@@ -1,9 +1,11 @@
-using MathRacerAPI.Extensions;
+using MathRacerAPI.Infrastructure.Configuration;
+using MathRacerAPI.Presentation.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+                .AddApplicationPart(typeof(MathRacerAPI.Presentation.Controllers.HealthController).Assembly);
 
 // Add custom services
 builder.Services.AddApplicationServices();

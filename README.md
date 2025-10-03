@@ -1,12 +1,21 @@
 # MathRacer API
 
-API para el juego MathRacer - Competencias matemáticas en tiempo real con soporte multijugador.
+API para el juego MathRacer - Competencias matemáticas en tiempo real desarrollada con **Clean Architecture**.
+
+## 🏗️ Arquitectura
+
+Este proyecto implementa **Clean Architecture** con 3 capas principales:
+- 🎭 **Presentation**: Controllers, DTOs, HTTP Pipeline
+- 💎 **Domain**: Models, Use Cases, Interfaces (Core)  
+- 🔧 **Infrastructure**: Repositories, Providers, Configuration
+
+📖 **Ver documentación completa**: [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ## 🚀 Quick Start
 
 ### Requisitos
-- .NET 8.0
-- Docker (para despliegue)
+- .NET 8.0 SDK
+- Editor: Visual Studio 2022 / VS Code
 
 ### Ejecutar localmente
 ```bash
@@ -15,210 +24,191 @@ cd MathRacerApi
 dotnet run
 ```
 
-La API estará disponible en: `http://localhost:5152`
+🌐 **API disponible en**: `https://localhost:5001` (HTTPS) | `http://localhost:5000` (HTTP)
 
-### Swagger Documentation
-- **Local**: http://localhost:5152/swagger
+### 📚 Documentación API
+- **Local**: https://localhost:5001/swagger
 - **Producción**: https://mathracerapi.onrender.com/swagger
 
----
+## 📋 Endpoints Activos
 
-## 📋 Endpoints Disponibles
-
-### API Information
-- `GET /` - Redirige a Swagger
+### ✅ Funcionales (Implementados)
+- `GET /` - Redirige a Swagger Documentation
 - `GET /api/info` - Información general de la API
-- `GET /swagger` - Documentación interactiva
+- `GET /health` - Health Check de la aplicación
+### 📋 Game Endpoints (Próximamente)
+- `POST /api/games` - Crear nueva partida
+- `GET /api/games/{id}` - Obtener estado de partida  
+- `POST /api/games/{id}/join` - Unirse a partida
+- `/hub/game` - SignalR Hub para tiempo real
 
-### Monitoring
-- `GET /health` - Health check de la aplicación
+## 🛠️ Desarrollo
 
-### Game (Coming Soon)
-- Endpoints de juego y multijugador (próxima implementación)
-
----
-
-## 🏗️ Arquitectura
-
-Este proyecto utiliza **Clean Architecture** con las siguientes capas:
-
+### Estructura del Código
 ```
-Controllers → Services → Repositories → Entities
-     ↓           ↓           ↓           ↓
-   HTTP      Business    Data Access   Domain
-  Handling    Logic      Layer        Models
+MathRacerApi/
+├── 🎭 Presentation/     # Controllers, DTOs, HTTP Config
+├── 💎 Domain/           # Use Cases, Models, Interfaces  
+└── 🔧 Infrastructure/   # Repositories, Providers, DI
 ```
 
-### Estructura de Carpetas
-- **`Controllers/`** - API Controllers
-- **`Services/`** - Lógica de negocio  
-- **`Models/`** - DTOs y ViewModels
-- **`Extensions/`** - Configuración modular
-- **`Repositories/`** - Acceso a datos (futuro)
-- **`Entities/`** - Entidades de dominio (futuro)
-- **`Hubs/`** - SignalR Hubs (futuro)
+### Comandos Útiles
+```bash
+# Compilar
+dotnet build
 
-📖 **Documentación completa**: [ARCHITECTURE.md](./ARCHITECTURE.md)
+# Ejecutar en desarrollo
+dotnet run
 
----
+# Ejecutar tests (cuando se agreguen)
+dotnet test
 
-## 🔄 CI/CD Pipeline
+# Docker
+docker build -t mathracer-api .
+docker run -p 5000:8080 mathracer-api
+```
+
+## 🔄 CI/CD & Deployment
 
 ### GitHub Actions
-- ✅ Build y test automático
-- ✅ Verificación de código en PRs
-- ✅ Deploy automático a producción
+- ✅ Build y test automático en PRs
+- ✅ Deploy automático a producción desde `main`
+- ✅ Verificación de código y arquitectura
 
 ### Deployment
-- **Plataforma**: Render
-- **Container**: Docker
-- **Auto-deploy**: Push a `main`
+- **Plataforma**: Render (Docker)
+- **URL Producción**: https://mathracerapi.onrender.com
+- **Auto-deploy**: Push a branch `main`
 
-### URLs
-- **Production**: https://mathracerapi.onrender.com
-- **Swagger Docs**: https://mathracerapi.onrender.com/swagger
+## � Roadmap
 
----
-
-## 🎮 Roadmap de Funcionalidades
-
-### ✅ Completado
-- [x] API base con Clean Architecture
-- [x] Health checks y monitoring  
-- [x] Swagger documentation
+### ✅ Fase 1: Base API (Completado)
+- [x] Clean Architecture implementada
+- [x] Health checks y monitoring
+- [x] Swagger documentation  
 - [x] CI/CD pipeline
 - [x] Docker deployment
 
-### 🚧 En Desarrollo
-- [ ] SignalR para multijugador en tiempo real
-- [ ] Sistema de matchmaking
+### 🚧 Fase 2: Core Game Features (En Desarrollo)
+- [ ] Autenticación de usuarios
+- [ ] Sistema de partidas
+- [ ] SignalR para tiempo real
+- [ ] Persistencia de datos
 - [ ] Gestión de salas de juego
 
 ### 📋 Próximas Features
-- [ ] Autenticación con Firebase
-- [ ] Base de datos (Entity Framework)
+### 🚧 Fase 3: Advanced Features (Planeado)
+- [ ] Base de datos con Entity Framework
+- [ ] Autenticación y autorización
 - [ ] Generación de problemas matemáticos
-- [ ] Sistema de puntuación
+- [ ] Sistema de puntuación y rankings
 - [ ] Estadísticas de jugadores
 
----
+## 🧪 Testing & Quality
 
-## 🧪 Testing
-
-### Ejecutar Tests
 ```bash
+# Ejecutar tests (cuando se agreguen)
 dotnet test
-```
 
-### Coverage (Futuro)
-```bash
+# Analizar cobertura
 dotnet test --collect:"XPlat Code Coverage"
+
+# Verificar build
+dotnet build --configuration Release
 ```
 
----
+## 🔧 Contribución
 
-## 🔧 Desarrollo
-
-### Crear nueva feature
+### Workflow de Desarrollo
 ```bash
-git checkout develop
-git pull
+# 1. Crear rama desde main o rama específica (ej: refactor/clean-architecture)
+git checkout main
+git pull origin main
 git checkout -b feature/nueva-funcionalidad
+
+# 2. Hacer cambios siguiendo Clean Architecture
+# 3. Commit siguiendo conventional commits
+git commit -m "feat: agregar nuevo endpoint de usuario"
+
+# 4. Push y crear PR hacia la rama correspondiente
+git push origin feature/nueva-funcionalidad
 ```
 
-### Convenciones
-- **Branches**: `feature/`, `bugfix/`, `hotfix/`
-- **Commits**: Conventional commits
-- **PRs**: Siempre hacia `develop`
+### Convenciones del Proyecto
+- **Branches**: `feature/`, `bugfix/`, `hotfix/`, `refactor/`
+- **Commits**: [Conventional Commits](https://conventionalcommits.org/)
+- **PRs**: Hacia rama base correspondiente (main/develop según contexto)
+- **Code Style**: Seguir convenciones de C# y comentarios XML
 
-### Estructura de Servicios
+### Agregar Nueva Funcionalidad
 ```csharp
-// Interface
+// 1. Definir interfaz en Domain
 public interface IGameService
 {
-    Task<GameResponse> CreateGameAsync(CreateGameRequest request);
+    Task<Game> CreateGameAsync(CreateGameRequest request);
 }
 
-// Implementation
-public class GameService : IGameService
-{
-    public async Task<GameResponse> CreateGameAsync(CreateGameRequest request)
-    {
-        // Implementación
-    }
-}
+// 2. Implementar en Infrastructure  
+public class GameService : IGameService { /* ... */ }
 
-// Registration in ServiceExtensions.cs
+// 3. Registrar en ServiceExtensions
 services.AddScoped<IGameService, GameService>();
+
+// 4. Usar en Use Case
+public class CreateGameUseCase
+{
+    private readonly IGameService _gameService;
+    // ...
+}
 ```
 
----
+## 🔒 Seguridad & Configuración
 
-## 📱 Clients
-
-Esta API será consumida por:
-- **Web App**: React frontend
-- **Mobile App**: Android con Kotlin
-- **Game Dashboard**: Admin panel
-
----
-
-## 🔒 Configuración de Seguridad
-
-### Variables de Entorno (Producción)
+### Variables de Entorno
 ```env
+# Desarrollo
+ASPNETCORE_ENVIRONMENT=Development
+ASPNETCORE_URLS=https://localhost:5001;http://localhost:5000
+
+# Producción  
 ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_URLS=http://+:8080
 ```
 
-### CORS (Configurado para desarrollo)
+### Configuración CORS
 ```csharp
-// En producción, configurar origins específicos
+// Configurado para desarrollo - Actualizar para producción
 app.UseCors(policy => policy
-    .WithOrigins("https://mathracer-web.com")
+    .AllowAnyOrigin()      // ⚠️ Cambiar en producción
     .AllowAnyMethod()
     .AllowAnyHeader());
 ```
 
----
+## 📊 Monitoring & Observability
 
-## 📊 Monitoring
+### Health Checks Disponibles
+- **Basic**: `/health` - Estado general, memoria, uptime
+- **Detailed**: Información de dependencias (cuando se agreguen)
 
-### Health Checks
-- **Endpoint**: `/health`
-- **Información**: Estado, memoria, uptime
+### Métricas (Futuras)
+- Tiempos de respuesta de API
+- Conexiones activas de SignalR
+- Sesiones de juego simultáneas
+- Tasa de errores por endpoint
 
-### Metrics (Futuro)
-- Response times
-- Active connections
-- Game sessions
-- Error rates
+## 📚 Recursos y Referencias
 
----
+- 📖 **Arquitectura**: [ARCHITECTURE.md](./ARCHITECTURE.md) - Documentación completa
+- 🌐 **API Docs**: [Swagger UI](https://localhost:5001/swagger) - Documentación interactiva
+- 🚀 **CI/CD**: [CI-CD-README.md](./CI-CD-README.md) - Pipeline de despliegue
+- 🏗️ **Clean Architecture**: [Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 
-## 🤝 Contribución
+## 🤝 Soporte
 
-1. Fork del repositorio
-2. Crear rama feature desde `develop`
-3. Implementar cambios siguiendo la arquitectura
-4. Agregar tests si es necesario
-5. Crear PR hacia `develop`
-
-### Code Style
-- Seguir convenciones de C#
-- Comentarios XML en APIs públicas
-- Mantener separación de responsabilidades
+- **🐛 Reportar Bugs**: [GitHub Issues](https://github.com/CaroVisentin/MathRacerApi/issues)
+- **💡 Sugerencias**: [GitHub Discussions](https://github.com/CaroVisentin/MathRacerApi/discussions)  
+- **📖 Documentación**: Consultar archivos `.md` en el repositorio
 
 ---
 
-## 📞 Soporte
-
-- **Issues**: GitHub Issues
-- **Documentación**: [ARCHITECTURE.md](./ARCHITECTURE.md)
-- **API Docs**: Swagger UI
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la licencia MIT. Ver [LICENSE](./LICENSE) para más detalles.
+*Desarrollado con ❤️ usando Clean Architecture y .NET 8*

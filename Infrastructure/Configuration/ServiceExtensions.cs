@@ -1,6 +1,6 @@
-using MathRacerAPI.Services;
+using MathRacerAPI.Domain.UseCases;
 
-namespace MathRacerAPI.Extensions;
+namespace MathRacerAPI.Infrastructure.Configuration;
 
 /// <summary>
 /// Extensiones para configurar los servicios de la aplicación
@@ -12,9 +12,9 @@ public static class ServiceExtensions
     /// </summary>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        // Registrar servicios
-        services.AddScoped<IApiInfoService, ApiInfoService>();
-        services.AddScoped<IHealthService, HealthService>();
+        // Registrar casos de uso
+        services.AddScoped<GetApiInfoUseCase>();
+        services.AddScoped<GetHealthStatusUseCase>();
         
         return services;
     }
