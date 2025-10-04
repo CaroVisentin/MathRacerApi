@@ -1,4 +1,7 @@
 using MathRacerAPI.Domain.UseCases;
+using MathRacerAPI.Domain.Repositories;
+using MathRacerAPI.Infrastructure.Repositories;
+using MathRacerAPI.Infrastructure.Providers;
 
 namespace MathRacerAPI.Infrastructure.Configuration;
 
@@ -15,7 +18,16 @@ public static class ServiceExtensions
         // Registrar casos de uso
         services.AddScoped<GetApiInfoUseCase>();
         services.AddScoped<GetHealthStatusUseCase>();
-        
+        services.AddScoped<CreateGameUseCase>();
+        services.AddScoped<JoinGameUseCase>();
+        services.AddScoped<GetNextQuestionUseCase>();
+        services.AddScoped<SubmitAnswerUseCase>();
+
+        // Registrar repositorios
+        services.AddScoped<IGameRepository, InMemoryGameRepository>();
+
+        services.AddSingleton(new QuestionProvider("Infrastructure/Providers/ecuaciones.json"));
+
         return services;
     }
 
