@@ -1,0 +1,332 @@
+[
+  {
+    "id": 1,
+    "equation": "8 = x + 3",
+    "result": "igual",
+    "options": [
+      {"value": 1, "isCorrect": false},
+      {"value": 3, "isCorrect": false},
+      {"value": 4, "isCorrect": false},
+      {"value": 5, "isCorrect": true}
+    ]
+  },
+  {
+    "id": 2,
+    "equation": "y = x - 2",
+    "result": "mayor",
+    "options": [
+      {"value": -1, "isCorrect": false},
+      {"value": 0, "isCorrect": false},
+      {"value": 1, "isCorrect": false},
+      {"value": 3, "isCorrect": true}
+    ]
+  },
+  {
+    "id": 3,
+    "equation": "y = x + 7",
+    "result": "menor",
+    "options": [
+      {"value": 4, "isCorrect": true},
+      {"value": 5, "isCorrect": false},
+      {"value": 7, "isCorrect": false},
+      {"value": 8, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 4,
+    "equation": "6 = x - 4",
+    "result": "igual",
+    "options": [
+      {"value": 8, "isCorrect": false},
+      {"value": 10, "isCorrect": true},
+      {"value": 1, "isCorrect": false},
+      {"value": 9, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 5,
+    "equation": "y = x + 10",
+    "result": "mayor",
+    "options": [
+      {"value": 7, "isCorrect": false},
+      {"value": 8, "isCorrect": false},
+      {"value": 9, "isCorrect": false},
+      {"value": 11, "isCorrect": true}
+    ]
+  },
+  {
+    "id": 6,
+    "equation": "y = x - 6",
+    "result": "menor",
+    "options": [
+      {"value": -8, "isCorrect": true},
+      {"value": -7, "isCorrect": false},
+      {"value": -6, "isCorrect": false},
+      {"value": -5, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 7,
+    "equation": "2 = x + 2",
+    "result": "igual",
+    "options": [
+      {"value": 0, "isCorrect": true},
+      {"value": 1, "isCorrect": false},
+      {"value": 2, "isCorrect": false},
+      {"value": 3, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 8,
+    "equation": "y = x - 9",
+    "result": "mayor",
+    "options": [
+      {"value": -12, "isCorrect": false},
+      {"value": -11, "isCorrect": false},
+      {"value": -10, "isCorrect": false},
+      {"value": -8, "isCorrect": true}
+    ]
+  },
+  {
+    "id": 9,
+    "equation": "y = x + 5",
+    "result": "menor",
+    "options": [
+      {"value": 3, "isCorrect": true},
+      {"value": 4, "isCorrect": false},
+      {"value": 5, "isCorrect": false},
+      {"value": 6, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 10,
+    "equation": "3 = x + 4",
+    "result": "igual",
+    "options": [
+      {"value": -1, "isCorrect": true},
+      {"value": -2, "isCorrect": false},
+      {"value": 0, "isCorrect": false},
+      {"value": 1, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 11,
+    "equation": "y = x + 12",
+    "result": "mayor",
+    "options": [
+      {"value": 9, "isCorrect": false},
+      {"value": 10, "isCorrect": false},
+      {"value": 11, "isCorrect": false},
+      {"value": 13, "isCorrect": true}
+    ]
+  },
+  {
+    "id": 12,
+    "equation": "y = x - 7",
+    "result": "menor",
+    "options": [
+      {"value": -9, "isCorrect": true},
+      {"value": -8, "isCorrect": false},
+      {"value": -7, "isCorrect": false},
+      {"value": -6, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 13,
+    "equation": "5 = x + 1",
+    "result": "igual",
+    "options": [
+      {"value": 2, "isCorrect": false},
+      {"value": 3, "isCorrect": false},
+      {"value": 4, "isCorrect": true},
+      {"value": 5, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 14,
+    "equation": "y = x - 10",
+    "result": "mayor",
+    "options": [
+      {"value": -13, "isCorrect": false},
+      {"value": -12, "isCorrect": false},
+      {"value": -11, "isCorrect": false},
+      {"value": -9, "isCorrect": true}
+    ]
+  },
+  {
+    "id": 15,
+    "equation": "y = x + 6",
+    "result": "menor",
+    "options": [
+      {"value": 4, "isCorrect": true},
+      {"value": 5, "isCorrect": false},
+      {"value": 6, "isCorrect": false},
+      {"value": 7, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 16,
+    "equation": "7 = x + 4",
+    "result": "igual",
+    "options": [
+      {"value": 2, "isCorrect": false},
+      {"value": 3, "isCorrect": false},
+      {"value": 3, "isCorrect": true},
+      {"value": 4, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 17,
+    "equation": "y = x + 15",
+    "result": "mayor",
+    "options": [
+      {"value": 12, "isCorrect": false},
+      {"value": 13, "isCorrect": false},
+      {"value": 14, "isCorrect": false},
+      {"value": 16, "isCorrect": true}
+    ]
+  },
+  {
+    "id": 18,
+    "equation": "y = x - 8",
+    "result": "menor",
+    "options": [
+      {"value": -10, "isCorrect": true},
+      {"value": -9, "isCorrect": false},
+      {"value": -8, "isCorrect": false},
+      {"value": -7, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 19,
+    "equation": "9 = x + 0",
+    "result": "igual",
+    "options": [
+      {"value": 7, "isCorrect": false},
+      {"value": 8, "isCorrect": false},
+      {"value": 9, "isCorrect": true},
+      {"value": 10, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 20,
+    "equation": "y = x - 11",
+    "result": "mayor",
+    "options": [
+      {"value": -14, "isCorrect": false},
+      {"value": -13, "isCorrect": false},
+      {"value": -12, "isCorrect": false},
+      {"value": -10, "isCorrect": true}
+    ]
+  },
+  {
+    "id": 21,
+    "equation": "12 = x + 2",
+    "result": "igual",
+    "options": [
+      {"value": 8, "isCorrect": false},
+      {"value": 9, "isCorrect": false},
+      {"value": 10, "isCorrect": true},
+      {"value": 11, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 22,
+    "equation": "y = x - 13",
+    "result": "mayor",
+    "options": [
+      {"value": -15, "isCorrect": false},
+      {"value": -14, "isCorrect": false},
+      {"value": -12, "isCorrect": false},
+      {"value": -11, "isCorrect": true}
+    ]
+  },
+  {
+    "id": 23,
+    "equation": "y = x + 8",
+    "result": "menor",
+    "options": [
+      {"value": 5, "isCorrect": true},
+      {"value": 6, "isCorrect": false},
+      {"value": 7, "isCorrect": false},
+      {"value": 8, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 24,
+    "equation": "4 = x - 5",
+    "result": "igual",
+    "options": [
+      {"value": 7, "isCorrect": false},
+      {"value": 8, "isCorrect": false},
+      {"value": 9, "isCorrect": true},
+      {"value": 10, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 25,
+    "equation": "y = x + 17",
+    "result": "mayor",
+    "options": [
+      {"value": 14, "isCorrect": false},
+      {"value": 15, "isCorrect": false},
+      {"value": 16, "isCorrect": false},
+      {"value": 18, "isCorrect": true}
+    ]
+  },
+  {
+    "id": 26,
+    "equation": "y = x - 15",
+    "result": "menor",
+    "options": [
+      {"value": -18, "isCorrect": true},
+      {"value": -17, "isCorrect": false},
+      {"value": -16, "isCorrect": false},
+      {"value": -15, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 27,
+    "equation": "6 = x + 2",
+    "result": "igual",
+    "options": [
+      {"value": 2, "isCorrect": false},
+      {"value": 3, "isCorrect": false},
+      {"value": 4, "isCorrect": true},
+      {"value": 5, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 28,
+    "equation": "y = x - 17",
+    "result": "mayor",
+    "options": [
+      {"value": -20, "isCorrect": false},
+      {"value": -19, "isCorrect": false},
+      {"value": -18, "isCorrect": false},
+      {"value": -16, "isCorrect": true}
+    ]
+  },
+  {
+    "id": 29,
+    "equation": "y = x + 11",
+    "result": "menor",
+    "options": [
+      {"value": 8, "isCorrect": true},
+      {"value": 9, "isCorrect": false},
+      {"value": 10, "isCorrect": false},
+      {"value": 11, "isCorrect": false}
+    ]
+  },
+  {
+    "id": 30,
+    "equation": "0 = x - 5",
+    "result": "igual",
+    "options": [
+      {"value": 3, "isCorrect": false},
+      {"value": 4, "isCorrect": false},
+      {"value": 5, "isCorrect": true},
+      {"value": 6, "isCorrect": false}
+    ]
+  }
+]

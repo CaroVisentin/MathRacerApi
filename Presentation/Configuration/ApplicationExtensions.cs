@@ -1,4 +1,4 @@
-namespace MathRacerAPI.Extensions;
+namespace MathRacerAPI.Presentation.Configuration;
 
 /// <summary>
 /// Extensiones para configurar el pipeline de la aplicación
