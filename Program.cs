@@ -1,7 +1,11 @@
 using MathRacerAPI.Infrastructure.Configuration;
 using MathRacerAPI.Presentation.Configuration;
+using MathRacerAPI.Presentation.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configurar URLs
+builder.WebHost.UseUrls("http://localhost:5153");
 
 // Leer orígenes permitidos desde la configuración
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
@@ -17,9 +21,27 @@ builder.Services.AddHealthCheckServices();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
-        policy.WithOrigins(allowedOrigins ?? new[] { "http://localhost:3000" }) //Si no encuentra los orígenes, por defecto usa este
-              .AllowAnyHeader()
-              .AllowAnyMethod());
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            // En desarrollo, permitir cualquier origen
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else
+        {
+            // En producción, usar orígenes específicos
+            policy.WithOrigins(allowedOrigins ?? new[] { 
+                "http://localhost:3000", 
+                "http://127.0.0.1:5500",
+                "http://localhost:5500"
+            })
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
+    });
 });
 
 var app = builder.Build();
@@ -40,5 +62,8 @@ app.UseCustomEndpoints();
 
 // Map controllers
 app.MapControllers();
+
+// Map SignalR hub
+app.MapHub<GameHub>("/gameHub");
 
 app.Run();

@@ -19,6 +19,11 @@ public class InMemoryGameRepository : IGameRepository
         return Task.FromResult(game);
     }
 
+    public Task<List<Game>> GetAllAsync()
+    {
+        return Task.FromResult(_games.Values.ToList());
+    }
+
     public Task UpdateAsync(Game game)
     {
         _games[game.Id] = game;

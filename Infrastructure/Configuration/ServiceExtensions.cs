@@ -1,7 +1,9 @@
 using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Domain.Repositories;
+using MathRacerAPI.Domain.Services;
 using MathRacerAPI.Infrastructure.Repositories;
 using MathRacerAPI.Infrastructure.Providers;
+using MathRacerAPI.Infrastructure.Services;
 
 namespace MathRacerAPI.Infrastructure.Configuration;
 
@@ -15,7 +17,7 @@ public static class ServiceExtensions
     /// </summary>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        // Registrar casos de uso
+        // Registrar casos de uso (modo offline)
         services.AddScoped<GetApiInfoUseCase>();
         services.AddScoped<GetHealthStatusUseCase>();
         services.AddScoped<CreateGameUseCase>();
@@ -23,10 +25,22 @@ public static class ServiceExtensions
         services.AddScoped<GetNextQuestionUseCase>();
         services.AddScoped<SubmitAnswerUseCase>();
 
+        // Registrar casos de uso (modo online)
+        services.AddScoped<FindMatchUseCase>();
+        services.AddScoped<ProcessOnlineAnswerUseCase>();
+        services.AddScoped<GetNextOnlineQuestionUseCase>();
+
         // Registrar repositorios
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
 
+        // Registrar servicios de dominio (lógica compartida)
+        services.AddScoped<IGameLogicService, GameLogicService>();
+
+        // Registrar proveedores
         services.AddSingleton(new QuestionProvider("Infrastructure/Providers/ecuaciones.json"));
+
+        // Configurar SignalR
+        services.AddSignalR();
 
         return services;
     }

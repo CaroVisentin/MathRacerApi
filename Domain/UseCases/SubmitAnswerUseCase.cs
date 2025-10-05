@@ -1,15 +1,18 @@
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
+using MathRacerAPI.Domain.Services;
 
 namespace MathRacerAPI.Domain.UseCases;
 
 public class SubmitAnswerUseCase
 {
     private readonly IGameRepository _gameRepository;
+    private readonly IGameLogicService _gameLogicService;
 
-    public SubmitAnswerUseCase(IGameRepository gameRepository)
+    public SubmitAnswerUseCase(IGameRepository gameRepository, IGameLogicService gameLogicService)
     {
         _gameRepository = gameRepository;
+        _gameLogicService = gameLogicService;
     }
 
     public async Task<Game?> ExecuteAsync(int gameId, int playerId, string answer)
@@ -26,58 +29,25 @@ public class SubmitAnswerUseCase
         var player = game.Players.FirstOrDefault(p => p.Id == playerId); //Encuentro el jugador que responde
         if (player == null) return null;
 
+        // Verificar si el jugador puede responder (no está en penalización)
+        if (!_gameLogicService.CanPlayerAnswer(player))
+            return game;
+
         int currentIndex = player.IndexAnswered;    //Determino el índice de la pregunta actual
         if (currentIndex >= game.Questions.Count)   //Significa que el juego ya terminó para ese jugador
             return game; 
 
         var question = game.Questions[currentIndex];
+        bool isCorrect = question.CorrectAnswer == answer;
 
-        if (question.CorrectAnswer == answer) //Respuesta correcta
-        {
-            player.CorrectAnswers++;
-            player.Position ++; 
-            player.PenaltyUntil = null; //Elimino la penalización si la tenía
+        // Aplicar resultado de la respuesta usando el servicio de dominio
+        _gameLogicService.ApplyAnswerResult(player, isCorrect);
 
-        }
-        else
-        {
-            player.PenaltyUntil = DateTime.UtcNow.AddSeconds(2); //Penalizo al jugador por 2 segundos
-        }
+        // Actualizar posiciones de jugadores
+        _gameLogicService.UpdatePlayerPositions(game);
 
-        player.IndexAnswered++;
-
-        //Finalizo la partida si el jugador contestó correctamente la cantidad de preguntas necesarias 
-        if (player.CorrectAnswers >= game.ConditionToWin)
-        {
-            if (player.FinishedAt == null)
-                player.FinishedAt = DateTime.UtcNow;
-
-            game.Status = GameStatus.Finished;
-            game.WinnerId = player.Id;
-        }
-        else if (player.IndexAnswered >= game.Questions.Count) //Finalizo si el jugador respondió todas las preguntas, todavía no ganó, espero al desempate
-        {
-            if (player.FinishedAt == null)
-                player.FinishedAt = DateTime.UtcNow;
-        }
-        //Finalizo si todos respondieron todas las preguntas
-        else if (game.Players.All(p => p.IndexAnswered >= game.Questions.Count))
-        {
-            var maxCorrect = game.Players.Max(p => p.CorrectAnswers); //Obtengo la mayor cantidad de respuestas correctas
-            var winners = game.Players.Where(p => p.CorrectAnswers == maxCorrect).ToList(); //Obtengo los jugadores que tienen esa cantidad de respuestas correctas
-
-            if (winners.Count == 1)     //Si hay un solo ganador, lo asigno
-            {
-                game.WinnerId = winners[0].Id;
-            }
-            else //Si hay más de un ganador, hago el desempate
-            {
-                var minFinished = winners.Min(p => p.FinishedAt ?? DateTime.MaxValue);
-                var winner = winners.First(p => p.FinishedAt == minFinished);
-                game.WinnerId = winner.Id;
-            }
-            game.Status = GameStatus.Finished;
-        }
+        // Verificar condiciones de finalización usando el servicio de dominio
+        _gameLogicService.CheckAndUpdateGameEndConditions(game);
 
         await _gameRepository.UpdateAsync(game);
         return game;
