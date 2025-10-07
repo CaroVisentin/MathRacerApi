@@ -24,10 +24,20 @@ builder.Services.AddCors(options =>
     {
         if (builder.Environment.IsDevelopment())
         {
-            // En desarrollo, permitir cualquier origen
-            policy.AllowAnyOrigin()
+            // En desarrollo, permitir orígenes comunes de Live Server y otros servidores de desarrollo
+            policy.WithOrigins(
+                "http://127.0.0.1:5500",
+                "http://localhost:5500",
+                "http://127.0.0.1:5501",
+                "http://localhost:5501",
+                "http://127.0.0.1:5502",
+                "http://localhost:5502",
+                "http://127.0.0.1:3000",
+                "http://localhost:3000"
+            )
                   .AllowAnyHeader()
-                  .AllowAnyMethod();
+                  .AllowAnyMethod()
+                  .AllowCredentials();
         }
         else
         {
@@ -51,7 +61,12 @@ app.UseCors("AllowFrontend");
 // Configure the HTTP request pipeline
 app.UseSwaggerDocumentation();
 
-app.UseHttpsRedirection();
+// Deshabilitar redirección HTTPS en desarrollo para evitar problemas con SignalR
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthorization();
 
 // Map health checks
