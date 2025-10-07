@@ -22,6 +22,7 @@ public static class ServiceExtensions
         services.AddScoped<JoinGameUseCase>();
         services.AddScoped<GetNextQuestionUseCase>();
         services.AddScoped<SubmitAnswerUseCase>();
+        services.AddScoped<GenerateEquationUseCase>();
 
         // Registrar repositorios
         services.AddScoped<IGameRepository, InMemoryGameRepository>();

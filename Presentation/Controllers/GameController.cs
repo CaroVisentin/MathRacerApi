@@ -1,3 +1,4 @@
+using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Presentation.DTOs;
 using Microsoft.AspNetCore.Mvc;
@@ -15,17 +16,20 @@ public class GameController : ControllerBase
     private readonly JoinGameUseCase _joinGameUseCase;
     private readonly GetNextQuestionUseCase _getNextQuestionUseCase;
     private readonly SubmitAnswerUseCase _submitAnswerUseCase;
+    private readonly GenerateEquationUseCase _generateEquationUseCase;
 
     public GameController(
         CreateGameUseCase createGameUseCase,
         JoinGameUseCase joinGameUseCase,
         GetNextQuestionUseCase getNextQuestionUseCase,
-        SubmitAnswerUseCase submitAnswerUseCase)
+        SubmitAnswerUseCase submitAnswerUseCase,
+        GenerateEquationUseCase generateEquationUseCase)
     {
         _createGameUseCase = createGameUseCase; //Instancio los casos de uso
         _joinGameUseCase = joinGameUseCase;
         _getNextQuestionUseCase = getNextQuestionUseCase;
         _submitAnswerUseCase = submitAnswerUseCase;
+        _generateEquationUseCase = generateEquationUseCase;
     }
 
     [HttpPost]
@@ -140,6 +144,17 @@ public class GameController : ControllerBase
         };
 
         return Ok(response);
+    }
+
+    [HttpPost("generate")]
+    public async Task<ActionResult<Question>> GenerateEquation([FromBody] EquationParams request)
+    {
+        if (request == null) return NotFound();
+
+        var question = await _generateEquationUseCase.ExecuteAsync(request);
+
+        return Ok(question);
+
     }
 
 }
