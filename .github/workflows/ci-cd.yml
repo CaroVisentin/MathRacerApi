@@ -20,12 +20,12 @@ jobs:
       uses: actions/checkout@v4
     
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         
     - name: Cache NuGet packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
@@ -51,7 +51,7 @@ jobs:
       run: dotnet test tests/MathRacerAPI.Tests/MathRacerAPI.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx"
       
     - name: Upload Test Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results
@@ -61,7 +61,7 @@ jobs:
       run: dotnet test tests/MathRacerAPI.Tests/MathRacerAPI.Tests.csproj --configuration Release --collect:"XPlat Code Coverage" --results-directory ./coverage
       
     - name: Upload Coverage Reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: coverage-report
