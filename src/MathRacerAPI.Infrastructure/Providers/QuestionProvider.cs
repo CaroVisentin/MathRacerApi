@@ -50,12 +50,19 @@ public class QuestionProvider : IQuestionProvider
         var random = new Random();
         var jsonQuestion = questions[random.Next(questions.Count)];
 
+        // Encontrar la opción correcta
+        var correctOption = jsonQuestion.Options.FirstOrDefault(opt => opt.IsCorrect);
+        if (correctOption == null)
+        {
+            throw new InvalidOperationException($"La pregunta con ID {jsonQuestion.Id} no tiene una opción correcta marcada");
+        }
+
         // Convertir JsonQuestion a Question
         var question = new Question
         {
             Id = jsonQuestion.Id,
             Equation = jsonQuestion.Equation,
-            CorrectAnswer = jsonQuestion.Result, // Usar Result como CorrectAnswer
+            CorrectAnswer = correctOption.Value.ToString(), // Usar el valor numérico de la opción correcta
             Options = jsonQuestion.Options.Select(opt => opt.Value.ToString()).ToList() // Convertir int a string
         };
 
