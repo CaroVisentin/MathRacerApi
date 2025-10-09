@@ -1,35 +1,39 @@
 # SignalR Integration - MathRacer Online Mode
 
-Este documento explica cómo usar la integración de SignalR para el modo multijugador online.
+Este documento explica cómo usar la integración de SignalR para el modo multijugador online siguiendo Clean Architecture.
 
-## Arquitectura
+## 🏗️ Arquitectura Clean para SignalR
 
-### Presentation Layer
-- **GameHub**: Hub de SignalR que maneja las comunicaciones en tiempo real
-- **OnlineController**: Controlador REST para obtener información sobre partidas online
-- **DTOs**: Objetos de transferencia de datos específicos para SignalR
+### src/MathRacerAPI.Presentation/ (Presentation Layer)
+- **Hubs/GameHub.cs**: Hub de SignalR que maneja comunicaciones en tiempo real
+- **Controllers/OnlineController.cs**: Endpoints REST complementarios 
+- **DTOs/SignalR/**: Objetos específicos para transferencia de datos SignalR
+- **Configuration/ApplicationExtensions.cs**: Configuración de CORS y SignalR
 
-### Domain Layer
+### src/MathRacerAPI.Domain/ (Domain Layer - Lógica Pura)
 #### Use Cases (Casos de Uso)
-- **FindMatchUseCase**: Busca o crea partidas multijugador online
-- **ProcessOnlineAnswerUseCase**: Procesa respuestas en partidas online
-- **GetNextOnlineQuestionUseCase**: Obtiene la siguiente pregunta
-- Reutiliza casos de uso existentes para modo offline
+- **FindMatchUseCase.cs**: Busca/crea partidas multijugador online
+- **ProcessOnlineAnswerUseCase.cs**: Procesa respuestas en tiempo real
+- **GetNextOnlineQuestionUseCase.cs**: Obtiene siguiente pregunta
+- **SubmitAnswerUseCase.cs**: Reutilizado para ambos modos (online/offline)
 
 #### Domain Services (Lógica Compartida)
-- **IGameLogicService**: Servicio con lógica de juego compartida entre casos de uso
-  - Verificación de condiciones de finalización
-  - Cálculo de posiciones de jugadores
-  - Aplicación de penalizaciones
-  - Validaciones de estado de juego
+- **IGameLogicService**: Interface con lógica de juego (testeable)
+  - ✅ Verificación de condiciones de finalización
+  - ✅ Cálculo de posiciones de jugadores  
+  - ✅ Aplicación de penalizaciones
+  - ✅ Validaciones de estado de juego
 
 #### Models
-- **GameSession**: Modelo que representa el estado de una sesión de juego
-- Reutiliza modelos existentes: `Game`, `Player`, `Question`
+- **Game.cs**: Entidad principal del juego
+- **Player.cs**: Jugadores con estado y posiciones
+- **Question.cs**: Preguntas matemáticas
+- **GameSession.cs**: Sesión de juego para SignalR
 
-### Infrastructure Layer
-- **GameLogicService**: Implementación del servicio de lógica compartida
-- Integración con el repositorio existente `IGameRepository`
+### src/MathRacerAPI.Infrastructure/ (Infrastructure Layer)
+- **Services/GameLogicService.cs**: Implementación concreta del IGameLogicService
+- **Repositories/InMemoryGameRepository.cs**: Persistencia en memoria
+- **Providers/QuestionProvider.cs**: Proveedor de preguntas matemáticas
 
 ## Endpoints SignalR
 
@@ -74,66 +78,216 @@ Obtiene información de configuración para conectarse al hub de SignalR.
 6. **Actualizaciones**: Todos reciben `GameUpdate` con el nuevo estado
 7. **Finalización**: El juego termina cuando alguien alcanza la condición de victoria
 
-## Configuración
+## 🔧 Configuración Clean Architecture
 
-### Cors
+### Program.cs (Presentation Layer)
 ```csharp
+// src/MathRacerAPI.Presentation/Program.cs
+
+// Configurar servicios por capas
+builder.Services.AddDomainServices();      // Domain registrations
+builder.Services.AddInfrastructureServices(); // Infrastructure registrations  
+builder.Services.AddPresentationServices();   // Presentation registrations
+
+// CORS para SignalR
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials()); // Necesario para SignalR
 });
-```
 
-### SignalR
-```csharp
+// SignalR
 builder.Services.AddSignalR();
-app.MapHub<GameHub>("/gameHub");
+
+var app = builder.Build();
+
+// Configurar pipeline
+app.UseCors("AllowFrontend");
+app.MapHub<GameHub>("/gameHub"); // Hub en /gameHub
 ```
 
-## Ejemplo de Uso (JavaScript)
-
-```javascript
-// Conectar al hub
-const connection = new signalR.HubConnectionBuilder()
-    .withUrl("/gameHub")
-    .build();
-
-// Configurar eventos
-connection.on("GameUpdate", (gameUpdate) => {
-    console.log("Estado del juego:", gameUpdate);
-    // Actualizar UI con el nuevo estado
-});
-
-connection.on("Error", (error) => {
-    console.error("Error:", error);
-});
-
-// Iniciar conexión
-connection.start().then(() => {
-    // Buscar partida
-    connection.invoke("FindMatch", "NombreJugador");
-}).catch(err => console.error(err));
-
-// Enviar respuesta
-function sendAnswer(gameId, playerId, answer) {
-    connection.invoke("SendAnswer", gameId, playerId, answer);
+### ServiceExtensions (Infrastructure Layer)
+```csharp
+// src/MathRacerAPI.Infrastructure/Configuration/ServiceExtensions.cs
+public static class ServiceExtensions
+{
+    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
+    {
+        services.AddScoped<IGameRepository, InMemoryGameRepository>();
+        services.AddScoped<IGameLogicService, GameLogicService>();
+        services.AddSingleton<IQuestionProvider, QuestionProvider>();
+        return services;
+    }
 }
 ```
 
-## Diferencias con el Modo Offline
+## 💻 Ejemplo de Uso (JavaScript Client)
 
-- **Modo Offline**: Usa endpoints REST tradicionales (`/api/game`)
-- **Modo Online**: Usa SignalR para comunicación en tiempo real
-- **Lógica compartida**: Ambos modos reutilizan los casos de uso del dominio
-- **Separación clara**: Los modos no tienen dependencias directas entre ellos
+### Configuración Base
+```javascript
+// Conectar al hub SignalR (Presentation Layer)
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl("http://localhost:5153/gameHub") // Puerto configurado
+    .withAutomaticReconnect() // Reconexión automática
+    .build();
+```
 
-## Consideraciones
+### Event Handlers (Recibir del Hub)
+```javascript
+// Configurar eventos que vienen del GameHub
+connection.on("GameUpdate", (gameUpdate) => {
+    console.log("🎮 Estado del juego actualizado:", gameUpdate);
+    updateGameUI(gameUpdate); // Actualizar interfaz
+});
 
-1. **Escalabilidad**: Esta implementación usa memoria para almacenar partidas. Para producción, considerar una base de datos.
-2. **Reconexión**: Implementar lógica de reconexión en el cliente.
-3. **Timeouts**: Considerar timeouts para partidas inactivas.
-4. **Validación**: Añadir validaciones adicionales según necesidades del negocio.
+connection.on("PlayerJoined", (playerInfo) => {
+    console.log("👤 Jugador unido:", playerInfo);
+    updatePlayersList(playerInfo);
+});
+
+connection.on("GameStarted", (gameData) => {
+    console.log("🚀 Juego iniciado:", gameData);
+    startGameUI(gameData);
+});
+
+connection.on("GameFinished", (result) => {
+    console.log("🏆 Juego finalizado:", result);
+    showGameResults(result);
+});
+
+connection.on("Error", (error) => {
+    console.error("❌ Error:", error);
+    showErrorMessage(error);
+});
+```
+
+### Client Actions (Enviar al Hub)
+```javascript
+// Iniciar conexión y buscar partida
+async function startOnlineGame(playerName) {
+    try {
+        await connection.start();
+        console.log("🔌 Conectado al GameHub");
+        
+        // Invocar FindMatchUseCase via Hub
+        await connection.invoke("FindMatch", playerName);
+        
+    } catch (err) {
+        console.error("💥 Error de conexión:", err);
+    }
+}
+
+// Enviar respuesta (ProcessOnlineAnswerUseCase)
+async function sendAnswer(gameId, playerId, answer) {
+    try {
+        await connection.invoke("SendAnswer", gameId, playerId, answer);
+    } catch (err) {
+        console.error("💥 Error enviando respuesta:", err);
+    }
+}
+
+// Desconectar limpiamente
+function disconnectFromGame() {
+    connection.stop();
+}
+```
+
+### Integración con UI
+```javascript
+// Ejemplo de integración completa
+class MathRacerOnline {
+    constructor() {
+        this.setupConnection();
+        this.gameId = null;
+        this.playerId = null;
+    }
+    
+    setupConnection() {
+        // ... configuración del connection como arriba
+    }
+    
+    async joinGame(playerName) {
+        await this.startOnlineGame(playerName);
+    }
+    
+    submitAnswer(answer) {
+        if (this.gameId && this.playerId) {
+            this.sendAnswer(this.gameId, this.playerId, answer);
+        }
+    }
+    
+    updateGameUI(gameUpdate) {
+        // Actualizar posiciones, puntajes, pregunta actual
+        document.getElementById('current-question').textContent = gameUpdate.currentQuestion;
+        // ... más lógica de UI
+    }
+}
+```
+
+## 🔄 Diferencias Modo Offline vs Online
+
+| Aspecto | Modo Offline | Modo Online (SignalR) |
+|---------|-------------|----------------------|
+| **Comunicación** | HTTP REST (`/api/game`) | WebSocket (`/gameHub`) |
+| **Use Cases** | `SubmitAnswerUseCase` | `ProcessOnlineAnswerUseCase` |
+| **Controllers** | `GameController` | `GameHub` + `OnlineController` |
+| **Tiempo Real** | ❌ Polling manual | ✅ Push automático |
+| **Multijugador** | ❌ Individual | ✅ Tiempo real |
+
+### Lógica Compartida (Clean Architecture)
+- **Domain Layer**: Ambos modos usan el mismo `IGameLogicService`
+- **Models**: Mismas entidades (`Game`, `Player`, `Question`)  
+- **Repository**: Mismo `IGameRepository` para persistencia
+- **Testing**: Mismos tests unitarios cubren ambos flujos
+
+## 🧪 Testing SignalR
+
+### Unit Tests (Existentes)
+```csharp
+// tests/MathRacerAPI.Tests/Services/GameLogicServiceTests.cs
+[Fact]
+public void CheckAndUpdateGameEndConditions_WhenPlayerReachesWinCondition_ShouldSetGameAsFinishedAndSetWinner()
+{
+    // Mismo test válido para offline y online
+}
+```
+
+### Integration Tests (Sugeridos)
+```csharp
+// Mockear SignalR Hub Context
+var mockHubContext = new Mock<IHubContext<GameHub>>();
+var mockClients = new Mock<IHubCallerClients>();
+mockHubContext.Setup(x => x.Clients).Returns(mockClients.Object);
+
+// Testear GameHub methods
+var gameHub = new GameHub(mockHubContext.Object, gameRepository, findMatchUseCase);
+```
+
+## 🚀 Consideraciones de Producción
+
+### 1. **Escalabilidad**
+- **Actual**: InMemory storage para desarrollo
+- **Producción**: Migrar a SQL Server/PostgreSQL + Redis para SignalR scale-out
+
+### 2. **Monitoreo**  
+```csharp
+// Métricas de SignalR
+services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true; // Solo desarrollo
+    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+});
+```
+
+### 3. **Seguridad**
+- **Authentication**: JWT tokens para partidas privadas
+- **Rate Limiting**: Limitar respuestas por segundo
+- **Validation**: Validar todas las entradas del cliente
+
+### 4. **Resilencia**
+- **Reconnection**: Cliente debe manejar desconexiones
+- **Timeouts**: Expulsar jugadores inactivos
+- **Error Handling**: Rollback de estado en errores

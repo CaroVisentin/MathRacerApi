@@ -2,15 +2,22 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
-# Copy csproj file and restore dependencies
-COPY *.csproj ./
+# Copy solution file and all project files
+COPY *.sln ./
+COPY src/MathRacerAPI.Domain/*.csproj ./src/MathRacerAPI.Domain/
+COPY src/MathRacerAPI.Infrastructure/*.csproj ./src/MathRacerAPI.Infrastructure/
+COPY src/MathRacerAPI.Presentation/*.csproj ./src/MathRacerAPI.Presentation/
+COPY tests/MathRacerAPI.Tests/*.csproj ./tests/MathRacerAPI.Tests/
+
+# Restore dependencies
 RUN dotnet restore
 
 # Copy the rest of the source code
-COPY . ./
+COPY src/ ./src/
+COPY tests/ ./tests/
 
-# Build the application
-RUN dotnet publish -c Release -o out
+# Build and publish the presentation project
+RUN dotnet publish src/MathRacerAPI.Presentation/MathRacerAPI.Presentation.csproj -c Release -o out
 
 # Use the official .NET 8 runtime image for running
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
@@ -27,4 +34,4 @@ ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 # Start the application
-ENTRYPOINT ["dotnet", "MathRacerAPI.dll"]
+ENTRYPOINT ["dotnet", "MathRacerAPI.Presentation.dll"]

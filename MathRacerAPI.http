@@ -1,6 +1,29 @@
-@MathRacerAPI_HostAddress = http://localhost:5152
+@MathRacerAPI_HostAddress = http://localhost:5153
 
-GET {{MathRacerAPI_HostAddress}}/weatherforecast/
+### Health Check
+GET {{MathRacerAPI_HostAddress}}/health
 Accept: application/json
+
+### API Info
+GET {{MathRacerAPI_HostAddress}}/api/info
+Accept: application/json
+
+### Create Game
+POST {{MathRacerAPI_HostAddress}}/api/game/create
+Content-Type: application/json
+
+{
+  "playerName": "TestPlayer",
+  "maxQuestions": 10
+}
+
+### Join Game
+POST {{MathRacerAPI_HostAddress}}/api/game/join
+Content-Type: application/json
+
+{
+  "gameId": 1,
+  "playerName": "Player2"
+}
 
 ###

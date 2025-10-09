@@ -4,6 +4,9 @@ using MathRacerAPI.Domain.Services;
 using MathRacerAPI.Infrastructure.Repositories;
 using MathRacerAPI.Infrastructure.Providers;
 using MathRacerAPI.Infrastructure.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace MathRacerAPI.Infrastructure.Configuration;
 
@@ -37,7 +40,29 @@ public static class ServiceExtensions
         services.AddScoped<IGameLogicService, GameLogicService>();
 
         // Registrar proveedores
-        services.AddSingleton(new QuestionProvider("Infrastructure/Providers/ecuaciones.json"));
+        services.AddSingleton<MathRacerAPI.Domain.Providers.IQuestionProvider>(serviceProvider =>
+        {
+            // Buscar el archivo JSON desde el directorio raíz de la solución
+            var currentDir = Directory.GetCurrentDirectory();
+            var solutionRoot = currentDir;
+            
+            // Navegar hacia arriba hasta encontrar el directorio que contiene src/
+            while (!Directory.Exists(Path.Combine(solutionRoot, "src")))
+            {
+                var parent = Directory.GetParent(solutionRoot);
+                if (parent == null) break;
+                solutionRoot = parent.FullName;
+            }
+            
+            var jsonPath = Path.Combine(solutionRoot, "src", "MathRacerAPI.Infrastructure", "Providers", "ecuaciones.json");
+            
+            // Log para debug
+            var logger = serviceProvider.GetService<ILogger<QuestionProvider>>();
+            logger?.LogInformation($"Intentando cargar preguntas desde: {jsonPath}");
+            logger?.LogInformation($"El archivo existe: {File.Exists(jsonPath)}");
+            
+            return new QuestionProvider(jsonPath);
+        });
 
         // Configurar SignalR
         services.AddSignalR();

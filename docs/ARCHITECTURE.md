@@ -79,30 +79,51 @@ Data → Implementation → Use Case → Controller → HTTP Response
 - **Mantenible**: Lógica de negocio centralizada en Domain
 - **Escalable**: Fácil agregar nuevas funcionalidades
 
-## 📁 Carpetas Preparadas (con .gitkeep)
+## 📁 Estructura Actual del Proyecto
 
-### Domain/
+### src/MathRacerAPI.Domain/ (Núcleo de Negocio)
 ```
 Domain/
-├── Models/          # ✅ ApiInfoResponse.cs, HealthCheckResponse.cs
-├── UseCases/        # ✅ GetApiInfoUseCase.cs, GetHealthStatusUseCase.cs
-├── Repositories/    # � IGameRepository.cs, IPlayerRepository.cs
-└── Services/        # 📁 IEmailService.cs, ICacheService.cs
+├── Models/          # ✅ Game.cs, Player.cs, Question.cs, GameStatus.cs
+├── UseCases/        # ✅ CreateGameUseCase.cs, JoinGameUseCase.cs, SubmitAnswerUseCase.cs
+├── Repositories/    # ✅ IGameRepository.cs
+└── Services/        # ✅ IGameLogicService.cs
 ```
 
-### Infrastructure/
+### src/MathRacerAPI.Infrastructure/ (Implementaciones)
 ```
 Infrastructure/
-├── Repositories/    # 📁 GameRepository.cs (EF Core)
-├── Services/        # 📁 EmailService.cs, CacheService.cs
+├── Repositories/    # ✅ InMemoryGameRepository.cs
+├── Services/        # ✅ GameLogicService.cs
 ├── Configuration/   # ✅ ServiceExtensions.cs
-└── Providers/       # 📁 ExternalApiProvider.cs
+└── Providers/       # ✅ QuestionProvider.cs, ecuaciones.json
 ```
 
-### Presentation/
+### src/MathRacerAPI.Presentation/ (API & SignalR)
 ```
 Presentation/
-├── Controllers/     # ✅ HealthController.cs, InfoController.cs
-├── DTOs/           # 📁 CreateGameDto.cs, GameResponseDto.cs
-└── Extensions/      # 📁 SwaggerExtensions.cs, CorsExtensions.cs
+├── Controllers/     # ✅ GameController.cs, HealthController.cs, InfoController.cs, OnlineController.cs
+├── DTOs/           # ✅ GameResponseDto.cs, CreateGameRequestDto.cs, QuestionResponseDto.cs
+├── Hubs/           # ✅ GameHub.cs (SignalR para multijugador en tiempo real)
+└── Configuration/   # ✅ ApplicationExtensions.cs
+```
+
+### tests/MathRacerAPI.Tests/ (Testing)
+```
+Tests/
+├── Services/        # ✅ GameLogicServiceTests.cs (11 tests)
+├── UseCases/        # ✅ SubmitAnswerUseCaseTests.cs (11 tests)
+└── Dependencies     # ✅ xUnit, Moq, FluentAssertions
+```
+
+## 🧪 Testing Coverage
+- **22+ Tests Unitarios** cubriendo lógica crítica
+- **Mocking** con Moq para interfaces y dependencias
+- **GameLogicService**: Condiciones de victoria, penalizaciones, posiciones
+- **Use Cases**: Validaciones, flujos de negocio, manejo de errores
+
+## 🔄 Flujo SignalR Multijugador
+```
+Cliente WebSocket → GameHub → Use Case → GameLogicService → Repository
+               ← Broadcast ← Model   ← Business Logic ← Data
 ```

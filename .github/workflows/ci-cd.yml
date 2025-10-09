@@ -2,9 +2,13 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, feature/* ]
   pull_request:
     branches: [ main, develop ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  SOLUTION_FILE: 'MathRacerAPI.sln'
 
 jobs:
   ci:
@@ -18,16 +22,59 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
         
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore ${{ env.SOLUTION_FILE }}
       
-    - name: Build application
-      run: dotnet build --no-restore --configuration Release
+    - name: Build Domain layer
+      run: dotnet build src/MathRacerAPI.Domain/MathRacerAPI.Domain.csproj --no-restore --configuration Release
       
-    - name: Run tests
-      run: dotnet test --no-build --configuration Release --verbosity normal
+    - name: Build Infrastructure layer
+      run: dotnet build src/MathRacerAPI.Infrastructure/MathRacerAPI.Infrastructure.csproj --no-restore --configuration Release
+      
+    - name: Build Presentation layer
+      run: dotnet build src/MathRacerAPI.Presentation/MathRacerAPI.Presentation.csproj --no-restore --configuration Release
+      
+    - name: Build Tests
+      run: dotnet build tests/MathRacerAPI.Tests/MathRacerAPI.Tests.csproj --no-restore --configuration Release
+      
+    - name: Run Unit Tests
+      run: dotnet test tests/MathRacerAPI.Tests/MathRacerAPI.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx"
+      
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: "**/test_results.trx"
+        
+    - name: Generate Test Coverage Report
+      run: dotnet test tests/MathRacerAPI.Tests/MathRacerAPI.Tests.csproj --configuration Release --collect:"XPlat Code Coverage" --results-directory ./coverage
+      
+    - name: Upload Coverage Reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-report
+        path: ./coverage/**/coverage.cobertura.xml
       
     - name: Test Docker build
       run: docker build -t mathracer-api-test .
+      
+    - name: Validate API Structure
+      run: |
+        echo "Validating Clean Architecture structure..."
+        test -d src/MathRacerAPI.Domain || (echo "Domain layer missing" && exit 1)
+        test -d src/MathRacerAPI.Infrastructure || (echo "Infrastructure layer missing" && exit 1)
+        test -d src/MathRacerAPI.Presentation || (echo "Presentation layer missing" && exit 1)
+        test -d tests/MathRacerAPI.Tests || (echo "Tests missing" && exit 1)
+        echo "Architecture validation passed!"

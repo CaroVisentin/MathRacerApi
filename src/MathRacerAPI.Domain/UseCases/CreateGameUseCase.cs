@@ -1,6 +1,6 @@
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
-using MathRacerAPI.Infrastructure.Providers;
+using MathRacerAPI.Domain.Providers;
 using System.Text.Json;
 
 namespace MathRacerAPI.Domain.UseCases;
@@ -8,9 +8,9 @@ namespace MathRacerAPI.Domain.UseCases;
 public class CreateGameUseCase
 {
     private readonly IGameRepository _gameRepository;
-    private readonly QuestionProvider _questionProvider;
+    private readonly IQuestionProvider _questionProvider;
 
-    public CreateGameUseCase(IGameRepository gameRepository, QuestionProvider questionProvider)
+    public CreateGameUseCase(IGameRepository gameRepository, IQuestionProvider questionProvider)
     {
         _gameRepository = gameRepository;
         _questionProvider = questionProvider;

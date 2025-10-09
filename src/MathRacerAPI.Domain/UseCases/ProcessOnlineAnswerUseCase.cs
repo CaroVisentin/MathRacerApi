@@ -1,6 +1,7 @@
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Domain.Services;
+using Microsoft.Extensions.Logging;
 
 namespace MathRacerAPI.Domain.UseCases;
 

@@ -1,7 +1,7 @@
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Domain.Services;
-using MathRacerAPI.Infrastructure.Providers;
+using MathRacerAPI.Domain.Providers;
 
 namespace MathRacerAPI.Domain.UseCases;
 
@@ -11,14 +11,14 @@ namespace MathRacerAPI.Domain.UseCases;
 public class FindMatchUseCase
 {
     private readonly IGameRepository _gameRepository;
-    private readonly QuestionProvider _questionProvider;
+    private readonly IQuestionProvider _questionProvider;
     private readonly IGameLogicService _gameLogicService;
     private static int _nextPlayerId = 1000; // Empezar desde 1000 para diferenciar del modo offline
     private static int _nextGameId = 1000;
 
     public FindMatchUseCase(
         IGameRepository gameRepository, 
-        QuestionProvider questionProvider,
+        IQuestionProvider questionProvider,
         IGameLogicService gameLogicService)
     {
         _gameRepository = gameRepository;
