@@ -352,13 +352,13 @@ public class GameLogicServiceTests
             {
                 Id = i,
                 Equation = $"{i} + {i} = ?",
-                CorrectAnswer = (i * 2).ToString(),
-                Options = new List<string> 
+                CorrectAnswer = (i * 2),
+                Options = new List<int> 
                 { 
-                    (i * 2).ToString(), 
-                    (i * 2 + 1).ToString(), 
-                    (i * 2 - 1).ToString(), 
-                    (i * 2 + 2).ToString() 
+                    (i * 2), 
+                    (i * 2 + 1), 
+                    (i * 2 - 1), 
+                    (i * 2 + 2) 
                 }
             });
         }

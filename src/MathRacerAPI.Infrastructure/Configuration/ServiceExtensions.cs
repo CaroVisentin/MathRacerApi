@@ -40,29 +40,7 @@ public static class ServiceExtensions
         services.AddScoped<IGameLogicService, GameLogicService>();
 
         // Registrar proveedores
-        services.AddSingleton<MathRacerAPI.Domain.Providers.IQuestionProvider>(serviceProvider =>
-        {
-            // Buscar el archivo JSON desde el directorio raíz de la solución
-            var currentDir = Directory.GetCurrentDirectory();
-            var solutionRoot = currentDir;
-            
-            // Navegar hacia arriba hasta encontrar el directorio que contiene src/
-            while (!Directory.Exists(Path.Combine(solutionRoot, "src")))
-            {
-                var parent = Directory.GetParent(solutionRoot);
-                if (parent == null) break;
-                solutionRoot = parent.FullName;
-            }
-            
-            var jsonPath = Path.Combine(solutionRoot, "src", "MathRacerAPI.Infrastructure", "Providers", "ecuaciones.json");
-            
-            // Log para debug
-            var logger = serviceProvider.GetService<ILogger<QuestionProvider>>();
-            logger?.LogInformation($"Intentando cargar preguntas desde: {jsonPath}");
-            logger?.LogInformation($"El archivo existe: {File.Exists(jsonPath)}");
-            
-            return new QuestionProvider(jsonPath);
-        });
+        services.AddSingleton<MathRacerAPI.Domain.Providers.IQuestionProvider, MathRacerAPI.Infrastructure.Providers.QuestionProvider>();
 
         // Configurar SignalR
         services.AddSignalR();

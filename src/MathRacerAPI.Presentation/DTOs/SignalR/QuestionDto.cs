@@ -9,7 +9,7 @@ public class QuestionDto
 {
     public int Id { get; set; }
     public string Equation { get; set; } = string.Empty;
-    public List<string> Options { get; set; } = new();
+    public List<int> Options { get; set; } = new();
 
     /// <summary>
     /// Convierte una Question a QuestionDto (sin mostrar la respuesta correcta)

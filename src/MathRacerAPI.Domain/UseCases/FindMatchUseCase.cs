@@ -74,25 +74,24 @@ public class FindMatchUseCase
 
         game.Players.Add(player);
 
-        // Generar preguntas aleatorias
-        var types = new[] { "mayor", "menor", "igual" };
         var random = new Random();
-        var typeSelected = types[random.Next(types.Length)];
-
-        var allQuestions = _questionProvider.GetQuestions();
-        var selected = allQuestions
-            .Where(q => q.Result == typeSelected)
-            .OrderBy(q => Guid.NewGuid()) // Orden aleatorio
-            .Take(game.MaxQuestions)
-            .ToList();
-
-        game.Questions = selected.Select((q, index) => new Question
+        var equationParams = new EquationParams
         {
-            Id = index + 1,
-            Equation = q.Equation,
-            Options = q.Options.Select(o => o.Value.ToString()).ToList(),
-            CorrectAnswer = q.Options.First(o => o.IsCorrect).Value.ToString()
-        }).ToList();
+            TermCount = 2,
+            VariableCount = 1,
+            Operations = new List<string> { "+", "-" },
+            ExpectedResult = random.Next(0, 2) == 0 ? "MAYOR" : "MENOR",
+            OptionsCount = 4,
+            OptionRangeMin = -10,
+            OptionRangeMax = 10,
+            NumberRangeMin = -10,
+            NumberRangeMax = 10,
+            TimePerEquation = 10
+        };
+
+        var allQuestions = _questionProvider.GetQuestions(equationParams, game.MaxQuestions);
+        game.Questions = allQuestions;
+        game.ExpectedResult = equationParams.ExpectedResult;
 
         await _gameRepository.AddAsync(game);
         return game;

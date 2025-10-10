@@ -13,4 +13,5 @@ public class Game
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public int? WinnerId { get; set; } 
     public int ConditionToWin { get; set; } = 10;
+    public string ExpectedResult { get; set; } = "MAYOR"; 
 }

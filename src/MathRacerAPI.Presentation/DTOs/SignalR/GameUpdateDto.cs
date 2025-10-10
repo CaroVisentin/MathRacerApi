@@ -16,6 +16,8 @@ public class GameUpdateDto
     public int QuestionCount { get; set; }
     public int ConditionToWin { get; set; }
 
+    public string? ExpectedResult { get; set; }
+
     /// <summary>
     /// Convierte una GameSession a GameUpdateDto
     /// </summary>
@@ -39,7 +41,8 @@ public class GameUpdateDto
             WinnerId = gameSession.WinnerId,
             CreatedAt = gameSession.CreatedAt,
             QuestionCount = gameSession.QuestionCount,
-            ConditionToWin = gameSession.ConditionToWin
+            ConditionToWin = gameSession.ConditionToWin,
+            ExpectedResult = gameSession.ExpectedResult
         };
     }
 }
