@@ -18,30 +18,29 @@ public class CreateGameUseCase
 
     public async Task<Game> ExecuteAsync(string playerName)
     {
-        var player = new Player { Name = playerName, Id = 1};  //Creo el jugador que crea la partida
+        var player = new Player { Name = playerName, Id = 1 };  //Creo el jugador que crea la partida 
         var game = new Game();
         game.Id = 1;    //Asigno un id a la partida
         game.Players.Add(player);  //Agrego el jugador a la partida
 
-        var types = new[] { "mayor", "menor", "igual" }; //Tipos de preguntas
         var random = new Random();
-        var typeSelected = types[random.Next(types.Length)]; //Obtengo de manera aleatoria el tipo de resultado esperado
-
-        var allQuestions = _questionProvider.GetQuestions();  //Obtengo todas las preguntas del proveedor
-
-        var selected = allQuestions
-            .Where(q => q.Result == typeSelected)    
-            .OrderBy(q => q.Equation)   
-            .Take(game.MaxQuestions)
-            .ToList();
-
-        game.Questions = selected.Select(q => new Question    //Mapeo las preguntas al modelo de dominio
+        var equationParams = new EquationParams
         {
-            Id = q.Id,
-            Equation = q.Equation,
-            Options = q.Options.Select(o => o.Value.ToString()).ToList(),
-            CorrectAnswer = q.Options.First(o => o.IsCorrect).Value.ToString()
-        }).ToList();
+            TermCount = 2,
+            VariableCount = 1,
+            Operations = new List<string> { "+", "-" },
+            ExpectedResult = random.Next(0, 2) == 0 ? "MAYOR" : "MENOR",
+            OptionsCount = 4,
+            OptionRangeMin = -10,
+            OptionRangeMax = 10,
+            NumberRangeMin = -10,
+            NumberRangeMax = 10,
+            TimePerEquation = 10
+        };     
+
+        var allQuestions = _questionProvider.GetQuestions(equationParams, game.MaxQuestions);
+        game.Questions = allQuestions;
+        game.ExpectedResult = equationParams.ExpectedResult;
 
         await _gameRepository.AddAsync(game);
         return game;

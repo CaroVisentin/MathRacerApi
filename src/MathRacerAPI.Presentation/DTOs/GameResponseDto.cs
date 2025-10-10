@@ -11,6 +11,7 @@ public class GameResponseDto
     public int MaxQuestions { get; set; }
     public int? WinnerId { get; set; }
     public string? WinnerName { get; set; }
+    public string? ExpectedResult { get; set; }
 }
 
 public class PlayerDto

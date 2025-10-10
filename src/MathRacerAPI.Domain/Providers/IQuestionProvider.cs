@@ -5,15 +5,15 @@ namespace MathRacerAPI.Domain.Providers;
 /// </summary>
 public interface IQuestionProvider
 {
+
     /// <summary>
-    /// Obtiene una pregunta aleatoria
+    /// Obtiene una lista de preguntas generadas dinámicamente basadas en los parámetros dados
     /// </summary>
-    /// <returns>Una pregunta con opciones múltiples</returns>
-    Models.Question GetRandomQuestion();
-    
+    List<Models.Question> GetQuestions(Models.EquationParams p, int count);
+
     /// <summary>
-    /// Obtiene todas las preguntas disponibles desde el archivo JSON
+    /// Genera una ecuación y sus opciones basadas en los parámetros dados
     /// </summary>
-    /// <returns>Lista de preguntas JSON</returns>
-    List<Models.JsonQuestion> GetQuestions();
+    Models.Question GenerateEquation(Models.EquationParams p);
+
 }

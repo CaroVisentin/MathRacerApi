@@ -1,6 +1,7 @@
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Domain.Services;
+using System.Text.Json;
 
 namespace MathRacerAPI.Domain.UseCases;
 
@@ -15,7 +16,7 @@ public class SubmitAnswerUseCase
         _gameLogicService = gameLogicService;
     }
 
-    public async Task<Game?> ExecuteAsync(int gameId, int playerId, string answer)
+    public async Task<Game?> ExecuteAsync(int gameId, int playerId, int answer)
     {
         var game = await _gameRepository.GetByIdAsync(gameId);
         if (game == null)
@@ -42,7 +43,7 @@ public class SubmitAnswerUseCase
 
         // Aplicar resultado de la respuesta usando el servicio de dominio
         _gameLogicService.ApplyAnswerResult(player, isCorrect);
-
+       
         // Actualizar posiciones de jugadores
         _gameLogicService.UpdatePlayerPositions(game);
 

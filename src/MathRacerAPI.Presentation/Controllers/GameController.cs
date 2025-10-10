@@ -1,3 +1,4 @@
+using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Presentation.DTOs;
 using Microsoft.AspNetCore.Mvc;
@@ -51,7 +52,8 @@ public class GameController : ControllerBase
             Status = game.Status.ToString(),
             MaxQuestions = game.MaxQuestions,
             WinnerId = game.WinnerId,
-            WinnerName = winnerName 
+            WinnerName = winnerName, 
+            ExpectedResult = game.ExpectedResult
         };
 
         return Ok(response); //Devuelvo la respuesta
@@ -81,7 +83,8 @@ public class GameController : ControllerBase
             Status = game.Status.ToString(),
             MaxQuestions = game.MaxQuestions,
             WinnerId = game.WinnerId,
-            WinnerName = winnerName 
+            WinnerName = winnerName,
+            ExpectedResult = game.ExpectedResult
         };
 
         return Ok(response);
@@ -136,7 +139,8 @@ public class GameController : ControllerBase
             WinnerId = game.WinnerId,
             WinnerName = game.WinnerId.HasValue
                 ? game.Players.FirstOrDefault(p => p.Id == game.WinnerId.Value)?.Name
-                : null
+                : null,
+            ExpectedResult = game.ExpectedResult
         };
 
         return Ok(response);

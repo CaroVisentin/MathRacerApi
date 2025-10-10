@@ -79,7 +79,7 @@ public class GameHub : Hub
     /// <param name="gameId">ID de la partida</param>
     /// <param name="playerId">ID del jugador</param>
     /// <param name="answer">Respuesta del jugador</param>
-    public async Task SendAnswer(int gameId, int playerId, string answer)
+    public async Task SendAnswer(int gameId, int playerId, int answer)
     {
         try
         {

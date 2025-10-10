@@ -24,7 +24,7 @@ public class ProcessOnlineAnswerUseCase
         _logger = logger;
     }
 
-    public async Task<Game?> ExecuteAsync(int gameId, int playerId, string answer)
+    public async Task<Game?> ExecuteAsync(int gameId, int playerId, int answer)
     {
         var game = await _gameRepository.GetByIdAsync(gameId);
         if (game == null)

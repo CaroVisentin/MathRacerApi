@@ -15,6 +15,8 @@ public class GameSession
     public DateTime CreatedAt { get; set; }
     public int QuestionCount { get; set; }
     public int ConditionToWin { get; set; }
+    public string? ExpectedResult { get; set; }
+
 
     /// <summary>
     /// Crea una GameSession a partir de un Game
@@ -30,7 +32,8 @@ public class GameSession
             WinnerId = game.WinnerId,
             CreatedAt = game.CreatedAt,
             QuestionCount = game.Questions.Count,
-            ConditionToWin = game.ConditionToWin
+            ConditionToWin = game.ConditionToWin,
+            ExpectedResult = game.ExpectedResult
         };
     }
 }

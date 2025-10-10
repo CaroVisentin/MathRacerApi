@@ -30,7 +30,7 @@ public class SubmitAnswerUseCaseTests
         // Arrange
         const int gameId = 1;
         const int playerId = 1;
-        const string answer = "10";
+        const int answer = 10;
 
         _gameRepositoryMock
             .Setup(x => x.GetByIdAsync(gameId))
@@ -50,7 +50,7 @@ public class SubmitAnswerUseCaseTests
         // Arrange
         const int gameId = 1;
         const int playerId = 1;
-        const string answer = "10";
+        const int answer = 10;
 
         var game = CreateTestGame();
         game.Status = GameStatus.Finished;
@@ -77,7 +77,7 @@ public class SubmitAnswerUseCaseTests
         // Arrange
         const int gameId = 1;
         const int nonExistentPlayerId = 999;
-        const string answer = "10";
+        const int answer = 10;
 
         var game = CreateTestGame();
         
@@ -98,7 +98,7 @@ public class SubmitAnswerUseCaseTests
         // Arrange
         const int gameId = 1;
         const int playerId = 1;
-        const string answer = "10";
+        const int answer = 10;
 
         var game = CreateTestGame();
         var player = game.Players.First(p => p.Id == playerId);
@@ -129,7 +129,7 @@ public class SubmitAnswerUseCaseTests
         // Arrange
         const int gameId = 1;
         const int playerId = 1;
-        const string answer = "10";
+        const int answer = 10;
 
         var game = CreateTestGame();
         var player = game.Players.First(p => p.Id == playerId);
@@ -160,7 +160,7 @@ public class SubmitAnswerUseCaseTests
         // Arrange
         const int gameId = 1;
         const int playerId = 1;
-        const string correctAnswer = "4"; // 2 + 2 = 4
+        const int correctAnswer = 4; // 2 + 2 = 4
 
         var game = CreateTestGame();
         var player = game.Players.First(p => p.Id == playerId);
@@ -192,7 +192,7 @@ public class SubmitAnswerUseCaseTests
         // Arrange
         const int gameId = 1;
         const int playerId = 1;
-        const string incorrectAnswer = "5"; // 2 + 2 ≠ 5
+        const int incorrectAnswer = 5; // 2 + 2 ≠ 5
 
         var game = CreateTestGame();
         var player = game.Players.First(p => p.Id == playerId);
@@ -224,7 +224,7 @@ public class SubmitAnswerUseCaseTests
         // Arrange
         const int gameId = 1;
         const int playerId = 1;
-        const string answer = "4";
+        const int answer = 4;
 
         var game = CreateTestGame();
         var player = game.Players.First(p => p.Id == playerId);
@@ -245,10 +245,10 @@ public class SubmitAnswerUseCaseTests
     }
 
     [Theory]
-    [InlineData("4", true)]   // Respuesta correcta
-    [InlineData("5", false)]  // Respuesta incorrecta
-    [InlineData("3", false)]  // Respuesta incorrecta
-    public async Task ExecuteAsync_WithDifferentAnswers_ShouldProcessCorrectly(string answer, bool expectedCorrect)
+    [InlineData(4, true)]   // Respuesta correcta
+    [InlineData(5, false)]  // Respuesta incorrecta
+    [InlineData(3, false)]  // Respuesta incorrecta
+    public async Task ExecuteAsync_WithDifferentAnswers_ShouldProcessCorrectly(int answer, bool expectedCorrect)
     {
         // Arrange
         const int gameId = 1;
@@ -286,15 +286,15 @@ public class SubmitAnswerUseCaseTests
             {
                 Id = 1,
                 Equation = "2 + 2 = ?",
-                CorrectAnswer = "4",
-                Options = new List<string> { "3", "4", "5", "6" }
+                CorrectAnswer = 4,
+                Options = new List<int> { 3, 4, 5, 6 }
             },
             new Question
             {
                 Id = 2,
                 Equation = "3 × 3 = ?",
-                CorrectAnswer = "9",
-                Options = new List<string> { "6", "9", "12", "15" }
+                CorrectAnswer = 9,
+                Options = new List<int> { 6, 9, 12, 15 }
             }
         };
 
