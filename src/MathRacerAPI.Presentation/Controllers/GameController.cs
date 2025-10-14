@@ -111,7 +111,8 @@ public class GameController : ControllerBase
         {
             QuestionId = result.Question.Id,
             Equation = result.Question.Equation,
-            Options = result.Question.Options
+            Options = result.Question.Options,
+            CorrectAnswer = result.Question.CorrectAnswer
         };
 
         return Ok(response);
