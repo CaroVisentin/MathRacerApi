@@ -1,11 +1,13 @@
-using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Domain.Services;
-using MathRacerAPI.Infrastructure.Repositories;
+using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Infrastructure.Providers;
+using MathRacerAPI.Infrastructure.Repositories;
 using MathRacerAPI.Infrastructure.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace MathRacerAPI.Infrastructure.Configuration;
@@ -18,7 +20,10 @@ public static class ServiceExtensions
     /// <summary>
     /// Configura los servicios de la aplicación
     /// </summary>
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddApplicationServices(
+             this IServiceCollection services,
+             IConfiguration configuration,
+             IWebHostEnvironment environment)
     {
         // Registrar casos de uso (modo offline)
         services.AddScoped<GetApiInfoUseCase>();
@@ -35,6 +40,16 @@ public static class ServiceExtensions
 
         // Registrar repositorios
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
+        services.AddScoped<ILevelRepository, LevelRepository>();
+
+        // Cargar el archivo .env correspondiente al entorno
+        DotNetEnv.Env.Load($".env.{environment.EnvironmentName.ToLower()}");
+
+        // Leer la cadena de conexión
+        var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");
+
+        services.AddDbContext<MathRacerDbContext>(options =>
+            options.UseSqlServer(connectionString));
 
         // Registrar servicios de dominio (lógica compartida)
         services.AddScoped<IGameLogicService, GameLogicService>();

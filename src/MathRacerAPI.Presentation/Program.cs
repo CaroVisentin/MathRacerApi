@@ -14,7 +14,10 @@ builder.Services.AddControllers()
                 .AddApplicationPart(typeof(MathRacerAPI.Presentation.Controllers.HealthController).Assembly);
 
 // Add custom services
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(
+    builder.Configuration,
+    builder.Environment
+);
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddHealthCheckServices();
 
