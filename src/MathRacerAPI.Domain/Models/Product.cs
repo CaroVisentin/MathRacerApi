@@ -12,7 +12,7 @@ namespace MathRacerAPI.Domain.Models
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public double Price { get; set; }
-        public string Subproduct { get; set; } = string.Empty;
+        public int ProductType { get; set; }
         public List<Player> Players { get; set; } = new List<Player>();
 
     }

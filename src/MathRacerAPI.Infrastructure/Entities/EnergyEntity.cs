@@ -8,7 +8,6 @@ namespace MathRacerAPI.Infrastructure.Entities
 {
     public class EnergyEntity
     {
-        public int Id { get; set; }
         public int PlayerId { get; set; }
         public int Amount { get; set; }
         public DateTime LastConsumptionDate { get; set; }

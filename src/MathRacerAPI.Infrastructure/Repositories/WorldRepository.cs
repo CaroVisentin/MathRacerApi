@@ -13,9 +13,9 @@ namespace MathRacerAPI.Infrastructure.Repositories
     public class WorldRepository : IWorldRepository
     {
 
-        private readonly MathRacerDbContext _context;
+        private readonly MathiRacerDbContext _context;
 
-        public WorldRepository(MathRacerDbContext context)
+        public WorldRepository(MathiRacerDbContext context)
         {
             _context = context;
         }

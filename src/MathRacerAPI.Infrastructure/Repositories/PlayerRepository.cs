@@ -12,9 +12,9 @@ namespace MathRacerAPI.Infrastructure.Repositories
     public class PlayerRepository : IPlayerRepository
     {
 
-        private readonly MathRacerDbContext _context;
+        private readonly MathiRacerDbContext _context;
 
-        public PlayerRepository(MathRacerDbContext context)
+        public PlayerRepository(MathiRacerDbContext context)
         {
             _context = context;
         }

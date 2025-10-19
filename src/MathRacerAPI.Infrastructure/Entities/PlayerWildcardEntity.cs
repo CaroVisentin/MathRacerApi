@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace MathRacerAPI.Infrastructure.Entities
 {
-    public class InventoryEntity
+    public class PlayerWildcardEntity
     {
         public int Id { get; set; }
         public int PlayerId { get; set; }
-        public int Wildcard1Count { get; set; }
-        public int Wildcard2Count { get; set; }
-        public int Wildcard3Count { get; set; }
+        public int WildcardId { get; set; }
+        public int Quantity { get; set; }
         public PlayerEntity Player { get; set; } = null!;
+        public WildcardEntity Wildcard { get; set; } = null!;
     }
 
 }

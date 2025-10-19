@@ -11,7 +11,6 @@ namespace MathRacerAPI.Infrastructure.Entities
         public int Id { get; set; }
         public int PlayerId { get; set; }
         public int ProductId { get; set; }
-        public int Quantity { get; set; }
         public bool IsActive { get; set; }
         public PlayerEntity Player { get; set; } = null!;
         public ProductEntity Product { get; set; } = null!;

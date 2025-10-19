@@ -19,7 +19,6 @@ namespace MathRacerAPI.Infrastructure.Entities
         public int Points { get; set; }
         public bool Deleted { get; set; }
         public LevelEntity LastLevel { get; set; } = null!;
-        public InventoryEntity Inventory { get; set; } = null!;
         public EnergyEntity Energy { get; set; } = null!;
         public ICollection<FriendshipEntity> Friendships1 { get; set; } = new List<FriendshipEntity>();
         public ICollection<FriendshipEntity> Friendships2 { get; set; } = new List<FriendshipEntity>();

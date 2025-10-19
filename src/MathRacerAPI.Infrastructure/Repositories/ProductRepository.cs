@@ -12,9 +12,9 @@ namespace MathRacerAPI.Infrastructure.Repositories
     public class ProductRepository : IProductRepository
     {
 
-        private readonly MathRacerDbContext _context;
+        private readonly MathiRacerDbContext _context;
 
-        public ProductRepository(MathRacerDbContext context)
+        public ProductRepository(MathiRacerDbContext context)
         {
             _context = context;
         }
@@ -32,7 +32,7 @@ namespace MathRacerAPI.Infrastructure.Repositories
                 Name = entity.Name,
                 Description = entity.Description,
                 Price = entity.Price,
-                Subproduct = entity.Subproduct.Name,
+                ProductType = entity.ProductTypeId,
                 Players = entity.PlayerProducts.Select(pp => new Player
                 {
                     Id = pp.Player.Id,

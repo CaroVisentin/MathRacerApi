@@ -48,7 +48,7 @@ public static class ServiceExtensions
         // Leer la cadena de conexión
         var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");
 
-        services.AddDbContext<MathRacerDbContext>(options =>
+        services.AddDbContext<MathiRacerDbContext>(options =>
             options.UseSqlServer(connectionString));
 
         // Registrar servicios de dominio (lógica compartida)

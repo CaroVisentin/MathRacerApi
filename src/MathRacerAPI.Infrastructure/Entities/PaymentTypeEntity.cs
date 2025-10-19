@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace MathRacerAPI.Infrastructure.Entities
 {
-    public class SubproductEntity
+    public class PaymentTypeEntity
     {
         public int Id { get; set; }
-        public int ProductTypeId { get; set; }
         public string Name { get; set; } = string.Empty;
-        public ICollection<ProductEntity> Products { get; set; } = new List<ProductEntity>();
+        public string Description { get; set; } = string.Empty;
+        public ICollection<PaymentMethodEntity> PaymentMethods { get; set; } = new List<PaymentMethodEntity>();
     }
 
 }

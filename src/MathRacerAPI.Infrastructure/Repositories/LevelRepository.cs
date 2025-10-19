@@ -12,9 +12,9 @@ namespace MathRacerAPI.Infrastructure.Repositories
 {
     public class LevelRepository : ILevelRepository
     {
-        private readonly MathRacerDbContext _context;
+        private readonly MathiRacerDbContext _context;
 
-        public LevelRepository(MathRacerDbContext context)
+        public LevelRepository(MathiRacerDbContext context)
         {
             _context = context;
         }
