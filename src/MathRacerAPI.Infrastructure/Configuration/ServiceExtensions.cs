@@ -1,7 +1,6 @@
 using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Domain.Services;
 using MathRacerAPI.Domain.UseCases;
-using MathRacerAPI.Infrastructure.Providers;
 using MathRacerAPI.Infrastructure.Repositories;
 using MathRacerAPI.Infrastructure.Services;
 using Microsoft.AspNetCore.Hosting;
@@ -32,6 +31,7 @@ public static class ServiceExtensions
         services.AddScoped<JoinGameUseCase>();
         services.AddScoped<GetNextQuestionUseCase>();
         services.AddScoped<SubmitAnswerUseCase>();
+        services.AddScoped<GetQuestionsUseCase>();
 
         // Registrar casos de uso (modo online)
         services.AddScoped<FindMatchUseCase>();
@@ -53,9 +53,6 @@ public static class ServiceExtensions
 
         // Registrar servicios de dominio (lógica compartida)
         services.AddScoped<IGameLogicService, GameLogicService>();
-
-        // Registrar proveedores
-        services.AddSingleton<MathRacerAPI.Domain.Providers.IQuestionProvider, MathRacerAPI.Infrastructure.Providers.QuestionProvider>();
 
         // Configurar SignalR
         services.AddSignalR();
