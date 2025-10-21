@@ -38,6 +38,7 @@ public static class ServiceExtensions
 
         // Registrar servicios de dominio (lógica compartida)
         services.AddScoped<IGameLogicService, GameLogicService>();
+        services.AddScoped<IPowerUpService, PowerUpService>();
 
         // Registrar proveedores
         services.AddSingleton<MathRacerAPI.Domain.Providers.IQuestionProvider, MathRacerAPI.Infrastructure.Providers.QuestionProvider>();

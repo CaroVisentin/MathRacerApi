@@ -12,15 +12,18 @@ public class ProcessOnlineAnswerUseCase
 {
     private readonly IGameRepository _gameRepository;
     private readonly IGameLogicService _gameLogicService;
+    private readonly IPowerUpService _powerUpService;
     private readonly ILogger<ProcessOnlineAnswerUseCase> _logger;
 
     public ProcessOnlineAnswerUseCase(
         IGameRepository gameRepository,
         IGameLogicService gameLogicService,
+        IPowerUpService powerUpService,
         ILogger<ProcessOnlineAnswerUseCase> logger)
     {
         _gameRepository = gameRepository;
         _gameLogicService = gameLogicService;
+        _powerUpService = powerUpService;
         _logger = logger;
     }
 
@@ -65,6 +68,12 @@ public class ProcessOnlineAnswerUseCase
 
         // Aplicar resultado de la respuesta usando el servicio de dominio
         _gameLogicService.ApplyAnswerResult(player, isCorrect);
+
+        // Procesar efectos activos de power-ups
+        if (game.PowerUpsEnabled)
+        {
+            _powerUpService.ProcessActiveEffects(game);
+        }
 
         // Actualizar posiciones de jugadores
         _gameLogicService.UpdatePlayerPositions(game);

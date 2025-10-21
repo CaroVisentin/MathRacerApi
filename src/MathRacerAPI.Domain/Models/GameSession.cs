@@ -16,7 +16,8 @@ public class GameSession
     public int QuestionCount { get; set; }
     public int ConditionToWin { get; set; }
     public string? ExpectedResult { get; set; }
-
+    public List<ActiveEffect>? ActiveEffects { get; set; }
+    public bool PowerUpsEnabled { get; set; }
 
     /// <summary>
     /// Crea una GameSession a partir de un Game
@@ -33,7 +34,9 @@ public class GameSession
             CreatedAt = game.CreatedAt,
             QuestionCount = game.Questions.Count,
             ConditionToWin = game.ConditionToWin,
-            ExpectedResult = game.ExpectedResult
+            ExpectedResult = game.ExpectedResult,
+            ActiveEffects = game.ActiveEffects,
+            PowerUpsEnabled = game.PowerUpsEnabled
         };
     }
 }
