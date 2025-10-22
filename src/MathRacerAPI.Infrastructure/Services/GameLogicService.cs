@@ -36,7 +36,7 @@ public class GameLogicService : IGameLogicService
         }
 
         // Verificar si todos terminaron todas las preguntas
-        if (game.Players.All(p => p.IndexAnswered >= game.Questions.Count) && game.Status != GameStatus.Finished)
+        if (game.Players.Any(p => p.IndexAnswered >= game.Questions.Count) && game.Status != GameStatus.Finished)
         {
             var maxCorrect = game.Players.Max(p => p.CorrectAnswers);
             var winners = game.Players.Where(p => p.CorrectAnswers == maxCorrect).ToList();

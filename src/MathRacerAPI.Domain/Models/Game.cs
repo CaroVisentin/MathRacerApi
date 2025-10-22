@@ -9,7 +9,7 @@ public class Game
     public List<Player> Players { get; set; } = new();
     public GameStatus Status { get; set; } = GameStatus.WaitingForPlayers;
     public List<Question> Questions { get; set; } = new();
-    public int MaxQuestions { get; set; } = 30;
+    public int MaxQuestions { get; set; } = 40;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public int? WinnerId { get; set; } 
     public int ConditionToWin { get; set; } = 10;
