@@ -13,17 +13,20 @@ public class FindMatchUseCase
     private readonly IGameRepository _gameRepository;
     private readonly IQuestionProvider _questionProvider;
     private readonly IGameLogicService _gameLogicService;
+    private readonly IPowerUpService _powerUpService;
     private static int _nextPlayerId = 1000; // Empezar desde 1000 para diferenciar del modo offline
     private static int _nextGameId = 1000;
 
     public FindMatchUseCase(
         IGameRepository gameRepository, 
         IQuestionProvider questionProvider,
-        IGameLogicService gameLogicService)
+        IGameLogicService gameLogicService,
+        IPowerUpService powerUpService)
     {
         _gameRepository = gameRepository;
         _questionProvider = questionProvider;
         _gameLogicService = gameLogicService;
+        _powerUpService = powerUpService;
     }
 
     public async Task<Game> ExecuteAsync(string playerName, string connectionId)
@@ -36,6 +39,9 @@ public class FindMatchUseCase
             ConnectionId = connectionId
         };
 
+    
+        player.AvailablePowerUps = _powerUpService.GrantInitialPowerUps(player.Id);
+
         // Buscar una partida esperando jugadores
         var availableGames = await _gameRepository.GetAllAsync();
         var waitingGame = availableGames.FirstOrDefault(g => 
@@ -45,6 +51,9 @@ public class FindMatchUseCase
 
         if (waitingGame != null)
         {
+            // Otorgar power-ups iniciales al segundo jugador
+            player.AvailablePowerUps = _powerUpService.GrantInitialPowerUps(player.Id);
+            
             // Unirse a partida existente
             waitingGame.Players.Add(player);
             
@@ -69,7 +78,9 @@ public class FindMatchUseCase
         {
             Id = Interlocked.Increment(ref _nextGameId),
             Status = GameStatus.WaitingForPlayers,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            PowerUpsEnabled = true, // Habilitar power-ups para partidas online
+            MaxPowerUpsPerPlayer = 3
         };
 
         game.Players.Add(player);

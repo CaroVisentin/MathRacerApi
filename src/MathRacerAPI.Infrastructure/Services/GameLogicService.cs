@@ -8,6 +8,13 @@ namespace MathRacerAPI.Infrastructure.Services;
 /// </summary>
 public class GameLogicService : IGameLogicService
 {
+    private readonly IPowerUpService? _powerUpService;
+
+    public GameLogicService(IPowerUpService? powerUpService = null)
+    {
+        _powerUpService = powerUpService;
+    }
+
     public bool CheckAndUpdateGameEndConditions(Game game)
     {
         // Verificar si alguien ganó por puntos
@@ -29,7 +36,7 @@ public class GameLogicService : IGameLogicService
         }
 
         // Verificar si todos terminaron todas las preguntas
-        if (game.Players.All(p => p.IndexAnswered >= game.Questions.Count) && game.Status != GameStatus.Finished)
+        if (game.Players.Any(p => p.IndexAnswered >= game.Questions.Count) && game.Status != GameStatus.Finished)
         {
             var maxCorrect = game.Players.Max(p => p.CorrectAnswers);
             var winners = game.Players.Where(p => p.CorrectAnswers == maxCorrect).ToList();
@@ -75,7 +82,17 @@ public class GameLogicService : IGameLogicService
     {
         if (isCorrect)
         {
-            player.CorrectAnswers++;
+            // Normalmente suma 1, pero si tiene Double Points activo suma 2
+            if (player.HasDoublePointsActive)
+            {
+                player.CorrectAnswers += 2; // Suma 2 respuestas correctas
+                player.HasDoublePointsActive = false; // Desactivar después de usar
+            }
+            else
+            {
+                player.CorrectAnswers++; // Suma 1 respuesta correcta normal
+            }
+            
             player.PenaltyUntil = null; // Eliminar penalización si la tenía
         }
         else

@@ -17,6 +17,8 @@ public class GameUpdateDto
     public int ConditionToWin { get; set; }
 
     public string? ExpectedResult { get; set; }
+    public List<ActiveEffectDto> ActiveEffects { get; set; } = new();
+    public bool PowerUpsEnabled { get; set; }
 
     /// <summary>
     /// Convierte una GameSession a GameUpdateDto
@@ -34,7 +36,9 @@ public class GameUpdateDto
                 Position = p.Position,
                 IsReady = p.IsReady,
                 PenaltyUntil = p.PenaltyUntil,
-                FinishedAt = p.FinishedAt
+                FinishedAt = p.FinishedAt,
+                AvailablePowerUps = p.AvailablePowerUps.Select(PowerUpDto.FromPowerUp).ToList(),
+                HasDoublePointsActive = p.HasDoublePointsActive
             }).ToList(),
             Status = gameSession.Status.ToString(),
             CurrentQuestion = gameSession.CurrentQuestion != null ? QuestionDto.FromQuestion(gameSession.CurrentQuestion) : null,
@@ -42,7 +46,9 @@ public class GameUpdateDto
             CreatedAt = gameSession.CreatedAt,
             QuestionCount = gameSession.QuestionCount,
             ConditionToWin = gameSession.ConditionToWin,
-            ExpectedResult = gameSession.ExpectedResult
+            ExpectedResult = gameSession.ExpectedResult,
+            ActiveEffects = gameSession.ActiveEffects?.Select(ActiveEffectDto.FromActiveEffect).ToList() ?? new(),
+            PowerUpsEnabled = gameSession.PowerUpsEnabled
         };
     }
 }
