@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MathRacerAPI.Domain.Repositories;
+using MathRacerAPI.Domain.Exceptions;
 
 namespace MathRacerAPI.Presentation.Controllers;
 
@@ -12,12 +13,10 @@ namespace MathRacerAPI.Presentation.Controllers;
 public class OnlineController : ControllerBase
 {
     private readonly IGameRepository _gameRepository;
-    private readonly ILogger<OnlineController> _logger;
 
-    public OnlineController(IGameRepository gameRepository, ILogger<OnlineController> logger)
+    public OnlineController(IGameRepository gameRepository)
     {
         _gameRepository = gameRepository;
-        _logger = logger;
     }
 
     /// <summary>
@@ -28,39 +27,33 @@ public class OnlineController : ControllerBase
     [HttpGet("game/{gameId}")]
     public async Task<IActionResult> GetGame(int gameId)
     {
-        try
+        var game = await _gameRepository.GetByIdAsync(gameId);
+        
+        // Lanzar excepción personalizada si no se encuentra
+        if (game == null)
         {
-            var game = await _gameRepository.GetByIdAsync(gameId);
-            if (game == null)
-            {
-                return NotFound(new { Message = "Partida no encontrada" });
-            }
+            throw new NotFoundException("Game", gameId);
+        }
 
-            return Ok(new
-            {
-                GameId = game.Id,
-                Status = game.Status.ToString(),
-                Players = game.Players.Select(p => new
-                {
-                    p.Id,
-                    p.Name,
-                    p.CorrectAnswers,
-                    p.Position,
-                    p.IsReady,
-                    HasPenalty = p.PenaltyUntil.HasValue && DateTime.UtcNow < p.PenaltyUntil.Value,
-                    p.FinishedAt
-                }),
-                game.WinnerId,
-                game.CreatedAt,
-                QuestionCount = game.Questions.Count,
-                game.ConditionToWin
-            });
-        }
-        catch (Exception ex)
+        return Ok(new
         {
-            _logger.LogError(ex, $"Error al obtener información de la partida {gameId}");
-            return StatusCode(500, new { Message = "Error interno del servidor" });
-        }
+            GameId = game.Id,
+            Status = game.Status.ToString(),
+            Players = game.Players.Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.CorrectAnswers,
+                p.Position,
+                p.IsReady,
+                HasPenalty = p.PenaltyUntil.HasValue && DateTime.UtcNow < p.PenaltyUntil.Value,
+                p.FinishedAt
+            }),
+            game.WinnerId,
+            game.CreatedAt,
+            QuestionCount = game.Questions.Count,
+            game.ConditionToWin
+        });
     }
 
     /// <summary>

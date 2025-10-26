@@ -1,7 +1,6 @@
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Domain.Services;
-using MathRacerAPI.Domain.Providers;
 
 namespace MathRacerAPI.Domain.UseCases;
 
@@ -11,7 +10,7 @@ namespace MathRacerAPI.Domain.UseCases;
 public class FindMatchUseCase
 {
     private readonly IGameRepository _gameRepository;
-    private readonly IQuestionProvider _questionProvider;
+    private readonly GetQuestionsUseCase _getQuestionsUseCase;
     private readonly IGameLogicService _gameLogicService;
     private readonly IPowerUpService _powerUpService;
     private static int _nextPlayerId = 1000; // Empezar desde 1000 para diferenciar del modo offline
@@ -19,12 +18,12 @@ public class FindMatchUseCase
 
     public FindMatchUseCase(
         IGameRepository gameRepository, 
-        IQuestionProvider questionProvider,
+        GetQuestionsUseCase getQuestionsUseCase, 
         IGameLogicService gameLogicService,
         IPowerUpService powerUpService)
     {
         _gameRepository = gameRepository;
-        _questionProvider = questionProvider;
+        _getQuestionsUseCase = getQuestionsUseCase;
         _gameLogicService = gameLogicService;
         _powerUpService = powerUpService;
     }
@@ -100,7 +99,7 @@ public class FindMatchUseCase
             TimePerEquation = 10
         };
 
-        var allQuestions = _questionProvider.GetQuestions(equationParams, game.MaxQuestions);
+        var allQuestions = await _getQuestionsUseCase.GetQuestions(equationParams, game.MaxQuestions);
         game.Questions = allQuestions;
         game.ExpectedResult = equationParams.ExpectedResult;
 

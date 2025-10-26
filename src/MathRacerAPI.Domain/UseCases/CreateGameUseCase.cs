@@ -1,6 +1,5 @@
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
-using MathRacerAPI.Domain.Providers;
 using System.Text.Json;
 
 namespace MathRacerAPI.Domain.UseCases;
@@ -8,12 +7,12 @@ namespace MathRacerAPI.Domain.UseCases;
 public class CreateGameUseCase
 {
     private readonly IGameRepository _gameRepository;
-    private readonly IQuestionProvider _questionProvider;
+    private readonly GetQuestionsUseCase _getQuestionsUseCase;
 
-    public CreateGameUseCase(IGameRepository gameRepository, IQuestionProvider questionProvider)
+    public CreateGameUseCase(IGameRepository gameRepository, GetQuestionsUseCase getQuestionsUseCase)
     {
         _gameRepository = gameRepository;
-        _questionProvider = questionProvider;
+        _getQuestionsUseCase = getQuestionsUseCase;
     }
 
     public async Task<Game> ExecuteAsync(string playerName)
@@ -38,7 +37,7 @@ public class CreateGameUseCase
             TimePerEquation = 10
         };     
 
-        var allQuestions = _questionProvider.GetQuestions(equationParams, game.MaxQuestions);
+        var allQuestions = await _getQuestionsUseCase.GetQuestions(equationParams, game.MaxQuestions);
         game.Questions = allQuestions;
         game.ExpectedResult = equationParams.ExpectedResult;
 
