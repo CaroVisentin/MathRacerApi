@@ -24,13 +24,13 @@ namespace MathRacerAPI.Infrastructure.Configuration
         public DbSet<LevelEntity> Levels { get; set; } = null!;
         public DbSet<OperationEntity> Operations { get; set; } = null!;
         public DbSet<PaymentMethodEntity> PaymentMethods { get; set; } = null!;
-        public DbSet<PaymentTypeEntity> PaymentTypes { get; set; } = null!;
         public DbSet<PlayerEntity> Players { get; set; } = null!;
         public DbSet<PlayerProductEntity> PlayerProducts { get; set; } = null!;
         public DbSet<PlayerWildcardEntity> PlayerWildcards { get; set; } = null!;
         public DbSet<ProductEntity> Products { get; set; } = null!;
         public DbSet<ProductTypeEntity> ProductTypes { get; set; } = null!;
         public DbSet<PurchaseEntity> Purchases { get; set; } = null!;
+        public DbSet<RarityEntity> Rarities { get; set; } = null!;
         public DbSet<RequestStatusEntity> RequestStatuses { get; set; } = null!;
         public DbSet<ResultTypeEntity> ResultTypes { get; set; } = null!;
         public DbSet<WildcardEntity> Wildcards { get; set; } = null!;
@@ -191,19 +191,6 @@ namespace MathRacerAPI.Infrastructure.Configuration
                     .HasMaxLength(100);
             });
 
-            // --- PAYMENT TYPE ---
-            modelBuilder.Entity<PaymentTypeEntity>(entity =>
-            {
-                entity.ToTable("PaymentType");
-
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).ValueGeneratedOnAdd();
-
-                entity.Property(e => e.Name)
-                    .IsRequired()
-                    .HasMaxLength(100);
-            });
-
             // --- PLAYER ---
             modelBuilder.Entity<PlayerEntity>(entity =>
             {
@@ -315,6 +302,11 @@ namespace MathRacerAPI.Infrastructure.Configuration
                     .WithOne(pp => pp.Product)
                     .HasForeignKey(pp => pp.ProductId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Rarity)
+                    .WithMany(r => r.Products)
+                    .HasForeignKey(r => r.RarityId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // --- PRODUCT TYPE ---
@@ -351,6 +343,27 @@ namespace MathRacerAPI.Infrastructure.Configuration
                 entity.Property(e => e.TotalAmount)
                     .IsRequired()
                     .HasColumnType("decimal(18,2)");
+            });
+
+            // --- RARITY ---
+            modelBuilder.Entity<RarityEntity>(entity =>
+            {
+                entity.ToTable("Rarity");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.Rarity)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Color)
+                    .IsRequired()
+                    .HasMaxLength(30);
+
+                entity.HasMany(e => e.Products)
+                  .WithOne(r => r.Rarity)
+                  .HasForeignKey(r => r.RarityId)
+                  .OnDelete(DeleteBehavior.Restrict);
             });
 
             // --- REQUEST STATUS ---

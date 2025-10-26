@@ -13,8 +13,10 @@ namespace MathRacerAPI.Infrastructure.Entities
         public string Description { get; set; } = string.Empty;
         public double Price { get; set; }
         public int ProductTypeId { get; set; }
+        public int RarityId { get; set; }
         public ProductTypeEntity ProductType { get; set; } = null!;
         public ICollection<PlayerProductEntity> PlayerProducts { get; set; } = new List<PlayerProductEntity>();
+        public RarityEntity Rarity { get; set; } = null!;
     }
 
 }
