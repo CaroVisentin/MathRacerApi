@@ -6,17 +6,18 @@ using System.Threading.Tasks;
 
 namespace MathRacerAPI.Domain.Models
 {
-    public class EquationParams
+    public class World
     {
-        public int TermCount { get; set; }
-        public int VariableCount { get; set; }
-        public List<string> Operations { get; set; } = new();
-        public string ExpectedResult { get; set; } = string.Empty;
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
         public int OptionsCount { get; set; }
         public int OptionRangeMin { get; set; }
         public int OptionRangeMax { get; set; }
         public int NumberRangeMin { get; set; }
         public int NumberRangeMax { get; set; }
         public int TimePerEquation { get; set; }
-    }  
+        public string Difficulty { get; set; } = string.Empty;
+        public List<Level> Levels { get; set; } = new List<Level>();
+        public List<string> Operations { get; set; } = new List<string>();
+    }
 }

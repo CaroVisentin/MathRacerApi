@@ -1,6 +1,7 @@
 using MathRacerAPI.Infrastructure.Configuration;
 using MathRacerAPI.Presentation.Configuration;
 using MathRacerAPI.Presentation.Hubs;
+using MathRacerAPI.Presentation.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +15,10 @@ builder.Services.AddControllers()
                 .AddApplicationPart(typeof(MathRacerAPI.Presentation.Controllers.HealthController).Assembly);
 
 // Add custom services
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(
+    builder.Configuration,
+    builder.Environment
+);
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddHealthCheckServices();
 
@@ -56,6 +60,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseCors("AllowFrontend");
 
