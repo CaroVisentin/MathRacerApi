@@ -13,4 +13,6 @@ public class Player
     public string ConnectionId { get; set; } = string.Empty;
     public DateTime? PenaltyUntil { get; set; }
     public DateTime? FinishedAt { get; set; }
+    public List<PowerUp> AvailablePowerUps { get; set; } = new();
+    public bool HasDoublePointsActive { get; set; } = false;
 }

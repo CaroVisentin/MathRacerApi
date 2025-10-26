@@ -53,6 +53,7 @@ public static class ServiceExtensions
 
         // Registrar servicios de dominio (lógica compartida)
         services.AddScoped<IGameLogicService, GameLogicService>();
+        services.AddScoped<IPowerUpService, PowerUpService>();
 
         // Configurar SignalR
         services.AddSignalR();

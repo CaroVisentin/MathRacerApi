@@ -10,9 +10,10 @@ public class QuestionDto
     public int Id { get; set; }
     public string Equation { get; set; } = string.Empty;
     public List<int> Options { get; set; } = new();
+    public int CorrectAnswer { get; set; }
 
     /// <summary>
-    /// Convierte una Question a QuestionDto (sin mostrar la respuesta correcta)
+    /// Convierte una Question a QuestionDto (incluyendo la respuesta correcta)
     /// </summary>
     public static QuestionDto FromQuestion(Question question)
     {
@@ -20,7 +21,8 @@ public class QuestionDto
         {
             Id = question.Id,
             Equation = question.Equation,
-            Options = question.Options
+            Options = question.Options,
+            CorrectAnswer = question.CorrectAnswer
         };
     }
 }
