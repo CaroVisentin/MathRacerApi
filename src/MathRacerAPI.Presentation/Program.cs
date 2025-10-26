@@ -1,6 +1,7 @@
 using MathRacerAPI.Infrastructure.Configuration;
 using MathRacerAPI.Presentation.Configuration;
 using MathRacerAPI.Presentation.Hubs;
+using MathRacerAPI.Presentation.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +60,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseCors("AllowFrontend");
 
