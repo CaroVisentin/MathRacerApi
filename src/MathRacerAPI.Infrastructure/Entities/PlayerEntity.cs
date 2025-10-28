@@ -11,8 +11,8 @@ namespace MathRacerAPI.Infrastructure.Entities
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-        public double Coins { get; set; }
+        public string Uid { get; set; } = string.Empty;
+        public int Coins { get; set; }
         public int LastLevelId { get; set; }
         public int Points { get; set; }
         public bool Deleted { get; set; }
