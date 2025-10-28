@@ -6,6 +6,7 @@ public class Player
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public int LastLevelId { get; set; } 
     public int CorrectAnswers { get; set; } = 0;
     public int IndexAnswered { get; set; } = 0;
     public int Position { get; set; } = 0; 

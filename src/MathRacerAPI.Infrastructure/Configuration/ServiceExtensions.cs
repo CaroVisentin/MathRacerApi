@@ -32,6 +32,8 @@ public static class ServiceExtensions
         services.AddScoped<GetNextQuestionUseCase>();
         services.AddScoped<SubmitAnswerUseCase>();
         services.AddScoped<GetQuestionsUseCase>();
+        services.AddScoped<GetPlayerByIdUseCase>();
+        services.AddScoped<GetWorldsUseCase>();
 
         // Registrar casos de uso (modo online)
         services.AddScoped<FindMatchUseCase>();
@@ -41,6 +43,8 @@ public static class ServiceExtensions
         // Registrar repositorios
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
         services.AddScoped<ILevelRepository, LevelRepository>();
+        services.AddScoped<IPlayerRepository, PlayerRepository>();
+        services.AddScoped<IWorldRepository, WorldRepository>();  
 
         // Cargar el archivo .env correspondiente al entorno
         DotNetEnv.Env.Load($".env.{environment.EnvironmentName.ToLower()}");
@@ -80,13 +84,30 @@ public static class ServiceExtensions
                 }
             });
 
-            // Incluir comentarios XML
-            var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            if (File.Exists(xmlPath))
+            // Incluir comentarios XML del proyecto Presentation (Controladores)
+            var presentationXmlFile = "MathRacerAPI.Presentation.xml";
+            var presentationXmlPath = Path.Combine(AppContext.BaseDirectory, presentationXmlFile);
+            if (File.Exists(presentationXmlPath))
             {
-                c.IncludeXmlComments(xmlPath);
+                c.IncludeXmlComments(presentationXmlPath);
             }
+
+            // Incluir comentarios XML del proyecto Domain (Modelos y DTOs)
+            var domainXmlFile = "MathRacerAPI.Domain.xml";
+            var domainXmlPath = Path.Combine(AppContext.BaseDirectory, domainXmlFile);
+            if (File.Exists(domainXmlPath))
+            {
+                c.IncludeXmlComments(domainXmlPath);
+            }
+
+            // Incluir comentarios XML del proyecto Infrastructure
+            var infrastructureXmlFile = "MathRacerAPI.Infrastructure.xml";
+            var infrastructureXmlPath = Path.Combine(AppContext.BaseDirectory, infrastructureXmlFile);
+            if (File.Exists(infrastructureXmlPath))
+            {
+                c.IncludeXmlComments(infrastructureXmlPath);
+            }
+
         });
 
         return services;
