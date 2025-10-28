@@ -24,24 +24,43 @@ namespace MathRacerAPI.Domain.UseCases
         /// <returns>Jugador encontrado</returns>
         /// <exception cref="ValidationException">Cuando el ID es inválido</exception>
         /// <exception cref="NotFoundException">Cuando el jugador no existe</exception>
-        public async Task<Player> ExecuteAsync(int playerId)
+        public async Task<PlayerProfile> ExecuteAsync(int playerId)
         {
             // Validación del ID
             if (playerId <= 0)
-            {
-                throw new ValidationException("El ID del jugador debe ser mayor a 0.");
-            }
+                throw new ValidationException("El ID del jugador debe ser mayor a 0");
 
             // Obtener jugador del repositorio
-            var player = await _playerRepository.GetByIdAsync(playerId);
+            var playerProfile = await _playerRepository.GetByIdAsync(playerId);
 
             // Lanzar excepción si no existe
-            if (player == null)
-            {
-                throw new NotFoundException("Jugador", playerId);
-            }
+            if (playerProfile == null)
+                throw new NotFoundException($"Jugador con ID {playerId} no fue encontrado");
 
-            return player;
+            return playerProfile;
+        }
+
+        /// <summary>
+        /// Ejecuta la lógica de obtención de un jugador por su UID
+        /// </summary>
+        /// <param name="uid">UID del jugador</param>
+        /// <returns>Jugador encontrado</returns>
+        /// <exception cref="ValidationException">Cuando el UID es inválido</exception>
+        /// <exception cref="NotFoundException">Cuando el jugador no existe</exception>
+        public async Task<PlayerProfile> ExecuteByUidAsync(string uid)
+        {
+            // Validación del UID
+            if (string.IsNullOrWhiteSpace(uid))
+                throw new ValidationException("El UID es requerido");
+
+            // Obtener jugador del repositorio
+            var playerProfile = await _playerRepository.GetByUidAsync(uid);
+
+            // Lanzar excepción si no existe
+            if (playerProfile == null)
+                throw new NotFoundException("No se encontró un jugador con el UID proporcionado");
+
+            return playerProfile;
         }
     }
 }

@@ -34,6 +34,9 @@ public static class ServiceExtensions
         services.AddScoped<GetQuestionsUseCase>();
         services.AddScoped<GetPlayerByIdUseCase>();
         services.AddScoped<GetWorldsUseCase>();
+        
+        // Registrar casos de uso de Players
+        services.AddScoped<CreatePlayerUseCase>();
 
         // Registrar casos de uso (modo online)
         services.AddScoped<FindMatchUseCase>();

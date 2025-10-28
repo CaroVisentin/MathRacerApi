@@ -2,6 +2,7 @@
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Infrastructure.Configuration;
+using MathRacerAPI.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace MathRacerAPI.Infrastructure.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<Player?> GetByIdAsync(int id)
+        public async Task<PlayerProfile?> GetByIdAsync(int id)
         {
             var entity = await _context.Players
                 .Where(p => !p.Deleted) // Excluir jugadores eliminados
@@ -29,12 +30,86 @@ namespace MathRacerAPI.Infrastructure.Repositories
                 return null;
             }
 
-            return new Player
+            return new PlayerProfile
             {
                 Id = entity.Id,
                 Name = entity.Name,
-                LastLevelId = entity.LastLevelId
+                Email = entity.Email,
+                Uid = entity.Uid,
+                LastLevelId = entity.LastLevelId,
+                Points = entity.Points,
+                Coins = entity.Coins
             };
+        }
+
+        public async Task<PlayerProfile?> GetByUidAsync(string uid)
+        {
+            var entity = await _context.Players
+                .Where(p => !p.Deleted)
+                .FirstOrDefaultAsync(p => p.Uid == uid);
+
+            if (entity == null)
+            {
+                return null;
+            }
+
+            return new PlayerProfile
+            {
+                Id = entity.Id,
+                Name = entity.Name,
+                Email = entity.Email,
+                Uid = entity.Uid,
+                LastLevelId = entity.LastLevelId,
+                Points = entity.Points,
+                Coins = entity.Coins
+            };
+        }
+
+        public async Task<PlayerProfile?> GetByEmailAsync(string email)
+        {
+            var entity = await _context.Players
+                .Where(p => !p.Deleted)
+                .FirstOrDefaultAsync(p => p.Email == email);
+
+            if (entity == null)
+            {
+                return null;
+            }
+
+            return new PlayerProfile
+            {
+                Id = entity.Id,
+                Name = entity.Name,
+                Email = entity.Email,
+                Uid = entity.Uid,
+                LastLevelId = entity.LastLevelId,
+                Points = entity.Points,
+                Coins = entity.Coins
+            };
+        }
+
+        public async Task<PlayerProfile> AddAsync(PlayerProfile playerProfile)
+        {
+            var entity = new PlayerEntity
+            {
+                Name = playerProfile.Name,
+                Email = playerProfile.Email,
+                Uid = playerProfile.Uid,
+                Coins = 0,
+                LastLevelId = 1,
+                Points = 0,
+                Deleted = false
+            };
+
+            _context.Players.Add(entity);
+            await _context.SaveChangesAsync();
+
+            playerProfile.Id = entity.Id;
+            playerProfile.LastLevelId = entity.LastLevelId;
+            playerProfile.Points = entity.Points;
+            playerProfile.Coins = entity.Coins;
+
+            return playerProfile;
         }
     }
 }

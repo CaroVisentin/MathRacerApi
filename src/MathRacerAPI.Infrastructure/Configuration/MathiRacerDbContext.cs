@@ -209,13 +209,12 @@ namespace MathRacerAPI.Infrastructure.Configuration
 
                 entity.HasIndex(e => e.Email).IsUnique();
 
-                entity.Property(e => e.Password)
+                entity.Property(e => e.Uid)
                     .IsRequired()
                     .HasMaxLength(255);
 
                 entity.Property(e => e.Coins)
                     .IsRequired()
-                    .HasColumnType("decimal(18,2)")
                     .HasDefaultValue(0);
 
                 entity.Property(e => e.Points)
