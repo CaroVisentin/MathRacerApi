@@ -103,12 +103,28 @@ public class ExceptionHandlingMiddleware
         context.Response.StatusCode = (int)statusCode;
 
         // Construir el objeto de respuesta
-        var response = new
+
+        object response;
+        if (_environment.IsDevelopment())
         {
-            StatusCode = (int)statusCode,
-            Message = message,
-            Details = details
-        };
+            response = new
+            {
+                StatusCode = (int)statusCode,
+                Message = message,
+                Details = details,
+                StackTrace = exception.StackTrace,
+                InnerException = exception.InnerException != null ? exception.InnerException.ToString() : null
+            };
+        }
+        else
+        {
+            response = new
+            {
+                StatusCode = (int)statusCode,
+                Message = message,
+                Details = details
+            };
+        }
 
         // Serializar y enviar la respuesta
         var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions
