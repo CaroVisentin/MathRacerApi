@@ -50,6 +50,17 @@ public class ExceptionHandlingMiddleware
         var message = "Ocurrió un error interno en el servidor.";
         object? details = null;
 
+        // Manejo especial para errores de token Firebase
+        if (exception.Message.Contains("Incorrect number of segments in ID token") ||
+            exception.Message.Contains("FirebaseAuthException") ||
+            exception.Message.Contains("ID token") ||
+            exception.Message.Contains("token is invalid"))
+        {
+            statusCode = HttpStatusCode.Unauthorized;
+            message = "El token de autenticación es inválido o no fue enviado.";
+            _logger.LogWarning(exception, "Token inválido: {Message}", exception.Message);
+        }
+
         // Determinar el código de estado HTTP según el tipo de excepción
         switch (exception)
         {
@@ -96,10 +107,7 @@ public class ExceptionHandlingMiddleware
         {
             StatusCode = (int)statusCode,
             Message = message,
-            Details = details,
-            // Solo incluir información técnica en desarrollo
-            StackTrace = _environment.IsDevelopment() ? exception.StackTrace : null,
-            InnerException = _environment.IsDevelopment() ? exception.InnerException?.Message : null
+            Details = details
         };
 
         // Serializar y enviar la respuesta

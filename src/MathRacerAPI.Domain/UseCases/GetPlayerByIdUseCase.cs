@@ -10,6 +10,20 @@ namespace MathRacerAPI.Domain.UseCases
     /// </summary>
     public class GetPlayerByIdUseCase
     {
+
+        /// <summary>
+        /// Ejecuta la lógica de obtención de un jugador por su email
+        /// </summary>
+        /// <param name="email">Email del jugador</param>
+        /// <returns>Jugador encontrado o null</returns>
+        public async Task<PlayerProfile?> ExecuteByEmailAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ValidationException("El email es requerido");
+
+            var playerProfile = await _playerRepository.GetByEmailAsync(email);
+            return playerProfile;
+        }
         private readonly IPlayerRepository _playerRepository;
 
         public GetPlayerByIdUseCase(IPlayerRepository playerRepository)
