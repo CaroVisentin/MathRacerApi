@@ -2,10 +2,8 @@
 using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Infrastructure.Configuration;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace MathRacerAPI.Infrastructure.Repositories
@@ -22,11 +20,11 @@ namespace MathRacerAPI.Infrastructure.Repositories
         public async Task<Level?> GetByIdAsync(int id)
         {
             var entity = await _context.Levels
-                 .FirstOrDefaultAsync(g => g.Id == id);
+                .Include(l => l.ResultType)
+                .FirstOrDefaultAsync(l => l.Id == id);
 
             if (entity == null) return null;
 
-            // Mapear manualmente a dominio
             return new Level
             {
                 Id = entity.Id,
@@ -34,10 +32,27 @@ namespace MathRacerAPI.Infrastructure.Repositories
                 Number = entity.Number,
                 TermsCount = entity.TermsCount,
                 VariablesCount = entity.VariablesCount,
-                ResultType = entity.ResultType.Name // Mapear el nombre del tipo de resultado
+                ResultType = entity.ResultType.Name
             };
+        }
 
+        public async Task<List<Level>> GetAllByWorldIdAsync(int worldId)
+        {
+            var entities = await _context.Levels
+                .Include(l => l.ResultType)
+                .Where(l => l.WorldId == worldId)
+                .OrderBy(l => l.Number)
+                .ToListAsync();
 
+            return entities.Select(entity => new Level
+            {
+                Id = entity.Id,
+                WorldId = entity.WorldId,
+                Number = entity.Number,
+                TermsCount = entity.TermsCount,
+                VariablesCount = entity.VariablesCount,
+                ResultType = entity.ResultType.Name
+            }).ToList();
         }
     }
 }
