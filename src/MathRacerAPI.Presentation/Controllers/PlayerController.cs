@@ -74,19 +74,27 @@ public class PlayerController : ControllerBase
     ///     {
     ///       "statusCode": 400,
     ///       "message": "El email 'juan@example.com' ya está registrado",
-    ///       "details": null,
-    ///       "stackTrace": null,
-    ///       "innerException": null
     ///     }
     /// 
-    /// Error 400 (ValidationException - campo requerido):
+    /// Error 400 (ValidationException - campo usuario requerido):
     /// 
     ///     {
     ///       "statusCode": 400,
     ///       "message": "El nombre de usuario es requerido",
-    ///       "details": null,
-    ///       "stackTrace": null,
-    ///       "innerException": null
+    ///     }
+    ///     
+    /// Error 400 (ValidationException - campo email requerido):
+    /// 
+    ///     {
+    ///       "statusCode": 400,
+    ///       "message": "El email es requerido",
+    ///     }
+    /// 
+    /// Error 400 (ValidationException - campo uid requerido):
+    /// 
+    ///     {
+    ///       "statusCode": 400,
+    ///       "message": "El UID es requerido",
     ///     }
     /// 
     /// Error 500 (Error de base de datos):
@@ -94,12 +102,11 @@ public class PlayerController : ControllerBase
     ///     {
     ///       "statusCode": 500,
     ///       "message": "Ocurrió un error interno en el servidor.",
-    ///       "details": null,
-    ///       "stackTrace": null,
-    ///       "innerException": null
     ///     }
     /// 
     /// </remarks>
+    /// 
+
     [HttpPost]
     [ProducesResponseType(typeof(PlayerProfileDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -161,9 +168,6 @@ public class PlayerController : ControllerBase
     ///     {
     ///       "statusCode": 400,
     ///       "message": "El ID del jugador debe ser mayor a 0",
-    ///       "details": null,
-    ///       "stackTrace": null,
-    ///       "innerException": null
     ///     }
     /// 
     /// Error 404 (NotFoundException):
@@ -171,9 +175,6 @@ public class PlayerController : ControllerBase
     ///     {
     ///       "statusCode": 404,
     ///       "message": "Jugador con ID 123 no fue encontrado",
-    ///       "details": null,
-    ///       "stackTrace": null,
-    ///       "innerException": null
     ///     }
     /// 
     /// Error 500 (Error de base de datos):
@@ -181,9 +182,6 @@ public class PlayerController : ControllerBase
     ///     {
     ///       "statusCode": 500,
     ///       "message": "Ocurrió un error interno en el servidor.",
-    ///       "details": null,
-    ///       "stackTrace": null,
-    ///       "innerException": null
     ///     }
     /// 
     /// </remarks>
@@ -246,9 +244,6 @@ public class PlayerController : ControllerBase
     ///     {
     ///       "statusCode": 400,
     ///       "message": "El UID es requerido",
-    ///       "details": null,
-    ///       "stackTrace": null,
-    ///       "innerException": null
     ///     }
     /// 
     /// Error 404 (NotFoundException):
@@ -256,9 +251,6 @@ public class PlayerController : ControllerBase
     ///     {
     ///       "statusCode": 404,
     ///       "message": "No se encontró un jugador con el UID proporcionado",
-    ///       "details": null,
-    ///       "stackTrace": null,
-    ///       "innerException": null
     ///     }
     /// 
     /// Error 500 (Error de base de datos):
@@ -266,12 +258,11 @@ public class PlayerController : ControllerBase
     ///     {
     ///       "statusCode": 500,
     ///       "message": "Ocurrió un error interno en el servidor.",
-    ///       "details": null,
-    ///       "stackTrace": null,
-    ///       "innerException": null
     ///     }
     /// 
     /// </remarks>
+    /// 
+
     [HttpGet("uid/{uid}")]
     [ProducesResponseType(typeof(PlayerProfileDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
