@@ -38,25 +38,53 @@ dotnet test
 - **SignalR**: ws://localhost:5153/gamehub  
 - **Swagger**: http://localhost:5153/swagger
 
+
+## 🔑 Configuración de credenciales Firebase
+
+**Importante:** No subas el archivo de credenciales de Firebase al repositorio. Cada desarrollador debe:
+
+1. Obtener su propio archivo de credenciales desde la consola de Firebase.
+2. Guardar el archivo localmente como `firebase-credentials.json` en la raíz del proyecto.
+3. Verifica que el archivo `firebase-credentials.json` esté en `.gitignore` para evitar subirlo al repositorio.
+
+**¡Listo!** No es necesario configurar ninguna variable de entorno ni editar `launchSettings.json`. El backend detecta automáticamente el archivo en la raíz.
+
 ## 🎮 Funcionalidades Implementadas
 
-### ✅ Core Game API
+
+### ✅ Endpoints REST
+
+#### Game Endpoints
 - `POST /api/games` - Crear nueva partida matemática
 - `GET /api/games/{id}` - Obtener estado de partida
 - `POST /api/games/{id}/join` - Unirse a partida
 - `POST /api/games/{id}/answer` - Enviar respuesta matemática
 - `GET /api/games/{id}/question` - Obtener siguiente pregunta
 
+#### Player Endpoints
+- `POST /api/player/register` - Registrar nuevo jugador (requiere idToken en header)
+- `POST /api/player/login` - Login de jugador (requiere idToken en header)
+- `POST /api/player/google` - Login con Google/Firebase (requiere idToken en header)
+- `GET /api/player/{id}` - Obtener perfil de jugador por ID (requiere idToken en header)
+- `GET /api/player/uid/{uid}` - Obtener perfil de jugador por UID de Firebase (requiere idToken en header)
+
+#### Online Endpoints
+- `GET /api/online/game/{gameId}` - Obtener información de partida online
+- `GET /api/online/connection-info` - Obtener información de conexión SignalR
+
+#### Worlds Endpoints
+- `GET /api/worlds/player/{playerId}` - Obtener mundos disponibles para un jugador
+
+#### Sistema & Monitoring
+- `GET /health` - Health Check detallado
+- `GET /api/info` - Información de la API
+- **Swagger**: Documentación interactiva completa
+
 ### ✅ SignalR Multijugador (Tiempo Real)
 - **Hub**: `/gamehub` - Conexión WebSocket
 - **FindMatch**: Matchmaking automático
 - **SendAnswer**: Respuestas en tiempo real
 - **GameUpdate**: Notificaciones instantáneas de estado
-
-### ✅ Sistema & Monitoring  
-- `GET /health` - Health Check detallado
-- `GET /api/info` - Información de la API
-- **Swagger**: Documentación interactiva completa
 
 ## 🛠️ Desarrollo
 

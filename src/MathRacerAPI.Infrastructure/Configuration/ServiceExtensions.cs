@@ -12,6 +12,7 @@ using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
+
 namespace MathRacerAPI.Infrastructure.Configuration;
 
 /// <summary>
@@ -23,9 +24,9 @@ public static class ServiceExtensions
     /// Configura los servicios de la aplicación
     /// </summary>
     public static IServiceCollection AddApplicationServices(
-             this IServiceCollection services,
-             IConfiguration configuration,
-             IWebHostEnvironment environment)
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
     {
         // Registrar casos de uso (modo offline)
         services.AddScoped<GetApiInfoUseCase>();
@@ -43,6 +44,11 @@ public static class ServiceExtensions
         // Registrar casos de uso de Worlds
         services.AddScoped<GetWorldsUseCase>();
         
+        // Registrar casos de uso de Players
+        services.AddScoped<RegisterPlayerUseCase>();
+        services.AddScoped<LoginPlayerUseCase>();
+        services.AddScoped<GoogleAuthUseCase>();
+
         // Registrar casos de uso de Levels
         services.AddScoped<GetWorldLevelsUseCase>();
 
@@ -57,8 +63,11 @@ public static class ServiceExtensions
         services.AddScoped<IPlayerRepository, PlayerRepository>();
         services.AddScoped<IWorldRepository, WorldRepository>();  
 
-        // Cargar el archivo .env correspondiente al entorno
-        DotNetEnv.Env.Load($".env.{environment.EnvironmentName.ToLower()}");
+    // Registrar servicio de Firebase
+    services.AddScoped<IFirebaseService, FirebaseService>();
+
+    // Cargar el archivo .env fijo para todos los entornos
+    DotNetEnv.Env.Load(".env");
 
         // Leer la cadena de conexión
         var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");

@@ -142,9 +142,8 @@ public class ExceptionHandlingMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        var response = await DeserializeResponse(context);
-        response.TryGetProperty("stackTrace", out var stackTrace).Should().BeTrue();
-        stackTrace.ValueKind.Should().Be(JsonValueKind.Null);
+    var response = await DeserializeResponse(context);
+    response.TryGetProperty("stackTrace", out var stackTrace).Should().BeFalse();
     }
 
     [Fact]
@@ -160,9 +159,9 @@ public class ExceptionHandlingMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        var response = await DeserializeResponse(context);
-        response.TryGetProperty("stackTrace", out var stackTrace).Should().BeTrue();
-        // StackTrace puede estar presente en desarrollo
+    var response = await DeserializeResponse(context);
+    response.TryGetProperty("stackTrace", out var stackTrace).Should().BeTrue();
+    stackTrace.ValueKind.Should().Be(JsonValueKind.String);
     }
 
     #endregion
@@ -336,6 +335,7 @@ public class ExceptionHandlingMiddlewareTests
         // Assert
         var response = await DeserializeResponse(context);
         response.TryGetProperty("innerException", out var inner).Should().BeTrue();
+        inner.GetString().Should().Contain("Error interno");
     }
 
     #endregion
@@ -505,9 +505,10 @@ public class ExceptionHandlingMiddlewareTests
 
         // Assert
         var response = await DeserializeResponse(context);
-        response.TryGetProperty("stackTrace", out _).Should().BeTrue();
+        response.TryGetProperty("stackTrace", out var stackTrace).Should().BeTrue();
+        stackTrace.ValueKind.Should().Be(JsonValueKind.String);
         response.TryGetProperty("innerException", out var inner).Should().BeTrue();
-        inner.GetString().Should().Be("Error interno");
+        inner.GetString().Should().Contain("Error interno");
     }
 
     [Fact]
@@ -525,11 +526,8 @@ public class ExceptionHandlingMiddlewareTests
 
         // Assert
         var response = await DeserializeResponse(context);
-        response.TryGetProperty("stackTrace", out var stackTrace).Should().BeTrue();
-        stackTrace.ValueKind.Should().Be(JsonValueKind.Null);
-
-        response.TryGetProperty("innerException", out var inner).Should().BeTrue();
-        inner.ValueKind.Should().Be(JsonValueKind.Null);
+        response.TryGetProperty("stackTrace", out var stackTrace).Should().BeFalse();
+        response.TryGetProperty("innerException", out var inner).Should().BeFalse();
     }
 
     [Fact]
