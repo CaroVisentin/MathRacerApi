@@ -67,6 +67,8 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+app.UseMiddleware<FirebaseAuthMiddleware>();
+
 app.UseCors("AllowFrontend");
 
 // Configure the HTTP request pipeline
