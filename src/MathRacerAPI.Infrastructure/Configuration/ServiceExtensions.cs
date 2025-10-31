@@ -52,6 +52,15 @@ public static class ServiceExtensions
         // Registrar casos de uso de Levels
         services.AddScoped<GetWorldLevelsUseCase>();
 
+        // Registrar casos de uso de modo individual
+        services.AddScoped<StartSoloGameUseCase>();
+        services.AddScoped<GetSoloGameStatusUseCase>();
+        services.AddScoped<SubmitSoloAnswerUseCase>();
+
+        // Registrar repositorios adicionales
+        services.AddScoped<IEnergyRepository, EnergyRepository>();
+        services.AddSingleton<ISoloGameRepository, InMemorySoloGameRepository>();
+
         // Registrar casos de uso (modo online)
         services.AddScoped<FindMatchUseCase>();
         services.AddScoped<ProcessOnlineAnswerUseCase>();
