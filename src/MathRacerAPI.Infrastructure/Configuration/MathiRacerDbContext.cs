@@ -8,12 +8,32 @@ using System.Threading.Tasks;
 
 namespace MathRacerAPI.Infrastructure.Configuration
 {
-    public class MathiRacerDbContext : DbContext
-    {
+        public class MathiRacerDbContext : DbContext
+        {
+            // Constructor para migraciones CLI (diseño)
+            public MathiRacerDbContext() : base(GetOptionsFromEnv()) {}
+
+            private static DbContextOptions<MathiRacerDbContext> GetOptionsFromEnv()
+            {
+                var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    // Intentar cargar el .env si no está definida la variable
+                    try
+                    {
+                        DotNetEnv.Env.Load(); // Carga .env por defecto
+                        connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");
+                    }
+                    catch { /* Ignorar si no existe DotNetEnv o el archivo */ }
+                }
+                var optionsBuilder = new DbContextOptionsBuilder<MathiRacerDbContext>();
+                optionsBuilder.UseSqlServer(connectionString);
+                return optionsBuilder.Options;
+            }
         public MathiRacerDbContext(DbContextOptions<MathiRacerDbContext> options)
             : base(options)
-        {
-        }
+            {
+            }
 
         // DbSets
         public DbSet<CoinPackageEntity> CoinPackages { get; set; } = null!;
@@ -209,13 +229,12 @@ namespace MathRacerAPI.Infrastructure.Configuration
 
                 entity.HasIndex(e => e.Email).IsUnique();
 
-                entity.Property(e => e.Password)
+                entity.Property(e => e.Uid)
                     .IsRequired()
                     .HasMaxLength(255);
 
                 entity.Property(e => e.Coins)
                     .IsRequired()
-                    .HasColumnType("decimal(18,2)")
                     .HasDefaultValue(0);
 
                 entity.Property(e => e.Points)
