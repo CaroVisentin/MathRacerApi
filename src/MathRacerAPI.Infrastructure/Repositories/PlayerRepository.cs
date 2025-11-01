@@ -19,17 +19,22 @@ namespace MathRacerAPI.Infrastructure.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
+        public async Task UpdateAsync(PlayerProfile playerProfile)
+        {
+            var entity = await _context.Players.FirstOrDefaultAsync(p => p.Id == playerProfile.Id && !p.Deleted);
+            if (entity != null)
+            {
+                entity.Points = playerProfile.Points;
+                await _context.SaveChangesAsync();
+            }
+        }
+
         public async Task<PlayerProfile?> GetByIdAsync(int id)
         {
             var entity = await _context.Players
-                .Where(p => !p.Deleted) // Excluir jugadores eliminados
+                .Where(p => !p.Deleted)
                 .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (entity == null)
-            {
-                return null;
-            }
-
+            if (entity == null) return null;
             return new PlayerProfile
             {
                 Id = entity.Id,
@@ -47,12 +52,7 @@ namespace MathRacerAPI.Infrastructure.Repositories
             var entity = await _context.Players
                 .Where(p => !p.Deleted)
                 .FirstOrDefaultAsync(p => p.Uid == uid);
-
-            if (entity == null)
-            {
-                return null;
-            }
-
+            if (entity == null) return null;
             return new PlayerProfile
             {
                 Id = entity.Id,
@@ -70,12 +70,7 @@ namespace MathRacerAPI.Infrastructure.Repositories
             var entity = await _context.Players
                 .Where(p => !p.Deleted)
                 .FirstOrDefaultAsync(p => p.Email == email);
-
-            if (entity == null)
-            {
-                return null;
-            }
-
+            if (entity == null) return null;
             return new PlayerProfile
             {
                 Id = entity.Id,
@@ -100,16 +95,15 @@ namespace MathRacerAPI.Infrastructure.Repositories
                 Points = 0,
                 Deleted = false
             };
-
             _context.Players.Add(entity);
             await _context.SaveChangesAsync();
-
             playerProfile.Id = entity.Id;
             playerProfile.LastLevelId = entity.LastLevelId;
             playerProfile.Points = entity.Points;
             playerProfile.Coins = entity.Coins;
-
             return playerProfile;
         }
+
+
     }
 }
