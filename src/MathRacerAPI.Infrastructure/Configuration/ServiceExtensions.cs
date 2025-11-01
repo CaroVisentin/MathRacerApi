@@ -52,6 +52,11 @@ public static class ServiceExtensions
         // Registrar casos de uso de Levels
         services.AddScoped<GetWorldLevelsUseCase>();
 
+        // Registrar casos de uso de modo individual
+        services.AddScoped<StartSoloGameUseCase>();
+        services.AddScoped<GetSoloGameStatusUseCase>();
+        services.AddScoped<SubmitSoloAnswerUseCase>();
+
         // Registrar casos de uso (modo online)
         services.AddScoped<FindMatchUseCase>();
         services.AddScoped<ProcessOnlineAnswerUseCase>();
@@ -61,14 +66,17 @@ public static class ServiceExtensions
         services.AddScoped<IGetPlayerRankingUseCase, GetPlayerRankingUseCase>();
 
         // Registrar repositorios
-        services.AddScoped<IGameRepository, InMemoryGameRepository>();
         services.AddScoped<ILevelRepository, LevelRepository>();
         services.AddScoped<IPlayerRepository, PlayerRepository>();
         services.AddScoped<IWorldRepository, WorldRepository>();
         services.AddScoped<IRankingRepository, RankingRepository>();
+        services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IEnergyRepository, EnergyRepository>();
+        services.AddScoped<IGameRepository, InMemoryGameRepository>();
+        services.AddSingleton<ISoloGameRepository, InMemorySoloGameRepository>();
 
-    // Registrar servicio de Firebase
-    services.AddScoped<IFirebaseService, FirebaseService>();
+        // Registrar servicio de Firebase
+        services.AddScoped<IFirebaseService, FirebaseService>();
 
     // Cargar el archivo .env fijo para todos los entornos
     DotNetEnv.Env.Load($".env.{environment.EnvironmentName.ToLower()}");
