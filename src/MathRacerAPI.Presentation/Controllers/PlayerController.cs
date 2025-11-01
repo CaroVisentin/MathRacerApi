@@ -26,7 +26,6 @@ public class PlayerController : ControllerBase
         _registerPlayerUseCase = registerPlayerUseCase;
         _loginPlayerUseCase = loginPlayerUseCase;
         _googleAuthUseCase = googleAuthUseCase;
-
     }
 
     /// <summary>
