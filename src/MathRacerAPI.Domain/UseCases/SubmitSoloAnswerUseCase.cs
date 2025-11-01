@@ -48,21 +48,33 @@ public class SubmitSoloAnswerUseCase
 
         var currentQuestion = game.Questions[game.CurrentQuestionIndex];
         var correctAnswer = currentQuestion.CorrectAnswer;
-        var isCorrect = correctAnswer == answer;
+        bool isCorrect = correctAnswer == answer;
 
-        // Validar si se excedió el tiempo de la pregunta actual
-        if (game.CurrentQuestionStartedAt.HasValue)
+        // Verificar si se excedió el tiempo permitido
+        if (game.LastAnswerTime.HasValue)
         {
-            var elapsedTime = (DateTime.UtcNow - game.CurrentQuestionStartedAt.Value).TotalSeconds;
-            if (elapsedTime > game.TimePerEquation)
+            var timeSinceLastAnswer = (DateTime.UtcNow - game.LastAnswerTime.Value).TotalSeconds;
+            
+            // Si pasó más tiempo del permitido desde la última respuesta, penalizar
+            if (timeSinceLastAnswer > game.TimePerEquation + game.ReviewTimeSeconds)
             {
-                isCorrect = false; // Tratar como respuesta incorrecta
+                isCorrect = false; // Tratar como respuesta incorrecta por timeout
+            }
+        }
+        else
+        {
+            // Es la primera pregunta, validar tiempo desde inicio del juego
+            var timeSinceGameStart = (DateTime.UtcNow - game.GameStartedAt).TotalSeconds;
+            
+            if (timeSinceGameStart > game.TimePerEquation)
+            {
+                isCorrect = false; // Timeout en la primera pregunta
             }
         }
 
+        // Procesar resultado
         if (isCorrect)
         {
-            // Respuesta correcta: avanzar posición
             game.PlayerPosition++;
             game.CorrectAnswers++;
             
@@ -70,62 +82,52 @@ public class SubmitSoloAnswerUseCase
             if (game.PlayerPosition >= game.TotalQuestions)
             {
                 game.Status = SoloGameStatus.PlayerWon;
-                game.WinnerId = game.PlayerId;
                 game.GameFinishedAt = DateTime.UtcNow;
             }
         }
         else
         {
-            // Respuesta incorrecta o tiempo agotado: perder vida
             game.LivesRemaining--;
 
             // Verificar si perdió todas las vidas
             if (game.LivesRemaining <= 0)
             {
-                game.Status = SoloGameStatus.PlayerLost;
+                game.Status = SoloGameStatus.PlayerLost; 
                 game.GameFinishedAt = DateTime.UtcNow;
-
-                // Consumir energía al perder el nivel
                 await _energyRepository.ConsumeEnergyAsync(game.PlayerId);
             }
         }
 
-        // Avanzar a la siguiente pregunta
+        // Marcar cuándo se respondió esta pregunta
+        game.LastAnswerTime = DateTime.UtcNow;
+        
+        // Avanzar al siguiente índice
         game.CurrentQuestionIndex++;
-        game.CurrentQuestionStartedAt = DateTime.UtcNow;
 
-        // Actualizar posición de la máquina
+        // Actualizar posición de la máquina basándose en tiempo total transcurrido
         UpdateMachinePosition(game);
 
         // Verificar si la máquina ganó
         if (game.MachinePosition >= game.TotalQuestions && game.Status == SoloGameStatus.InProgress)
         {
-            game.Status = SoloGameStatus.MachineWon;
-            game.WinnerId = -1;
+            game.Status = SoloGameStatus.MachineWon; 
             game.GameFinishedAt = DateTime.UtcNow;
         }
 
         await _soloGameRepository.UpdateAsync(game);
 
-        // OBTENER LA SIGUIENTE PREGUNTA (si el juego continúa)
-        Question? nextQuestion = null;
-        if (game.Status == SoloGameStatus.InProgress 
-            && game.CurrentQuestionIndex < game.Questions.Count)
-        {
-            nextQuestion = game.Questions[game.CurrentQuestionIndex];
-        }
-
-        // Devolver resultado con información de la respuesta Y la siguiente pregunta
         return new SoloAnswerResult
         {
             Game = game,
             IsCorrect = isCorrect,
             CorrectAnswer = correctAnswer,
-            PlayerAnswer = answer,
-            NextQuestion = nextQuestion 
+            PlayerAnswer = answer
         };
     }
 
+    /// <summary>
+    /// Actualiza la posición de la máquina basándose en el tiempo total transcurrido
+    /// </summary>
     private void UpdateMachinePosition(SoloGame game)
     {
         var elapsedTime = (DateTime.UtcNow - game.GameStartedAt).TotalSeconds;
@@ -134,9 +136,6 @@ public class SubmitSoloAnswerUseCase
         var progress = elapsedTime / totalEstimatedTime;
         game.MachinePosition = (int)(progress * game.TotalQuestions);
         
-        if (game.MachinePosition > game.TotalQuestions)
-        {
-            game.MachinePosition = game.TotalQuestions;
-        }
+        game.MachinePosition = Math.Min(game.MachinePosition, game.TotalQuestions);
     }
 }

@@ -11,14 +11,14 @@ public static class SoloGameMappers
     /// <summary>
     /// Mapea una Question del dominio a QuestionDto
     /// </summary>
-    public static QuestionDto ToDto(this Question question, DateTime startedAt)
+    public static QuestionDto ToDto(this Question question)
     {
         return new QuestionDto
         {
             Id = question.Id,
             Equation = question.Equation,
             Options = question.Options,
-            StartedAt = startedAt
+            StartedAt = DateTime.UtcNow // Siempre NOW cuando se entrega la pregunta
         };
     }
 
@@ -65,8 +65,7 @@ public static class SoloGameMappers
             TimePerEquation = game.TimePerEquation,
             LivesRemaining = game.LivesRemaining,
             GameStartedAt = game.GameStartedAt,
-            CurrentQuestion = currentQuestion?.ToDto(game.CurrentQuestionStartedAt ?? DateTime.UtcNow) 
-                              ?? new QuestionDto(),
+            CurrentQuestion = currentQuestion?.ToDto() ?? new QuestionDto(),
             PlayerProducts = game.PlayerProducts.ToDtoList(),
             MachineProducts = game.MachineProducts.ToDtoList()
         };
@@ -83,7 +82,7 @@ public static class SoloGameMappers
         if (game.CurrentQuestionIndex < game.Questions.Count)
         {
             var question = game.Questions[game.CurrentQuestionIndex];
-            currentQuestion = question.ToDto(game.CurrentQuestionStartedAt ?? DateTime.UtcNow);
+            currentQuestion = question.ToDto(); // Timestamp NOW cuando se solicita
         }
 
         return new SoloGameStatusResponseDto
@@ -98,12 +97,9 @@ public static class SoloGameMappers
             CurrentQuestionIndex = game.CurrentQuestionIndex,
             TotalQuestions = game.TotalQuestions,
             TimePerEquation = game.TimePerEquation,
-            WinnerId = game.WinnerId,
-            WinnerName = game.WinnerName,
             GameStartedAt = game.GameStartedAt,
             GameFinishedAt = game.GameFinishedAt,
-            ElapsedTime = result.ElapsedTime,
-            RemainingTimeForQuestion = result.RemainingTimeForQuestion
+            ElapsedTime = result.ElapsedTime
         };
     }
 
@@ -121,20 +117,18 @@ public static class SoloGameMappers
             CorrectAnswer = result.CorrectAnswer,
             PlayerAnswer = result.PlayerAnswer,
             
-            // Estado crítico del juego
+            // Estado del juego
             Status = game.Status.ToString(),
             LivesRemaining = game.LivesRemaining,
             PlayerPosition = game.PlayerPosition,
             MachinePosition = game.MachinePosition,
             CorrectAnswers = game.CorrectAnswers,
             
-            // Siguiente pregunta
-            NextQuestion = result.NextQuestion?.ToDto(game.CurrentQuestionStartedAt ?? DateTime.UtcNow),
-            CurrentQuestionIndex = game.CurrentQuestionIndex,
+            // Información de tiempo
+            WaitTimeSeconds = game.ReviewTimeSeconds,
+            AnsweredAt = game.LastAnswerTime ?? DateTime.UtcNow,
             
-            // Información del ganador
-            WinnerId = game.WinnerId,
-            WinnerName = game.WinnerName
+            CurrentQuestionIndex = game.CurrentQuestionIndex,
         };
     }
 }

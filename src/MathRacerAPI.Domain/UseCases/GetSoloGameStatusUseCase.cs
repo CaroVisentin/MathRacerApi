@@ -33,40 +33,38 @@ public class GetSoloGameStatusUseCase
             throw new BusinessException("No tienes permiso para acceder a esta partida");
         }
 
+        // Verificar que hayan pasado ReviewTimeSeconds desde la última respuesta
+        if (game.LastAnswerTime.HasValue && game.Status == SoloGameStatus.InProgress)
+        {
+            var timeSinceLastAnswer = (DateTime.UtcNow - game.LastAnswerTime.Value).TotalSeconds;
+            
+            if (timeSinceLastAnswer < game.ReviewTimeSeconds)
+            {
+                var remainingWait = Math.Ceiling(game.ReviewTimeSeconds - timeSinceLastAnswer);
+                throw new ValidationException(
+                    $"Debes esperar {remainingWait} segundos más antes de ver la siguiente pregunta");
+            }
+        }
+
         // Actualizar posición de la máquina si el juego está en progreso
         if (game.Status == SoloGameStatus.InProgress)
         {
             UpdateMachinePosition(game);
+            await _soloGameRepository.UpdateAsync(game);
         }
 
-        // CALCULAR TIEMPO RESTANTE (lógica movida del controller)
-        var remainingTime = CalculateRemainingTime(game);
-
-        // CALCULAR TIEMPO TRANSCURRIDO
         var elapsedTime = (DateTime.UtcNow - game.GameStartedAt).TotalSeconds;
 
         return new SoloGameStatusResult
         {
             Game = game,
-            RemainingTimeForQuestion = remainingTime,
             ElapsedTime = elapsedTime
         };
     }
 
     /// <summary>
-    /// Calcula el tiempo restante para la pregunta actual
+    /// Actualiza la posición de la máquina basándose en el tiempo total transcurrido
     /// </summary>
-    private double CalculateRemainingTime(SoloGame game)
-    {
-        if (!game.CurrentQuestionStartedAt.HasValue || game.Status != SoloGameStatus.InProgress)
-        {
-            return 0.0;
-        }
-
-        var elapsed = (DateTime.UtcNow - game.CurrentQuestionStartedAt.Value).TotalSeconds;
-        return Math.Max(0, game.TimePerEquation - elapsed);
-    }
-
     private void UpdateMachinePosition(SoloGame game)
     {
         var elapsedTime = (DateTime.UtcNow - game.GameStartedAt).TotalSeconds;
@@ -75,9 +73,6 @@ public class GetSoloGameStatusUseCase
         var progress = elapsedTime / totalEstimatedTime;
         game.MachinePosition = (int)(progress * game.TotalQuestions);
         
-        if (game.MachinePosition > game.TotalQuestions)
-        {
-            game.MachinePosition = game.TotalQuestions;
-        }
+        game.MachinePosition = Math.Min(game.MachinePosition, game.TotalQuestions);
     }
 }

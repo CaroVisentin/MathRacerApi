@@ -8,7 +8,7 @@ namespace MathRacerAPI.Presentation.DTOs.Solo;
 public class SoloGameStatusResponseDto
 {
     public int GameId { get; set; }
-    public string Status { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty; 
     
     // Progreso
     public int PlayerPosition { get; set; }
@@ -22,14 +22,9 @@ public class SoloGameStatusResponseDto
     public int TotalQuestions { get; set; }
     public int TimePerEquation { get; set; }
     
-    // Ganador (solo si terminó)
-    public int? WinnerId { get; set; }
-    public string? WinnerName { get; set; }
-    
     // Tiempos
     public DateTime GameStartedAt { get; set; }
     public DateTime? GameFinishedAt { get; set; }
     public double ElapsedTime { get; set; }
-    public double RemainingTimeForQuestion { get; set; }
 
 }

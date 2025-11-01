@@ -65,14 +65,14 @@ public class StartSoloGameUseCase
             throw new NotFoundException($"Mundo con ID {level.WorldId} no encontrado");
         }
 
-        // 5. OBTENER PRODUCTOS ACTIVOS DEL JUGADOR
+        // 5. Obtener productos activos del jugador
         var playerProducts = await _productRepository.GetActiveProductsByPlayerIdAsync(player.Id);
         if (playerProducts.Count != 3)
         {
             throw new BusinessException("Error, debes tener 3 productos activos (auto, personaje, fondo)");
         }
 
-        // 6. OBTENER PRODUCTOS ALEATORIOS PARA LA MÁQUINA
+        // 6. Obtener productos aleatorios para la máquina
         var machineProducts = await _productRepository.GetRandomProductsForMachineAsync();
         if (machineProducts.Count != 3)
         {
@@ -108,10 +108,10 @@ public class StartSoloGameUseCase
             TotalQuestions = 10,
             TimePerEquation = world.TimePerEquation,
             GameStartedAt = DateTime.UtcNow,
-            CurrentQuestionStartedAt = DateTime.UtcNow,
             Status = SoloGameStatus.InProgress,
             PlayerProducts = playerProducts,    
-            MachineProducts = machineProducts  
+            MachineProducts = machineProducts,
+            ReviewTimeSeconds = 3 
         };
 
         // 9. Guardar partida

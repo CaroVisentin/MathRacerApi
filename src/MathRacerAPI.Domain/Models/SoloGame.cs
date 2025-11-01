@@ -31,19 +31,12 @@ public class SoloGame
 
     // Control de tiempo
     public DateTime GameStartedAt { get; set; }
-    public DateTime? CurrentQuestionStartedAt { get; set; }
+    public DateTime? LastAnswerTime { get; set; } 
     public DateTime? GameFinishedAt { get; set; }
+    public int ReviewTimeSeconds { get; set; } = 3; 
 
     // Estado del juego
     public SoloGameStatus Status { get; set; } = SoloGameStatus.InProgress;
-    public int? WinnerId { get; set; } // PlayerId si gana, -1 si gana la máquina
-
-    public string? WinnerName => WinnerId switch
-    {
-        _ when WinnerId == PlayerId => PlayerName,
-        -1 => "Máquina",
-        _ => null
-    };
 
     // Tiempo total estimado para la máquina
     public int TotalEstimatedTime => (TotalQuestions + 3) * TimePerEquation;
@@ -60,5 +53,5 @@ public enum SoloGameStatus
     InProgress,
     PlayerWon,
     MachineWon,
-    PlayerLost // Sin vidas
+    PlayerLost
 }
