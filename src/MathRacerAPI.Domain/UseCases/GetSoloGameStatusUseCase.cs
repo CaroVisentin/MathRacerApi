@@ -18,7 +18,7 @@ public class GetSoloGameStatusUseCase
         _soloGameRepository = soloGameRepository;
     }
 
-    public async Task<SoloGame> ExecuteAsync(int gameId, string? requestingPlayerUid = null)
+    public async Task<SoloGameStatusResult> ExecuteAsync(int gameId, string? requestingPlayerUid = null)
     {
         var game = await _soloGameRepository.GetByIdAsync(gameId);
         
@@ -39,7 +39,32 @@ public class GetSoloGameStatusUseCase
             UpdateMachinePosition(game);
         }
 
-        return game;
+        // CALCULAR TIEMPO RESTANTE (lógica movida del controller)
+        var remainingTime = CalculateRemainingTime(game);
+
+        // CALCULAR TIEMPO TRANSCURRIDO
+        var elapsedTime = (DateTime.UtcNow - game.GameStartedAt).TotalSeconds;
+
+        return new SoloGameStatusResult
+        {
+            Game = game,
+            RemainingTimeForQuestion = remainingTime,
+            ElapsedTime = elapsedTime
+        };
+    }
+
+    /// <summary>
+    /// Calcula el tiempo restante para la pregunta actual
+    /// </summary>
+    private double CalculateRemainingTime(SoloGame game)
+    {
+        if (!game.CurrentQuestionStartedAt.HasValue || game.Status != SoloGameStatus.InProgress)
+        {
+            return 0.0;
+        }
+
+        var elapsed = (DateTime.UtcNow - game.CurrentQuestionStartedAt.Value).TotalSeconds;
+        return Math.Max(0, game.TimePerEquation - elapsed);
     }
 
     private void UpdateMachinePosition(SoloGame game)

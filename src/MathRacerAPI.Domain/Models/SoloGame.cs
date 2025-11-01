@@ -38,8 +38,18 @@ public class SoloGame
     public SoloGameStatus Status { get; set; } = SoloGameStatus.InProgress;
     public int? WinnerId { get; set; } // PlayerId si gana, -1 si gana la máquina
 
+    public string? WinnerName => WinnerId switch
+    {
+        _ when WinnerId == PlayerId => PlayerName,
+        -1 => "Máquina",
+        _ => null
+    };
+
     // Tiempo total estimado para la máquina
     public int TotalEstimatedTime => (TotalQuestions + 3) * TimePerEquation;
+
+    public List<PlayerProduct> PlayerProducts { get; set; } = new();
+    public List<PlayerProduct> MachineProducts { get; set; } = new();
 }
 
 /// <summary>

@@ -11,8 +11,9 @@ namespace MathRacerAPI.Domain.Models;
 /// </summary>
 public class SoloAnswerResult
 {
-    public SoloGame Game { get; set; } = null!;
+    public SoloGame Game { get; set; } = new();
     public bool IsCorrect { get; set; }
     public int CorrectAnswer { get; set; }
-    public int PlayerAnswer { get; set; }
+    public int PlayerAnswer { get; set; }  
+    public Question? NextQuestion { get; set; }
 }

@@ -2,6 +2,7 @@
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MathRacerAPI.Domain.UseCases;
@@ -15,6 +16,7 @@ public class StartSoloGameUseCase
     private readonly IEnergyRepository _energyRepository;
     private readonly ILevelRepository _levelRepository;
     private readonly IWorldRepository _worldRepository;
+    private readonly IProductRepository _productRepository;
     private readonly GetQuestionsUseCase _getQuestionsUseCase;
     private readonly GetPlayerByIdUseCase _getPlayerByIdUseCase;
 
@@ -23,6 +25,7 @@ public class StartSoloGameUseCase
         IEnergyRepository energyRepository,
         ILevelRepository levelRepository,
         IWorldRepository worldRepository,
+        IProductRepository productRepository,
         GetQuestionsUseCase getQuestionsUseCase,
         GetPlayerByIdUseCase getPlayerByIdUseCase)
     {
@@ -30,6 +33,7 @@ public class StartSoloGameUseCase
         _energyRepository = energyRepository;
         _levelRepository = levelRepository;
         _worldRepository = worldRepository;
+        _productRepository = productRepository;
         _getQuestionsUseCase = getQuestionsUseCase;
         _getPlayerByIdUseCase = getPlayerByIdUseCase;
     }
@@ -61,7 +65,21 @@ public class StartSoloGameUseCase
             throw new NotFoundException($"Mundo con ID {level.WorldId} no encontrado");
         }
 
-        // 5. Generar preguntas según la configuración del nivel
+        // 5. OBTENER PRODUCTOS ACTIVOS DEL JUGADOR
+        var playerProducts = await _productRepository.GetActiveProductsByPlayerIdAsync(player.Id);
+        if (playerProducts.Count != 3)
+        {
+            throw new BusinessException("Error, debes tener 3 productos activos (auto, personaje, fondo)");
+        }
+
+        // 6. OBTENER PRODUCTOS ALEATORIOS PARA LA MÁQUINA
+        var machineProducts = await _productRepository.GetRandomProductsForMachineAsync();
+        if (machineProducts.Count != 3)
+        {
+            throw new BusinessException("Error al cargar productos de la máquina");
+        }
+
+        // 7. Generar preguntas según la configuración del nivel
         var equationParams = new EquationParams
         {
             TermCount = level.TermsCount,
@@ -78,7 +96,7 @@ public class StartSoloGameUseCase
 
         var questions = await _getQuestionsUseCase.GetQuestions(equationParams, 10);
 
-        // 6. Crear partida 
+        // 8. Crear partida 
         var soloGame = new SoloGame
         {
             PlayerId = player.Id,
@@ -91,10 +109,12 @@ public class StartSoloGameUseCase
             TimePerEquation = world.TimePerEquation,
             GameStartedAt = DateTime.UtcNow,
             CurrentQuestionStartedAt = DateTime.UtcNow,
-            Status = SoloGameStatus.InProgress
+            Status = SoloGameStatus.InProgress,
+            PlayerProducts = playerProducts,    
+            MachineProducts = machineProducts  
         };
 
-        // 7. Guardar partida
+        // 9. Guardar partida
         await _soloGameRepository.AddAsync(soloGame);
 
         return soloGame;

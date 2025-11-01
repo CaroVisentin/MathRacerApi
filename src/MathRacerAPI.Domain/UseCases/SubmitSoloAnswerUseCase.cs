@@ -107,13 +107,22 @@ public class SubmitSoloAnswerUseCase
 
         await _soloGameRepository.UpdateAsync(game);
 
-        // Devolver resultado con información de la respuesta
+        // OBTENER LA SIGUIENTE PREGUNTA (si el juego continúa)
+        Question? nextQuestion = null;
+        if (game.Status == SoloGameStatus.InProgress 
+            && game.CurrentQuestionIndex < game.Questions.Count)
+        {
+            nextQuestion = game.Questions[game.CurrentQuestionIndex];
+        }
+
+        // Devolver resultado con información de la respuesta Y la siguiente pregunta
         return new SoloAnswerResult
         {
             Game = game,
             IsCorrect = isCorrect,
             CorrectAnswer = correctAnswer,
-            PlayerAnswer = answer
+            PlayerAnswer = answer,
+            NextQuestion = nextQuestion 
         };
     }
 
