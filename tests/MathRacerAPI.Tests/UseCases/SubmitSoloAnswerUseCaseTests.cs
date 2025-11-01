@@ -15,15 +15,54 @@ public class SubmitSoloAnswerUseCaseTests
 {
     private readonly Mock<ISoloGameRepository> _soloGameRepositoryMock;
     private readonly Mock<IEnergyRepository> _energyRepositoryMock;
+    private readonly Mock<IPlayerRepository> _playerRepositoryMock;
     private readonly SubmitSoloAnswerUseCase _submitSoloAnswerUseCase;
 
     public SubmitSoloAnswerUseCaseTests()
     {
         _soloGameRepositoryMock = new Mock<ISoloGameRepository>();
         _energyRepositoryMock = new Mock<IEnergyRepository>();
+        _playerRepositoryMock = new Mock<IPlayerRepository>();
+
+        var grantLevelRewardUseCase = new GrantLevelRewardUseCase(
+            _playerRepositoryMock.Object);
+
         _submitSoloAnswerUseCase = new SubmitSoloAnswerUseCase(
             _soloGameRepositoryMock.Object,
-            _energyRepositoryMock.Object);
+            _energyRepositoryMock.Object,
+            grantLevelRewardUseCase);
+
+        SetupDefaultPlayerRepositoryMocks();
+    }
+
+    /// <summary>
+    /// Configura mocks por defecto para el PlayerRepository
+    /// </summary>
+    private void SetupDefaultPlayerRepositoryMocks()
+    {
+        // Mock para GetByIdAsync - retorna un jugador de prueba
+        _playerRepositoryMock
+            .Setup(x => x.GetByIdAsync(It.IsAny<int>()))
+            .ReturnsAsync((int id) => new PlayerProfile
+            {
+                Id = id,
+                Uid = "test-uid-123",
+                Name = "TestPlayer",
+                Email = "test@test.com",
+                LastLevelId = 0,
+                Coins = 100,
+                Points = 50
+            });
+
+        // Mock para AddCoinsAsync
+        _playerRepositoryMock
+            .Setup(x => x.AddCoinsAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+
+        // Mock para UpdateLastLevelAsync
+        _playerRepositoryMock
+            .Setup(x => x.UpdateLastLevelAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
     }
 
     #region Game Validation Tests
@@ -188,6 +227,9 @@ public class SubmitSoloAnswerUseCaseTests
         result.Game.Status.Should().Be(SoloGameStatus.PlayerWon);
         result.Game.PlayerPosition.Should().Be(game.TotalQuestions);
         result.Game.GameFinishedAt.Should().NotBeNull();
+        
+        _playerRepositoryMock.Verify(x => x.GetByIdAsync(game.PlayerId), Times.Once);
+        _playerRepositoryMock.Verify(x => x.AddCoinsAsync(game.PlayerId, It.IsAny<int>()), Times.Once);
     }
 
     [Fact]

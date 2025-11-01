@@ -52,9 +52,15 @@ public class SoloControllerTests
         var getSoloGameStatusUseCase = new GetSoloGameStatusUseCase(
             _soloGameRepositoryMock.Object);
 
+        // Crear GrantLevelRewardUseCase con repositorio mockeado
+        var grantLevelRewardUseCase = new GrantLevelRewardUseCase(
+            _playerRepositoryMock.Object);
+
+        // Pasar GrantLevelRewardUseCase a SubmitSoloAnswerUseCase
         var submitSoloAnswerUseCase = new SubmitSoloAnswerUseCase(
             _soloGameRepositoryMock.Object,
-            _energyRepositoryMock.Object);
+            _energyRepositoryMock.Object,
+            grantLevelRewardUseCase); 
 
         // Crear controller con Use Cases reales
         _controller = new SoloController(
@@ -298,6 +304,18 @@ public class SoloControllerTests
             .Setup(x => x.UpdateAsync(It.IsAny<SoloGame>()))
             .Returns(Task.CompletedTask);
 
+        _playerRepositoryMock
+            .Setup(x => x.GetByIdAsync(game.PlayerId))
+            .ReturnsAsync(CreateTestPlayer(uid));
+
+        _playerRepositoryMock
+            .Setup(x => x.AddCoinsAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+
+        _playerRepositoryMock
+            .Setup(x => x.UpdateLastLevelAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+
         // Act
         var result = await _controller.SubmitAnswer(gameId, answer);
 
@@ -359,7 +377,10 @@ public class SoloControllerTests
             Id = 100,
             Uid = uid,
             Name = "TestPlayer",
-            Email = "test@test.com"
+            Email = "test@test.com",
+            LastLevelId = 0, 
+            Coins = 0,  
+            Points = 0 
         };
     }
 

@@ -16,6 +16,5 @@ namespace MathRacerAPI.Infrastructure.Entities
         public int ResultTypeId { get; set; }
         public ResultTypeEntity ResultType { get; set; } = null!;
         public WorldEntity World { get; set; } = null!;
-        public ICollection<PlayerEntity> Players { get; set; } = new List<PlayerEntity>();
     }
 }

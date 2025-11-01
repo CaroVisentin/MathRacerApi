@@ -13,5 +13,7 @@ namespace MathRacerAPI.Domain.Repositories
         Task<PlayerProfile?> GetByEmailAsync(string email);
         Task<PlayerProfile?> GetByUidAsync(string uid);
         Task<PlayerProfile> AddAsync(PlayerProfile playerProfile);
+        Task AddCoinsAsync(int playerId, int coins);
+        Task UpdateLastLevelAsync(int playerId, int levelId);
     }
 }

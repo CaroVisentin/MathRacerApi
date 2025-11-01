@@ -28,14 +28,9 @@ public static class ServiceExtensions
         IConfiguration configuration,
         IWebHostEnvironment environment)
     {
-        // Registrar casos de uso (modo offline)
+        // Registrar casos de uso de información general
         services.AddScoped<GetApiInfoUseCase>();
         services.AddScoped<GetHealthStatusUseCase>();
-        services.AddScoped<CreateGameUseCase>();
-        services.AddScoped<JoinGameUseCase>();
-        services.AddScoped<GetNextQuestionUseCase>();
-        services.AddScoped<SubmitAnswerUseCase>();
-        services.AddScoped<GetQuestionsUseCase>();
 
         // Registrar casos de uso de Players
         services.AddScoped<CreatePlayerUseCase>();
@@ -52,15 +47,19 @@ public static class ServiceExtensions
         // Registrar casos de uso de Levels
         services.AddScoped<GetWorldLevelsUseCase>();
 
+        // Registrar casos de uso de Ecuaciones
+        services.AddScoped<GetQuestionsUseCase>();
+
         // Registrar casos de uso de modo individual
         services.AddScoped<StartSoloGameUseCase>();
         services.AddScoped<GetSoloGameStatusUseCase>();
         services.AddScoped<SubmitSoloAnswerUseCase>();
 
-        // Registrar casos de uso (modo online)
+        // Registrar casos de uso de modo online 
         services.AddScoped<FindMatchUseCase>();
         services.AddScoped<ProcessOnlineAnswerUseCase>();
         services.AddScoped<GetNextOnlineQuestionUseCase>();
+        services.AddScoped<GrantLevelRewardUseCase>();
 
         // Registrar repositorios
         services.AddScoped<ILevelRepository, LevelRepository>();

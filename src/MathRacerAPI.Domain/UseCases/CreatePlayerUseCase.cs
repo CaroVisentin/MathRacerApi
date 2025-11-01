@@ -37,9 +37,6 @@ namespace MathRacerAPI.Domain.UseCases
                 Name = username,
                 Email = email,
                 Uid = uid,
-                LastLevelId = 1,
-                Points = 0,
-                Coins = 0,
             };
 
             // Si hay error de DB, la excepción se propaga automáticamente

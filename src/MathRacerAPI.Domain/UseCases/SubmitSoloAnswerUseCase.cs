@@ -13,11 +13,16 @@ public class SubmitSoloAnswerUseCase
 {
     private readonly ISoloGameRepository _soloGameRepository;
     private readonly IEnergyRepository _energyRepository;
+    private readonly GrantLevelRewardUseCase _grantLevelRewardUseCase;
 
-    public SubmitSoloAnswerUseCase(ISoloGameRepository soloGameRepository, IEnergyRepository energyRepository)
+    public SubmitSoloAnswerUseCase(
+        ISoloGameRepository soloGameRepository, 
+        IEnergyRepository energyRepository,
+        GrantLevelRewardUseCase grantLevelRewardUseCase)
     {
         _soloGameRepository = soloGameRepository;
         _energyRepository = energyRepository;
+        _grantLevelRewardUseCase = grantLevelRewardUseCase;
     }
 
     public async Task<SoloAnswerResult> ExecuteAsync(int gameId, int answer, string requestingPlayerUid)
@@ -55,20 +60,18 @@ public class SubmitSoloAnswerUseCase
         {
             var timeSinceLastAnswer = (DateTime.UtcNow - game.LastAnswerTime.Value).TotalSeconds;
             
-            // Si pasó más tiempo del permitido desde la última respuesta, penalizar
             if (timeSinceLastAnswer > game.TimePerEquation + game.ReviewTimeSeconds)
             {
-                isCorrect = false; // Tratar como respuesta incorrecta por timeout
+                isCorrect = false;
             }
         }
         else
         {
-            // Es la primera pregunta, validar tiempo desde inicio del juego
             var timeSinceGameStart = (DateTime.UtcNow - game.GameStartedAt).TotalSeconds;
             
             if (timeSinceGameStart > game.TimePerEquation)
             {
-                isCorrect = false; // Timeout en la primera pregunta
+                isCorrect = false;
             }
         }
 
@@ -83,13 +86,15 @@ public class SubmitSoloAnswerUseCase
             {
                 game.Status = SoloGameStatus.PlayerWon;
                 game.GameFinishedAt = DateTime.UtcNow;
+                
+                // Otorgar recompensas usando el caso de uso dedicado
+                await _grantLevelRewardUseCase.ExecuteAsync(game.PlayerId, game.LevelId, game.WorldId);
             }
         }
         else
         {
             game.LivesRemaining--;
 
-            // Verificar si perdió todas las vidas
             if (game.LivesRemaining <= 0)
             {
                 game.Status = SoloGameStatus.PlayerLost; 
@@ -98,16 +103,11 @@ public class SubmitSoloAnswerUseCase
             }
         }
 
-        // Marcar cuándo se respondió esta pregunta
         game.LastAnswerTime = DateTime.UtcNow;
-        
-        // Avanzar al siguiente índice
         game.CurrentQuestionIndex++;
 
-        // Actualizar posición de la máquina basándose en tiempo total transcurrido
         UpdateMachinePosition(game);
 
-        // Verificar si la máquina ganó
         if (game.MachinePosition >= game.TotalQuestions && game.Status == SoloGameStatus.InProgress)
         {
             game.Status = SoloGameStatus.MachineWon; 
