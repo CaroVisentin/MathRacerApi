@@ -12,6 +12,10 @@ namespace MathRacerAPI.Presentation.DTOs
         public int Points { get; set; }
         public int Coins { get; set; }
 
+        public ProductDto? Car { get; set; }
+        public ProductDto? Background { get; set; }
+        public ProductDto? Character { get; set; }
+
     }
 
 }

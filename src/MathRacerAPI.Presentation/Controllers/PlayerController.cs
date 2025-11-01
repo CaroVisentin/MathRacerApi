@@ -121,14 +121,43 @@ public class PlayerController : ControllerBase
         if (playerProfile == null)
             return BadRequest("No se pudo registrar el jugador. El email puede estar duplicado o los datos son inválidos.");
 
-        var response = new PlayerProfileDto {
+        var response = new PlayerProfileDto
+        {
             Id = playerProfile.Id,
             Name = playerProfile.Name,
             Email = playerProfile.Email,
             LastLevelId = playerProfile.LastLevelId,
             Points = playerProfile.Points,
-            Coins = playerProfile.Coins
+            Coins = playerProfile.Coins,
+
+            Car = playerProfile.Car == null ? null : new ProductDto
+            {
+                Id = playerProfile.Car.Id,
+                Name = playerProfile.Car.Name,
+                Description = playerProfile.Car.Description,
+                Price = playerProfile.Car.Price,
+                ProductType = playerProfile.Car.ProductType
+            },
+
+            Background = playerProfile.Background == null ? null : new ProductDto
+            {
+                Id = playerProfile.Background.Id,
+                Name = playerProfile.Background.Name,
+                Description = playerProfile.Background.Description,
+                Price = playerProfile.Background.Price,
+                ProductType = playerProfile.Background.ProductType
+            },
+
+            Character = playerProfile.Character == null ? null : new ProductDto
+            {
+                Id = playerProfile.Character.Id,
+                Name = playerProfile.Character.Name,
+                Description = playerProfile.Character.Description,
+                Price = playerProfile.Character.Price,
+                ProductType = playerProfile.Character.ProductType
+            }
         };
+
         return CreatedAtAction(nameof(GetPlayerById), new { id = playerProfile.Id }, response);
     }
 
@@ -201,8 +230,36 @@ public class PlayerController : ControllerBase
             Email = playerProfile.Email,
             LastLevelId = playerProfile.LastLevelId,
             Points = playerProfile.Points,
-            Coins = playerProfile.Coins
+            Coins = playerProfile.Coins,
+
+            Car = playerProfile.Car == null ? null : new ProductDto
+            {
+                Id = playerProfile.Car.Id,
+                Name = playerProfile.Car.Name,
+                Description = playerProfile.Car.Description,
+                Price = playerProfile.Car.Price,
+                ProductType = playerProfile.Car.ProductType
+            },
+
+            Background = playerProfile.Background == null ? null : new ProductDto
+            {
+                Id = playerProfile.Background.Id,
+                Name = playerProfile.Background.Name,
+                Description = playerProfile.Background.Description,
+                Price = playerProfile.Background.Price,
+                ProductType = playerProfile.Background.ProductType
+            },
+
+            Character = playerProfile.Character == null ? null : new ProductDto
+            {
+                Id = playerProfile.Character.Id,
+                Name = playerProfile.Character.Name,
+                Description = playerProfile.Character.Description,
+                Price = playerProfile.Character.Price,
+                ProductType = playerProfile.Character.ProductType
+            }
         };
+
 
         return Ok(response);
     }
@@ -279,8 +336,36 @@ public class PlayerController : ControllerBase
             Email = playerProfile.Email,
             LastLevelId = playerProfile.LastLevelId,
             Points = playerProfile.Points,
-            Coins = playerProfile.Coins
+            Coins = playerProfile.Coins,
+
+            Car = playerProfile.Car == null ? null : new ProductDto
+            {
+                Id = playerProfile.Car.Id,
+                Name = playerProfile.Car.Name,
+                Description = playerProfile.Car.Description,
+                Price = playerProfile.Car.Price,
+                ProductType = playerProfile.Car.ProductType
+            },
+
+            Background = playerProfile.Background == null ? null : new ProductDto
+            {
+                Id = playerProfile.Background.Id,
+                Name = playerProfile.Background.Name,
+                Description = playerProfile.Background.Description,
+                Price = playerProfile.Background.Price,
+                ProductType = playerProfile.Background.ProductType
+            },
+
+            Character = playerProfile.Character == null ? null : new ProductDto
+            {
+                Id = playerProfile.Character.Id,
+                Name = playerProfile.Character.Name,
+                Description = playerProfile.Character.Description,
+                Price = playerProfile.Character.Price,
+                ProductType = playerProfile.Character.ProductType
+            }
         };
+
 
         return Ok(response);
     }
@@ -316,8 +401,36 @@ public class PlayerController : ControllerBase
             Email = playerProfile.Email,
             LastLevelId = playerProfile.LastLevelId,
             Points = playerProfile.Points,
-            Coins = playerProfile.Coins
+            Coins = playerProfile.Coins,
+
+            Car = playerProfile.Car == null ? null : new ProductDto
+            {
+                Id = playerProfile.Car.Id,
+                Name = playerProfile.Car.Name,
+                Description = playerProfile.Car.Description,
+                Price = playerProfile.Car.Price,
+                ProductType = playerProfile.Car.ProductType
+            },
+
+            Background = playerProfile.Background == null ? null : new ProductDto
+            {
+                Id = playerProfile.Background.Id,
+                Name = playerProfile.Background.Name,
+                Description = playerProfile.Background.Description,
+                Price = playerProfile.Background.Price,
+                ProductType = playerProfile.Background.ProductType
+            },
+
+            Character = playerProfile.Character == null ? null : new ProductDto
+            {
+                Id = playerProfile.Character.Id,
+                Name = playerProfile.Character.Name,
+                Description = playerProfile.Character.Description,
+                Price = playerProfile.Character.Price,
+                ProductType = playerProfile.Character.ProductType
+            }
         };
+
         return CreatedAtAction(nameof(GetPlayerById), new { id = playerProfile.Id }, response);
     }
 
@@ -352,8 +465,36 @@ public class PlayerController : ControllerBase
             Email = playerProfile.Email,
             LastLevelId = playerProfile.LastLevelId,
             Points = playerProfile.Points,
-            Coins = playerProfile.Coins
+            Coins = playerProfile.Coins,
+
+            Car = playerProfile.Car == null ? null : new ProductDto
+            {
+                Id = playerProfile.Car.Id,
+                Name = playerProfile.Car.Name,
+                Description = playerProfile.Car.Description,
+                Price = playerProfile.Car.Price,
+                ProductType = playerProfile.Car.ProductType
+            },
+
+            Background = playerProfile.Background == null ? null : new ProductDto
+            {
+                Id = playerProfile.Background.Id,
+                Name = playerProfile.Background.Name,
+                Description = playerProfile.Background.Description,
+                Price = playerProfile.Background.Price,
+                ProductType = playerProfile.Background.ProductType
+            },
+
+            Character = playerProfile.Character == null ? null : new ProductDto
+            {
+                Id = playerProfile.Character.Id,
+                Name = playerProfile.Character.Name,
+                Description = playerProfile.Character.Description,
+                Price = playerProfile.Character.Price,
+                ProductType = playerProfile.Character.ProductType
+            }
         };
+
         return Ok(response);
     }
 
@@ -386,8 +527,36 @@ public class PlayerController : ControllerBase
             Email = playerProfile.Email,
             LastLevelId = playerProfile.LastLevelId,
             Points = playerProfile.Points,
-            Coins = playerProfile.Coins
+            Coins = playerProfile.Coins,
+
+            Car = playerProfile.Car == null ? null : new ProductDto
+            {
+                Id = playerProfile.Car.Id,
+                Name = playerProfile.Car.Name,
+                Description = playerProfile.Car.Description,
+                Price = playerProfile.Car.Price,
+                ProductType = playerProfile.Car.ProductType
+            },
+
+            Background = playerProfile.Background == null ? null : new ProductDto
+            {
+                Id = playerProfile.Background.Id,
+                Name = playerProfile.Background.Name,
+                Description = playerProfile.Background.Description,
+                Price = playerProfile.Background.Price,
+                ProductType = playerProfile.Background.ProductType
+            },
+
+            Character = playerProfile.Character == null ? null : new ProductDto
+            {
+                Id = playerProfile.Character.Id,
+                Name = playerProfile.Character.Name,
+                Description = playerProfile.Character.Description,
+                Price = playerProfile.Character.Price,
+                ProductType = playerProfile.Character.ProductType
+            }
         };
+
         return Ok(response);
     }
 }

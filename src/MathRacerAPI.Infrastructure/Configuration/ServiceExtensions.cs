@@ -66,8 +66,8 @@ public static class ServiceExtensions
     // Registrar servicio de Firebase
     services.AddScoped<IFirebaseService, FirebaseService>();
 
-    // Cargar el archivo .env fijo para todos los entornos
-    DotNetEnv.Env.Load(".env");
+        // Cargar el archivo .env fijo para todos los entornos
+        DotNetEnv.Env.Load($".env.{environment.EnvironmentName.ToLower()}");
 
         // Leer la cadena de conexión
         var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");
