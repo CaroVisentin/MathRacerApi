@@ -130,32 +130,9 @@ public class PlayerController : ControllerBase
             Points = playerProfile.Points,
             Coins = playerProfile.Coins,
 
-            Car = playerProfile.Car == null ? null : new ProductDto
-            {
-                Id = playerProfile.Car.Id,
-                Name = playerProfile.Car.Name,
-                Description = playerProfile.Car.Description,
-                Price = playerProfile.Car.Price,
-                ProductType = playerProfile.Car.ProductType
-            },
-
-            Background = playerProfile.Background == null ? null : new ProductDto
-            {
-                Id = playerProfile.Background.Id,
-                Name = playerProfile.Background.Name,
-                Description = playerProfile.Background.Description,
-                Price = playerProfile.Background.Price,
-                ProductType = playerProfile.Background.ProductType
-            },
-
-            Character = playerProfile.Character == null ? null : new ProductDto
-            {
-                Id = playerProfile.Character.Id,
-                Name = playerProfile.Character.Name,
-                Description = playerProfile.Character.Description,
-                Price = playerProfile.Character.Price,
-                ProductType = playerProfile.Character.ProductType
-            }
+            Car = playerProfile.Car == null ? null : new ActiveProductDto { Id = playerProfile.Car.Id },
+            Background = playerProfile.Background == null ? null : new ActiveProductDto { Id = playerProfile.Background.Id },
+            Character = playerProfile.Character == null ? null : new ActiveProductDto { Id = playerProfile.Character.Id }
         };
 
         return CreatedAtAction(nameof(GetPlayerById), new { id = playerProfile.Id }, response);
@@ -232,32 +209,9 @@ public class PlayerController : ControllerBase
             Points = playerProfile.Points,
             Coins = playerProfile.Coins,
 
-            Car = playerProfile.Car == null ? null : new ProductDto
-            {
-                Id = playerProfile.Car.Id,
-                Name = playerProfile.Car.Name,
-                Description = playerProfile.Car.Description,
-                Price = playerProfile.Car.Price,
-                ProductType = playerProfile.Car.ProductType
-            },
-
-            Background = playerProfile.Background == null ? null : new ProductDto
-            {
-                Id = playerProfile.Background.Id,
-                Name = playerProfile.Background.Name,
-                Description = playerProfile.Background.Description,
-                Price = playerProfile.Background.Price,
-                ProductType = playerProfile.Background.ProductType
-            },
-
-            Character = playerProfile.Character == null ? null : new ProductDto
-            {
-                Id = playerProfile.Character.Id,
-                Name = playerProfile.Character.Name,
-                Description = playerProfile.Character.Description,
-                Price = playerProfile.Character.Price,
-                ProductType = playerProfile.Character.ProductType
-            }
+            Car = playerProfile.Car == null ? null : new ActiveProductDto { Id = playerProfile.Car.Id },
+            Background = playerProfile.Background == null ? null : new ActiveProductDto { Id = playerProfile.Background.Id },
+            Character = playerProfile.Character == null ? null : new ActiveProductDto { Id = playerProfile.Character.Id }
         };
 
 
@@ -338,32 +292,9 @@ public class PlayerController : ControllerBase
             Points = playerProfile.Points,
             Coins = playerProfile.Coins,
 
-            Car = playerProfile.Car == null ? null : new ProductDto
-            {
-                Id = playerProfile.Car.Id,
-                Name = playerProfile.Car.Name,
-                Description = playerProfile.Car.Description,
-                Price = playerProfile.Car.Price,
-                ProductType = playerProfile.Car.ProductType
-            },
-
-            Background = playerProfile.Background == null ? null : new ProductDto
-            {
-                Id = playerProfile.Background.Id,
-                Name = playerProfile.Background.Name,
-                Description = playerProfile.Background.Description,
-                Price = playerProfile.Background.Price,
-                ProductType = playerProfile.Background.ProductType
-            },
-
-            Character = playerProfile.Character == null ? null : new ProductDto
-            {
-                Id = playerProfile.Character.Id,
-                Name = playerProfile.Character.Name,
-                Description = playerProfile.Character.Description,
-                Price = playerProfile.Character.Price,
-                ProductType = playerProfile.Character.ProductType
-            }
+            Car = playerProfile.Car == null ? null : new ActiveProductDto { Id = playerProfile.Car.Id },
+            Background = playerProfile.Background == null ? null : new ActiveProductDto { Id = playerProfile.Background.Id },
+            Character = playerProfile.Character == null ? null : new ActiveProductDto { Id = playerProfile.Character.Id }
         };
 
 
@@ -403,32 +334,9 @@ public class PlayerController : ControllerBase
             Points = playerProfile.Points,
             Coins = playerProfile.Coins,
 
-            Car = playerProfile.Car == null ? null : new ProductDto
-            {
-                Id = playerProfile.Car.Id,
-                Name = playerProfile.Car.Name,
-                Description = playerProfile.Car.Description,
-                Price = playerProfile.Car.Price,
-                ProductType = playerProfile.Car.ProductType
-            },
-
-            Background = playerProfile.Background == null ? null : new ProductDto
-            {
-                Id = playerProfile.Background.Id,
-                Name = playerProfile.Background.Name,
-                Description = playerProfile.Background.Description,
-                Price = playerProfile.Background.Price,
-                ProductType = playerProfile.Background.ProductType
-            },
-
-            Character = playerProfile.Character == null ? null : new ProductDto
-            {
-                Id = playerProfile.Character.Id,
-                Name = playerProfile.Character.Name,
-                Description = playerProfile.Character.Description,
-                Price = playerProfile.Character.Price,
-                ProductType = playerProfile.Character.ProductType
-            }
+            Car = playerProfile.Car == null ? null : new ActiveProductDto { Id = playerProfile.Car.Id },
+            Background = playerProfile.Background == null ? null : new ActiveProductDto { Id = playerProfile.Background.Id },
+            Character = playerProfile.Character == null ? null : new ActiveProductDto { Id = playerProfile.Character.Id }
         };
 
         return CreatedAtAction(nameof(GetPlayerById), new { id = playerProfile.Id }, response);
@@ -467,32 +375,9 @@ public class PlayerController : ControllerBase
             Points = playerProfile.Points,
             Coins = playerProfile.Coins,
 
-            Car = playerProfile.Car == null ? null : new ProductDto
-            {
-                Id = playerProfile.Car.Id,
-                Name = playerProfile.Car.Name,
-                Description = playerProfile.Car.Description,
-                Price = playerProfile.Car.Price,
-                ProductType = playerProfile.Car.ProductType
-            },
-
-            Background = playerProfile.Background == null ? null : new ProductDto
-            {
-                Id = playerProfile.Background.Id,
-                Name = playerProfile.Background.Name,
-                Description = playerProfile.Background.Description,
-                Price = playerProfile.Background.Price,
-                ProductType = playerProfile.Background.ProductType
-            },
-
-            Character = playerProfile.Character == null ? null : new ProductDto
-            {
-                Id = playerProfile.Character.Id,
-                Name = playerProfile.Character.Name,
-                Description = playerProfile.Character.Description,
-                Price = playerProfile.Character.Price,
-                ProductType = playerProfile.Character.ProductType
-            }
+            Car = playerProfile.Car == null ? null : new ActiveProductDto { Id = playerProfile.Car.Id },
+            Background = playerProfile.Background == null ? null : new ActiveProductDto { Id = playerProfile.Background.Id },
+            Character = playerProfile.Character == null ? null : new ActiveProductDto { Id = playerProfile.Character.Id }
         };
 
         return Ok(response);
@@ -529,32 +414,9 @@ public class PlayerController : ControllerBase
             Points = playerProfile.Points,
             Coins = playerProfile.Coins,
 
-            Car = playerProfile.Car == null ? null : new ProductDto
-            {
-                Id = playerProfile.Car.Id,
-                Name = playerProfile.Car.Name,
-                Description = playerProfile.Car.Description,
-                Price = playerProfile.Car.Price,
-                ProductType = playerProfile.Car.ProductType
-            },
-
-            Background = playerProfile.Background == null ? null : new ProductDto
-            {
-                Id = playerProfile.Background.Id,
-                Name = playerProfile.Background.Name,
-                Description = playerProfile.Background.Description,
-                Price = playerProfile.Background.Price,
-                ProductType = playerProfile.Background.ProductType
-            },
-
-            Character = playerProfile.Character == null ? null : new ProductDto
-            {
-                Id = playerProfile.Character.Id,
-                Name = playerProfile.Character.Name,
-                Description = playerProfile.Character.Description,
-                Price = playerProfile.Character.Price,
-                ProductType = playerProfile.Character.ProductType
-            }
+            Car = playerProfile.Car == null ? null : new ActiveProductDto { Id = playerProfile.Car.Id },
+            Background = playerProfile.Background == null ? null : new ActiveProductDto { Id = playerProfile.Background.Id },
+            Character = playerProfile.Character == null ? null : new ActiveProductDto { Id = playerProfile.Character.Id }
         };
 
         return Ok(response);

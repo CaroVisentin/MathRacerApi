@@ -7,6 +7,7 @@
         public string Email { get; set; } = string.Empty;
         public string Uid { get; set; } = string.Empty;
         public int Points { get; set; }
-        public ProductDto? Character { get; set; }
+        // Sólo exponemos el Id del product character
+        public ActiveProductDto? Character { get; set; }
     }
 }

@@ -42,14 +42,7 @@ namespace MathRacerAPI.Presentation.Controllers
                 Email = p.Email,
                 Uid = p.Uid,
                 Points = p.Points,
-                Character = p.Character == null ? null : new ProductDto
-                {
-                    Id = p.Character.Id,
-                    Name = p.Character.Name,
-                    Description = p.Character.Description,
-                    Price = p.Character.Price,
-                    ProductType = p.Character.ProductType
-                }
+                Character = p.Character == null ? null : new ActiveProductDto { Id = p.Character.Id }
             });
 
             return Ok(response);
