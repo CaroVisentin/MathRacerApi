@@ -29,11 +29,11 @@ namespace MathRacerAPI.Tests.UseCases
         {
             // Arrange
             var playerId = 1;
-            var itemType = "car";
-            var expectedResponse = CreateSampleGarageItemsResponse("Car");
+            var itemType = "auto";
+            var expectedResponse = CreateSampleGarageItemsResponse("Auto");
 
             _mockGarageRepository
-                .Setup(x => x.GetPlayerItemsByTypeAsync(playerId, "Car"))
+                .Setup(x => x.GetPlayerItemsByTypeAsync(playerId, "Auto"))
                 .ReturnsAsync(expectedResponse);
 
             // Act
@@ -42,7 +42,7 @@ namespace MathRacerAPI.Tests.UseCases
             // Assert
             result.Should().NotBeNull();
             result.Should().BeEquivalentTo(expectedResponse);
-            result.ItemType.Should().Be("Car");
+            result.ItemType.Should().Be("Auto");
             result.Items.Should().HaveCount(2);
         }
 
@@ -99,13 +99,13 @@ namespace MathRacerAPI.Tests.UseCases
         }
 
         [Theory]
-        [InlineData("car", "Car")]
-        [InlineData("Car", "Car")]
-        [InlineData("CAR", "Car")]
-        [InlineData("character", "Character")]
-        [InlineData("CHARACTER", "Character")]
-        [InlineData("background", "Background")]
-        [InlineData("BACKGROUND", "Background")]
+        [InlineData("auto", "Auto")]
+        [InlineData("Auto", "Auto")]
+        [InlineData("AUTO", "Auto")]
+        [InlineData("personaje", "Personaje")]
+        [InlineData("PERSONAJE", "Personaje")]
+        [InlineData("fondo", "Fondo")]
+        [InlineData("FONDO", "Fondo")]
         public async Task ExecuteAsync_WithValidItemTypes_ShouldNormalizeAndProcess(string inputType, string expectedType)
         {
             // Arrange

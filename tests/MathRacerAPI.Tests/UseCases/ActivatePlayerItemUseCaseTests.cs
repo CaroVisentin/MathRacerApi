@@ -31,11 +31,11 @@ namespace MathRacerAPI.Tests.UseCases
             {
                 PlayerId = 1,
                 ProductId = 1,
-                ProductType = "car"
+                ProductType = "auto"
             };
 
             _mockGarageRepository
-                .Setup(x => x.ActivatePlayerItemAsync(1, 1, "Car"))
+                .Setup(x => x.ActivatePlayerItemAsync(1, 1, "Auto"))
                 .ReturnsAsync(true);
 
             // Act
@@ -43,7 +43,7 @@ namespace MathRacerAPI.Tests.UseCases
 
             // Assert
             result.Should().BeTrue();
-            _mockGarageRepository.Verify(x => x.ActivatePlayerItemAsync(1, 1, "Car"), Times.Once);
+            _mockGarageRepository.Verify(x => x.ActivatePlayerItemAsync(1, 1, "Auto"), Times.Once);
         }
 
         [Fact]
@@ -54,11 +54,11 @@ namespace MathRacerAPI.Tests.UseCases
             {
                 PlayerId = 1,
                 ProductId = 1,
-                ProductType = "car"
+                ProductType = "auto"
             };
 
             _mockGarageRepository
-                .Setup(x => x.ActivatePlayerItemAsync(1, 1, "Car"))
+                .Setup(x => x.ActivatePlayerItemAsync(1, 1, "Auto"))
                 .ReturnsAsync(false);
 
             // Act
@@ -87,7 +87,7 @@ namespace MathRacerAPI.Tests.UseCases
             {
                 PlayerId = 0,
                 ProductId = 1,
-                ProductType = "car"
+                ProductType = "auto"
             };
 
             // Act & Assert
@@ -104,7 +104,7 @@ namespace MathRacerAPI.Tests.UseCases
             {
                 PlayerId = -1,
                 ProductId = 1,
-                ProductType = "car"
+                ProductType = "auto"
             };
 
             // Act & Assert
@@ -121,7 +121,7 @@ namespace MathRacerAPI.Tests.UseCases
             {
                 PlayerId = 1,
                 ProductId = 0,
-                ProductType = "car"
+                ProductType = "auto"
             };
 
             // Act & Assert
@@ -138,7 +138,7 @@ namespace MathRacerAPI.Tests.UseCases
             {
                 PlayerId = 1,
                 ProductId = -1,
-                ProductType = "car"
+                ProductType = "auto"
             };
 
             // Act & Assert
@@ -199,13 +199,13 @@ namespace MathRacerAPI.Tests.UseCases
         }
 
         [Theory]
-        [InlineData("car", "Car")]
-        [InlineData("Car", "Car")]
-        [InlineData("CAR", "Car")]
-        [InlineData("character", "Character")]
-        [InlineData("CHARACTER", "Character")]
-        [InlineData("background", "Background")]
-        [InlineData("BACKGROUND", "Background")]
+        [InlineData("auto", "Auto")]
+        [InlineData("Auto", "Auto")]
+        [InlineData("AUTO", "Auto")]
+        [InlineData("personaje", "Personaje")]
+        [InlineData("PERSONAJE", "Personaje")]
+        [InlineData("fondo", "Fondo")]
+        [InlineData("FONDO", "Fondo")]
         public async Task ExecuteAsync_WithValidProductTypes_ShouldNormalizeAndProcess(string inputType, string expectedType)
         {
             // Arrange
