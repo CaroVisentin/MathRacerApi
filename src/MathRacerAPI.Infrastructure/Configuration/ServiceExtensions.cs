@@ -62,10 +62,14 @@ public static class ServiceExtensions
         services.AddScoped<ProcessOnlineAnswerUseCase>();
         services.AddScoped<GetNextOnlineQuestionUseCase>();
 
+        // Registrar casos de uso de Ranking
+        services.AddScoped<IGetPlayerRankingUseCase, GetPlayerRankingUseCase>();
+
         // Registrar repositorios
         services.AddScoped<ILevelRepository, LevelRepository>();
         services.AddScoped<IPlayerRepository, PlayerRepository>();
         services.AddScoped<IWorldRepository, WorldRepository>();
+        services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IEnergyRepository, EnergyRepository>();
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
