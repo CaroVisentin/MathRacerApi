@@ -57,11 +57,16 @@ public static class ServiceExtensions
         services.AddScoped<ProcessOnlineAnswerUseCase>();
         services.AddScoped<GetNextOnlineQuestionUseCase>();
 
+        // Registrar casos de uso de Garage
+        services.AddScoped<GetPlayerGarageItemsUseCase>();
+        services.AddScoped<ActivatePlayerItemUseCase>();
+
         // Registrar repositorios
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
         services.AddScoped<ILevelRepository, LevelRepository>();
         services.AddScoped<IPlayerRepository, PlayerRepository>();
-        services.AddScoped<IWorldRepository, WorldRepository>();  
+        services.AddScoped<IWorldRepository, WorldRepository>();
+        services.AddScoped<IGarageRepository, GarageRepository>();  
 
     // Registrar servicio de Firebase
     services.AddScoped<IFirebaseService, FirebaseService>();
