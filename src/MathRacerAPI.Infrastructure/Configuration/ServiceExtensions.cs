@@ -62,6 +62,8 @@ public static class ServiceExtensions
         services.AddScoped<ILevelRepository, LevelRepository>();
         services.AddScoped<IPlayerRepository, PlayerRepository>();
         services.AddScoped<IWorldRepository, WorldRepository>();  
+    // Registrar repositorios de amistad
+    services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 
     // Registrar servicio de Firebase
     services.AddScoped<IFirebaseService, FirebaseService>();
@@ -78,6 +80,12 @@ public static class ServiceExtensions
         // Registrar servicios de dominio (lógica compartida)
         services.AddScoped<IGameLogicService, GameLogicService>();
         services.AddScoped<IPowerUpService, PowerUpService>();
+
+    // Registrar casos de uso de amistad
+    services.AddScoped<SendFriendRequestUseCase>();
+    services.AddScoped<AcceptFriendRequestUseCase>();
+    services.AddScoped<RejectFriendRequestUseCase>();
+    services.AddScoped<GetFriendsUseCase>();
 
         // Configurar SignalR
         services.AddSignalR();
