@@ -1,3 +1,4 @@
+using MathRacerAPI.Presentation.DTOs.SignalR;
 using System;
 
 namespace MathRacerAPI.Presentation.DTOs.Solo;

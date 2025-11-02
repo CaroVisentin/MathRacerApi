@@ -273,7 +273,7 @@ public class GetPlayerByIdUseCaseTests
             Uid = uid,
             Name = "New Player",
             Email = "new@test.com",
-            LastLevelId = 1,  // Nivel inicial
+            LastLevelId = 0,  // Nivel inicial
             Points = 0,       // Sin puntos
             Coins = 0         // Sin monedas
         };
@@ -287,7 +287,7 @@ public class GetPlayerByIdUseCaseTests
 
         // Assert
         result.Should().NotBeNull();
-        result.LastLevelId.Should().Be(1);
+        result.LastLevelId.Should().Be(0);
         result.Points.Should().Be(0);
         result.Coins.Should().Be(0);
     }
