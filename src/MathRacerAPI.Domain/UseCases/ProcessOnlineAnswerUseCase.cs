@@ -13,17 +13,20 @@ public class ProcessOnlineAnswerUseCase
     private readonly IGameRepository _gameRepository;
     private readonly IGameLogicService _gameLogicService;
     private readonly IPowerUpService _powerUpService;
+    private readonly IPlayerRepository _playerRepository;
     private readonly ILogger<ProcessOnlineAnswerUseCase> _logger;
 
     public ProcessOnlineAnswerUseCase(
         IGameRepository gameRepository,
         IGameLogicService gameLogicService,
         IPowerUpService powerUpService,
+        IPlayerRepository playerRepository,
         ILogger<ProcessOnlineAnswerUseCase> logger)
     {
         _gameRepository = gameRepository;
         _gameLogicService = gameLogicService;
         _powerUpService = powerUpService;
+        _playerRepository = playerRepository;
         _logger = logger;
     }
 
@@ -80,10 +83,29 @@ public class ProcessOnlineAnswerUseCase
 
         // Verificar condiciones de finalización
         var gameEnded = _gameLogicService.CheckAndUpdateGameEndConditions(game);
-        
         if (gameEnded)
         {
             _logger.LogInformation($"Partida {gameId} terminada, ganador: jugador {game.WinnerId}");
+
+            // Asignar puntos al ganador y restar a los perdedores
+            if (game.WinnerId.HasValue)
+            {
+                var winnerProfile = await _playerRepository.GetByIdAsync(game.WinnerId.Value);
+                if (winnerProfile != null)
+                {
+                    winnerProfile.Points += 10;
+                    await _playerRepository.UpdateAsync(winnerProfile);
+                }
+                foreach (var p in game.Players.Where(x => x.Id != game.WinnerId.Value))
+                {
+                    var loserProfile = await _playerRepository.GetByIdAsync(p.Id);
+                    if (loserProfile != null)
+                    {
+                        loserProfile.Points = Math.Max(0, loserProfile.Points - 5);
+                        await _playerRepository.UpdateAsync(loserProfile);
+                    }
+                }
+            }
         }
 
         _logger.LogInformation($"Respuesta {(isCorrect ? "correcta" : "incorrecta")} del jugador {playerId} en partida {gameId}");
