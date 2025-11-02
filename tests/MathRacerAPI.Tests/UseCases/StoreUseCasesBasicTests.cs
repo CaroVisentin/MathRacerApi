@@ -35,11 +35,11 @@ public class StoreUseCasesBasicTests
         var exception = await Assert.ThrowsAsync<NotFoundException>(
             () => useCase.ExecuteAsync(invalidPlayerId, productId));
 
-        exception.Message.Should().Contain("Jugador con ID 999 no encontrado");
+        exception.Message.Should().Be("Jugador no encontrado");
     }
 
     [Fact]
-    public async Task PurchaseStoreItemUseCase_WithInvalidProduct_ShouldReturnFailure()
+    public async Task PurchaseStoreItemUseCase_WithInvalidProduct_ShouldThrowBusinessException()
     {
         // Arrange
         var storeRepositoryMock = new Mock<IStoreRepository>();
@@ -69,17 +69,15 @@ public class StoreUseCasesBasicTests
 
         var useCase = new PurchaseStoreItemUseCase(storeRepositoryMock.Object, playerRepositoryMock.Object);
 
-        // Act
-        var result = await useCase.ExecuteAsync(playerId, invalidProductId);
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<BusinessException>(
+            () => useCase.ExecuteAsync(playerId, invalidProductId));
 
-        // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeFalse();
-        result.Message.Should().Be("Producto no encontrado");
+        exception.Message.Should().Be("Producto no encontrado");
     }
 
     [Fact]
-    public async Task PurchaseStoreItemUseCase_WithAlreadyOwnedProduct_ShouldReturnFailure()
+    public async Task PurchaseStoreItemUseCase_WithAlreadyOwnedProduct_ShouldThrowConflictException()
     {
         // Arrange
         var storeRepositoryMock = new Mock<IStoreRepository>();
@@ -124,18 +122,15 @@ public class StoreUseCasesBasicTests
 
         var useCase = new PurchaseStoreItemUseCase(storeRepositoryMock.Object, playerRepositoryMock.Object);
 
-        // Act
-        var result = await useCase.ExecuteAsync(playerId, productId);
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ConflictException>(
+            () => useCase.ExecuteAsync(playerId, productId));
 
-        // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeFalse();
-        result.Message.Should().Be("Ya posees este producto");
-        result.RemainingCoins.Should().Be(playerCoins);
+        exception.Message.Should().Be("Ya posees este producto");
     }
 
     [Fact]
-    public async Task PurchaseStoreItemUseCase_WithInsufficientCoins_ShouldReturnFailure()
+    public async Task PurchaseStoreItemUseCase_WithInsufficientCoins_ShouldThrowBusinessException()
     {
         // Arrange
         var storeRepositoryMock = new Mock<IStoreRepository>();
@@ -181,21 +176,18 @@ public class StoreUseCasesBasicTests
 
         var useCase = new PurchaseStoreItemUseCase(storeRepositoryMock.Object, playerRepositoryMock.Object);
 
-        // Act
-        var result = await useCase.ExecuteAsync(playerId, productId);
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<BusinessException>(
+            () => useCase.ExecuteAsync(playerId, productId));
 
-        // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeFalse();
-        result.Message.Should().Be("No tienes suficientes monedas");
-        result.RemainingCoins.Should().Be(playerCoins);
+        exception.Message.Should().Be("No tienes suficientes monedas");
 
         // Verify that purchase was not attempted
         storeRepositoryMock.Verify(x => x.PurchaseProductAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<decimal>()), Times.Never);
     }
 
     [Fact]
-    public async Task PurchaseStoreItemUseCase_WithValidPurchase_ShouldReturnSuccess()
+    public async Task PurchaseStoreItemUseCase_WithValidPurchase_ShouldReturnRemainingCoins()
     {
         // Arrange
         var storeRepositoryMock = new Mock<IStoreRepository>();
@@ -249,10 +241,7 @@ public class StoreUseCasesBasicTests
         var result = await useCase.ExecuteAsync(playerId, productId);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.Message.Should().Be("Compra realizada exitosamente");
-        result.RemainingCoins.Should().Be(playerCoins - productPrice);
+        result.Should().Be(playerCoins - productPrice);
 
         // Verify repository calls
         playerRepositoryMock.Verify(x => x.GetByIdAsync(playerId), Times.Once);
@@ -261,7 +250,7 @@ public class StoreUseCasesBasicTests
     }
 
     [Fact]
-    public async Task PurchaseStoreItemUseCase_WithRepositoryFailure_ShouldReturnFailure()
+    public async Task PurchaseStoreItemUseCase_WithRepositoryFailure_ShouldThrowBusinessException()
     {
         // Arrange
         var storeRepositoryMock = new Mock<IStoreRepository>();
@@ -311,13 +300,11 @@ public class StoreUseCasesBasicTests
 
         var useCase = new PurchaseStoreItemUseCase(storeRepositoryMock.Object, playerRepositoryMock.Object);
 
-        // Act
-        var result = await useCase.ExecuteAsync(playerId, productId);
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<BusinessException>(
+            () => useCase.ExecuteAsync(playerId, productId));
 
-        // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeFalse();
-        result.Message.Should().Be("Error al procesar la compra");
+        exception.Message.Should().Be("Error al procesar la compra");
     }
 
     #endregion

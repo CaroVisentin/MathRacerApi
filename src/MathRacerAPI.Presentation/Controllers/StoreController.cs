@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Domain.Exceptions;
+using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Presentation.DTOs;
+using MathRacerAPI.Presentation.Mappers;
 
 namespace MathRacerAPI.Presentation.Controllers;
 
@@ -9,16 +11,16 @@ namespace MathRacerAPI.Presentation.Controllers;
 [Route("api/[controller]")]
 public class StoreController : ControllerBase
 {
-    private readonly IGetStoreCarsUseCase _getStoreCarsUseCase;
-    private readonly IGetStoreCharactersUseCase _getStoreCharactersUseCase;
-    private readonly IGetStoreBackgroundsUseCase _getStoreBackgroundsUseCase;
-    private readonly IPurchaseStoreItemUseCase _purchaseStoreItemUseCase;
+    private readonly GetStoreCarsUseCase _getStoreCarsUseCase;
+    private readonly GetStoreCharactersUseCase _getStoreCharactersUseCase;
+    private readonly GetStoreBackgroundsUseCase _getStoreBackgroundsUseCase;
+    private readonly PurchaseStoreItemUseCase _purchaseStoreItemUseCase;
 
     public StoreController(
-        IGetStoreCarsUseCase getStoreCarsUseCase,
-        IGetStoreCharactersUseCase getStoreCharactersUseCase,
-        IGetStoreBackgroundsUseCase getStoreBackgroundsUseCase,
-        IPurchaseStoreItemUseCase purchaseStoreItemUseCase)
+        GetStoreCarsUseCase getStoreCarsUseCase,
+        GetStoreCharactersUseCase getStoreCharactersUseCase,
+        GetStoreBackgroundsUseCase getStoreBackgroundsUseCase,
+        PurchaseStoreItemUseCase purchaseStoreItemUseCase)
     {
         _getStoreCarsUseCase = getStoreCarsUseCase;
         _getStoreCharactersUseCase = getStoreCharactersUseCase;
@@ -69,10 +71,18 @@ public class StoreController : ControllerBase
     /// 
     /// **Posibles errores:**
     /// 
-    /// Error 404 (Jugador no encontrado):
+    /// Error 400 (ValidationException - ID inválido):
     /// 
     ///     {
-    ///       "message": "Jugador con ID 999 no encontrado"
+    ///       "statusCode": 400,
+    ///       "message": "El ID del jugador debe ser mayor a 0"
+    ///     }
+    /// 
+    /// Error 404 (NotFoundException - jugador no encontrado):
+    /// 
+    ///     {
+    ///       "statusCode": 404,
+    ///       "message": "Jugador no encontrado"
     ///     }
     /// 
     /// </remarks>
@@ -83,34 +93,14 @@ public class StoreController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<StoreResponseDto>> GetCars([FromQuery] int playerId)
     {
-        try
+        if (playerId <= 0)
         {
-            var cars = await _getStoreCarsUseCase.ExecuteAsync(playerId);
-            
-            var response = new StoreResponseDto
-            {
-                Items = cars.Select(c => new StoreItemDto
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    Description = c.Description,
-                    Price = c.Price,
-                    ImageUrl = c.ImageUrl,
-                    ProductTypeId = c.ProductTypeId,
-                    ProductTypeName = c.ProductTypeName,
-                    Rarity = c.Rarity,
-                    IsOwned = c.IsOwned,
-                    Currency = c.Currency
-                }).ToList(),
-                TotalCount = cars.Count
-            };
+            throw new ValidationException("El ID del jugador debe ser mayor a 0");
+        }
 
-            return Ok(response);
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        var cars = await _getStoreCarsUseCase.ExecuteAsync(playerId);
+        var response = cars.ToStoreResponseDto();
+        return Ok(response);
     }
 
     /// <summary>
@@ -156,10 +146,18 @@ public class StoreController : ControllerBase
     /// 
     /// **Posibles errores:**
     /// 
-    /// Error 404 (Jugador no encontrado):
+    /// Error 400 (ValidationException - ID inválido):
     /// 
     ///     {
-    ///       "message": "Jugador con ID 999 no encontrado"
+    ///       "statusCode": 400,
+    ///       "message": "El ID del jugador debe ser mayor a 0"
+    ///     }
+    /// 
+    /// Error 404 (NotFoundException - jugador no encontrado):
+    /// 
+    ///     {
+    ///       "statusCode": 404,
+    ///       "message": "Jugador no encontrado"
     ///     }
     /// 
     /// </remarks>
@@ -170,34 +168,14 @@ public class StoreController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<StoreResponseDto>> GetCharacters([FromQuery] int playerId)
     {
-        try
+        if (playerId <= 0)
         {
-            var characters = await _getStoreCharactersUseCase.ExecuteAsync(playerId);
-            
-            var response = new StoreResponseDto
-            {
-                Items = characters.Select(c => new StoreItemDto
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    Description = c.Description,
-                    Price = c.Price,
-                    ImageUrl = c.ImageUrl,
-                    ProductTypeId = c.ProductTypeId,
-                    ProductTypeName = c.ProductTypeName,
-                    Rarity = c.Rarity,
-                    IsOwned = c.IsOwned,
-                    Currency = c.Currency
-                }).ToList(),
-                TotalCount = characters.Count
-            };
+            throw new ValidationException("El ID del jugador debe ser mayor a 0");
+        }
 
-            return Ok(response);
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        var characters = await _getStoreCharactersUseCase.ExecuteAsync(playerId);
+        var response = characters.ToStoreResponseDto();
+        return Ok(response);
     }
 
     /// <summary>
@@ -243,10 +221,18 @@ public class StoreController : ControllerBase
     /// 
     /// **Posibles errores:**
     /// 
-    /// Error 404 (Jugador no encontrado):
+    /// Error 400 (ValidationException - ID inválido):
     /// 
     ///     {
-    ///       "message": "Jugador con ID 999 no encontrado"
+    ///       "statusCode": 400,
+    ///       "message": "El ID del jugador debe ser mayor a 0"
+    ///     }
+    /// 
+    /// Error 404 (NotFoundException - jugador no encontrado):
+    /// 
+    ///     {
+    ///       "statusCode": 404,
+    ///       "message": "Jugador no encontrado"
     ///     }
     /// 
     /// </remarks>
@@ -257,34 +243,14 @@ public class StoreController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<StoreResponseDto>> GetBackgrounds([FromQuery] int playerId)
     {
-        try
+        if (playerId <= 0)
         {
-            var backgrounds = await _getStoreBackgroundsUseCase.ExecuteAsync(playerId);
-            
-            var response = new StoreResponseDto
-            {
-                Items = backgrounds.Select(b => new StoreItemDto
-                {
-                    Id = b.Id,
-                    Name = b.Name,
-                    Description = b.Description,
-                    Price = b.Price,
-                    ImageUrl = b.ImageUrl,
-                    ProductTypeId = b.ProductTypeId,
-                    ProductTypeName = b.ProductTypeName,
-                    Rarity = b.Rarity,
-                    IsOwned = b.IsOwned,
-                    Currency = b.Currency
-                }).ToList(),
-                TotalCount = backgrounds.Count
-            };
+            throw new ValidationException("El ID del jugador debe ser mayor a 0");
+        }
 
-            return Ok(response);
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        var backgrounds = await _getStoreBackgroundsUseCase.ExecuteAsync(playerId);
+        var response = backgrounds.ToStoreResponseDto();
+        return Ok(response);
     }
 
     /// <summary>
@@ -319,73 +285,51 @@ public class StoreController : ControllerBase
     /// **Ejemplo de respuesta exitosa (200):**
     /// 
     ///     {
-    ///       "success": true,
     ///       "message": "Compra realizada exitosamente",
     ///       "remainingCoins": 750.00
     ///     }
     /// 
-    /// **Ejemplos de respuestas de error (400):**
+    /// **Posibles errores:**
     /// 
-    /// Monedas insuficientes:
+    /// Error 400 (BusinessException - monedas insuficientes):
     /// 
     ///     {
-    ///       "success": false,
-    ///       "message": "No tienes suficientes monedas",
-    ///       "remainingCoins": 100.00
+    ///       "statusCode": 400,
+    ///       "message": "No tienes suficientes monedas"
     ///     }
     /// 
-    /// Producto ya poseído:
+    /// Error 400 (BusinessException - producto no encontrado):
     /// 
     ///     {
-    ///       "success": false,
-    ///       "message": "Ya posees este producto",
-    ///       "remainingCoins": 1000.00
-    ///     }
-    /// 
-    /// Error 404 (Producto no encontrado):
-    /// 
-    ///     {
-    ///       "success": false,
+    ///       "statusCode": 400,
     ///       "message": "Producto no encontrado"
     ///     }
     /// 
-    /// Error 404 (Jugador no encontrado):
+    /// Error 409 (ConflictException - producto ya poseído):
     /// 
     ///     {
-    ///       "message": "Jugador con ID 999 no encontrado"
+    ///       "statusCode": 409,
+    ///       "message": "Ya posees este producto"
+    ///     }
+    /// 
+    /// Error 404 (NotFoundException):
+    /// 
+    ///     {
+    ///       "statusCode": 404,
+    ///       "message": "Jugador no encontrado"
     ///     }
     /// 
     /// </remarks>
     [HttpPost("purchase")]
-    [ProducesResponseType(typeof(PurchaseResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(PurchaseResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(PurchaseSuccessResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<PurchaseResponseDto>> PurchaseItem([FromBody] PurchaseRequestDto request)
+    public async Task<ActionResult<PurchaseSuccessResponseDto>> PurchaseItem([FromBody] PurchaseRequestDto request)
     {
-        try
-        {
-            var result = await _purchaseStoreItemUseCase.ExecuteAsync(request.PlayerId, request.ProductId);
-            
-            var response = new PurchaseResponseDto
-            {
-                Success = result.Success,
-                Message = result.Message,
-                RemainingCoins = result.RemainingCoins
-            };
+        var remainingCoins = await _purchaseStoreItemUseCase.ExecuteAsync(request.PlayerId, request.ProductId);
 
-            if (result.Success)
-            {
-                return Ok(response);
-            }
-            else
-            {
-                return BadRequest(response);
-            }
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        return Ok(remainingCoins.ToSuccessDto());
     }
 }

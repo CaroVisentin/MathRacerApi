@@ -66,13 +66,7 @@ public static class ServiceExtensions
         services.AddScoped<GetStoreCarsUseCase>();
         services.AddScoped<GetStoreCharactersUseCase>();
         services.AddScoped<GetStoreBackgroundsUseCase>();
-
-
-        // Registrar casos de uso de Store
-            services.AddScoped<IGetStoreCarsUseCase, GetStoreCarsUseCase>();
-            services.AddScoped<IGetStoreCharactersUseCase, GetStoreCharactersUseCase>();
-            services.AddScoped<IGetStoreBackgroundsUseCase, GetStoreBackgroundsUseCase>();
-            services.AddScoped<IPurchaseStoreItemUseCase, PurchaseStoreItemUseCase>();
+        services.AddScoped<PurchaseStoreItemUseCase>();
             
         // Registrar casos de uso de Garage
         services.AddScoped<GetPlayerGarageItemsUseCase>();

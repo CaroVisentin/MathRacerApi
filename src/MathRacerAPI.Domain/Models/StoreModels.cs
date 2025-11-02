@@ -25,4 +25,26 @@ public class PurchaseResult
     public bool Success { get; set; }
     public string Message { get; set; } = string.Empty;
     public decimal RemainingCoins { get; set; }
+    public PurchaseErrorType? ErrorType { get; set; }
+}
+
+/// <summary>
+/// Tipos de errores en una compra
+/// </summary>
+public enum PurchaseErrorType
+{
+    /// <summary>
+    /// El producto no fue encontrado
+    /// </summary>
+    ProductNotFound,
+    
+    /// <summary>
+    /// El jugador ya posee el producto
+    /// </summary>
+    AlreadyOwned,
+    
+    /// <summary>
+    /// El jugador no tiene suficientes monedas
+    /// </summary>
+    InsufficientCoins
 }

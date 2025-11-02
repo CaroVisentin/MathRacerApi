@@ -26,6 +26,28 @@ public class PurchaseRequestDto
     public int ProductId { get; set; }
 }
 
+/// <summary>
+/// Respuesta exitosa de compra (200 OK)
+/// </summary>
+public class PurchaseSuccessResponseDto
+{
+    public string Message { get; set; } = "Compra realizada exitosamente";
+    public decimal RemainingCoins { get; set; }
+}
+
+/// <summary>
+/// Respuesta de error de compra (400/409) - Opcional: Los errores son manejados automáticamente por el middleware
+/// </summary>
+public class PurchaseErrorResponseDto
+{
+    public int StatusCode { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public decimal? RemainingCoins { get; set; } // Opcional, solo para casos donde sea relevante
+}
+
+/// <summary>
+/// Respuesta genérica de compra (para backward compatibility si es necesario)
+/// </summary>
 public class PurchaseResponseDto
 {
     public bool Success { get; set; }
