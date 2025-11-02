@@ -40,6 +40,8 @@ public static class ServiceExtensions
         // Registrar casos de uso de Players
         services.AddScoped<CreatePlayerUseCase>();
         services.AddScoped<GetPlayerByIdUseCase>();
+        services.AddScoped<GetPlayerByEmailUseCase>();
+
 
         // Registrar casos de uso de Worlds
         services.AddScoped<GetWorldsUseCase>();
@@ -68,6 +70,12 @@ public static class ServiceExtensions
       
         // Registrar casos de uso de Ranking
         services.AddScoped<IGetPlayerRankingUseCase, GetPlayerRankingUseCase>();
+
+        // Registrar casos de uso de amistad
+        services.AddScoped<SendFriendRequestUseCase>();
+        services.AddScoped<AcceptFriendRequestUseCase>();
+        services.AddScoped<RejectFriendRequestUseCase>();
+        services.AddScoped<GetFriendsUseCase>();
 
 
         // Registrar repositorios
@@ -99,11 +107,7 @@ public static class ServiceExtensions
         services.AddScoped<IGameLogicService, GameLogicService>();
         services.AddScoped<IPowerUpService, PowerUpService>();
 
-    // Registrar casos de uso de amistad
-    services.AddScoped<SendFriendRequestUseCase>();
-    services.AddScoped<AcceptFriendRequestUseCase>();
-    services.AddScoped<RejectFriendRequestUseCase>();
-    services.AddScoped<GetFriendsUseCase>();
+  
 
         // Configurar SignalR
         services.AddSignalR();

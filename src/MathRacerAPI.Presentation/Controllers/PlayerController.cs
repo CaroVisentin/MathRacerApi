@@ -16,16 +16,20 @@ public class PlayerController : ControllerBase
     private readonly RegisterPlayerUseCase _registerPlayerUseCase;
     private readonly LoginPlayerUseCase _loginPlayerUseCase;
     private readonly GoogleAuthUseCase _googleAuthUseCase;
+    private readonly GetPlayerByEmailUseCase _getPlayerByEmailUseCase;
 
     public PlayerController(
         RegisterPlayerUseCase registerPlayerUseCase,
         LoginPlayerUseCase loginPlayerUseCase,
         GoogleAuthUseCase googleAuthUseCase,
-        GetPlayerByIdUseCase getPlayerByIdUseCase)
+        GetPlayerByIdUseCase getPlayerByIdUseCase,
+        GetPlayerByEmailUseCase getPlayerByEmailUseCase
+        )
     {
         _registerPlayerUseCase = registerPlayerUseCase;
         _loginPlayerUseCase = loginPlayerUseCase;
         _googleAuthUseCase = googleAuthUseCase;
+        _getPlayerByEmailUseCase = getPlayerByEmailUseCase;
     }
 
     /// <summary>
@@ -147,4 +151,37 @@ public class PlayerController : ControllerBase
 
         return Ok(response);
     }
+
+    [HttpGet("email/{email}")]
+    [ProducesResponseType(typeof(FriendProfileDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<FriendProfileDto>> GetPlayerByEmail(string email)
+    {
+        var user = await _getPlayerByEmailUseCase.ExecuteAsync(email);
+        if (user == null) return NotFound("Usuario no encontrado.");
+
+        var response = new PlayerProfileDto
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            Points = user.Points,
+            Character = user.Character == null ? null : new ActiveProductDto
+            {
+                Id = user.Character.Id
+            },
+            Car = user.Car == null ? null : new ActiveProductDto
+            {
+                Id = user.Car.Id
+            },
+            Background = user.Background == null ? null : new ActiveProductDto
+            {
+                Id = user.Background.Id
+            }
+        };
+
+        return Ok(response);
+    }
+
 }
