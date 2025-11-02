@@ -129,6 +129,8 @@ public static class SoloGameMappers
             AnsweredAt = game.LastAnswerTime ?? DateTime.UtcNow,
             
             CurrentQuestionIndex = game.CurrentQuestionIndex,
+
+            ShouldOpenWorldCompletionChest = result.ShouldOpenWorldCompletionChest
         };
     }
 }

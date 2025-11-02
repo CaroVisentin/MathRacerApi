@@ -16,6 +16,7 @@ public class SubmitSoloAnswerUseCaseTests
     private readonly Mock<ISoloGameRepository> _soloGameRepositoryMock;
     private readonly Mock<IEnergyRepository> _energyRepositoryMock;
     private readonly Mock<IPlayerRepository> _playerRepositoryMock;
+    private readonly Mock<ILevelRepository> _levelRepositoryMock;
     private readonly SubmitSoloAnswerUseCase _submitSoloAnswerUseCase;
 
     public SubmitSoloAnswerUseCaseTests()
@@ -23,6 +24,7 @@ public class SubmitSoloAnswerUseCaseTests
         _soloGameRepositoryMock = new Mock<ISoloGameRepository>();
         _energyRepositoryMock = new Mock<IEnergyRepository>();
         _playerRepositoryMock = new Mock<IPlayerRepository>();
+        _levelRepositoryMock = new Mock<ILevelRepository>();
 
         var grantLevelRewardUseCase = new GrantLevelRewardUseCase(
             _playerRepositoryMock.Object);
@@ -30,7 +32,9 @@ public class SubmitSoloAnswerUseCaseTests
         _submitSoloAnswerUseCase = new SubmitSoloAnswerUseCase(
             _soloGameRepositoryMock.Object,
             _energyRepositoryMock.Object,
-            grantLevelRewardUseCase);
+            grantLevelRewardUseCase,
+            _levelRepositoryMock.Object,
+            _playerRepositoryMock.Object);
 
         SetupDefaultPlayerRepositoryMocks();
     }
@@ -218,6 +222,10 @@ public class SubmitSoloAnswerUseCaseTests
             .Setup(x => x.UpdateAsync(It.IsAny<SoloGame>()))
             .Returns(Task.CompletedTask);
 
+        _levelRepositoryMock
+            .Setup(x => x.GetByIdAsync(game.LevelId))
+            .ReturnsAsync(new Level { Id = game.LevelId, WorldId = game.WorldId, Number = 5 });
+
         // Act
         var result = await _submitSoloAnswerUseCase.ExecuteAsync(gameId, correctAnswer, uid);
 
@@ -228,7 +236,7 @@ public class SubmitSoloAnswerUseCaseTests
         result.Game.PlayerPosition.Should().Be(game.TotalQuestions);
         result.Game.GameFinishedAt.Should().NotBeNull();
         
-        _playerRepositoryMock.Verify(x => x.GetByIdAsync(game.PlayerId), Times.Once);
+        _playerRepositoryMock.Verify(x => x.GetByIdAsync(game.PlayerId), Times.Exactly(2)); 
         _playerRepositoryMock.Verify(x => x.AddCoinsAsync(game.PlayerId, It.IsAny<int>()), Times.Once);
     }
 
@@ -361,6 +369,254 @@ public class SubmitSoloAnswerUseCaseTests
         // Assert
         result.Game.PlayerPosition.Should().Be(0);
         result.Game.CorrectAnswers.Should().Be(0);
+    }
+
+    #endregion
+
+    #region World Completion Chest Tests
+
+    [Fact]
+    public async Task ExecuteAsync_WhenPlayerWinsLevel15_ShouldSetShouldOpenChestToTrue()
+    {
+        // Arrange
+        const int gameId = 1;
+        const int correctAnswer = 5;
+        const string uid = "test-uid-123";
+        const int levelId = 15;
+        
+        var game = CreateTestSoloGame(uid);
+        game.LevelId = levelId;
+        game.Questions[0].CorrectAnswer = correctAnswer;
+        game.PlayerPosition = game.TotalQuestions - 1; // A punto de ganar
+
+        _soloGameRepositoryMock
+            .Setup(x => x.GetByIdAsync(gameId))
+            .ReturnsAsync(game);
+
+        _soloGameRepositoryMock
+            .Setup(x => x.UpdateAsync(It.IsAny<SoloGame>()))
+            .Returns(Task.CompletedTask);
+
+        // Mock: Nivel 15 del mundo 1
+        _levelRepositoryMock
+            .Setup(x => x.GetByIdAsync(levelId))
+            .ReturnsAsync(new Level 
+            { 
+                Id = levelId, 
+                WorldId = 1, 
+                Number = 15 // Último nivel del mundo
+            });
+
+        // Act
+        var result = await _submitSoloAnswerUseCase.ExecuteAsync(gameId, correctAnswer, uid);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsCorrect.Should().BeTrue();
+        result.Game.Status.Should().Be(SoloGameStatus.PlayerWon);
+        result.ShouldOpenWorldCompletionChest.Should().BeTrue();
+        
+        _levelRepositoryMock.Verify(x => x.GetByIdAsync(levelId), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenPlayerWinsNonLevel15_ShouldSetShouldOpenChestToFalse()
+    {
+        // Arrange
+        const int gameId = 1;
+        const int correctAnswer = 5;
+        const string uid = "test-uid-123";
+        const int levelId = 10;
+        
+        var game = CreateTestSoloGame(uid);
+        game.LevelId = levelId;
+        game.Questions[0].CorrectAnswer = correctAnswer;
+        game.PlayerPosition = game.TotalQuestions - 1; // A punto de ganar
+
+        _soloGameRepositoryMock
+            .Setup(x => x.GetByIdAsync(gameId))
+            .ReturnsAsync(game);
+
+        _soloGameRepositoryMock
+            .Setup(x => x.UpdateAsync(It.IsAny<SoloGame>()))
+            .Returns(Task.CompletedTask);
+
+        // Mock: Nivel 10 del mundo 1 (no es el último)
+        _levelRepositoryMock
+            .Setup(x => x.GetByIdAsync(levelId))
+            .ReturnsAsync(new Level 
+            { 
+                Id = levelId, 
+                WorldId = 1, 
+                Number = 10 // No es el nivel 15
+            });
+
+        // Act
+        var result = await _submitSoloAnswerUseCase.ExecuteAsync(gameId, correctAnswer, uid);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsCorrect.Should().BeTrue();
+        result.Game.Status.Should().Be(SoloGameStatus.PlayerWon);
+        result.ShouldOpenWorldCompletionChest.Should().BeFalse();
+        
+        _levelRepositoryMock.Verify(x => x.GetByIdAsync(levelId), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenPlayerWinsButLevelNotFound_ShouldSetShouldOpenChestToFalse()
+    {
+        // Arrange
+        const int gameId = 1;
+        const int correctAnswer = 5;
+        const string uid = "test-uid-123";
+        const int levelId = 15;
+        
+        var game = CreateTestSoloGame(uid);
+        game.LevelId = levelId;
+        game.Questions[0].CorrectAnswer = correctAnswer;
+        game.PlayerPosition = game.TotalQuestions - 1; // A punto de ganar
+
+        _soloGameRepositoryMock
+            .Setup(x => x.GetByIdAsync(gameId))
+            .ReturnsAsync(game);
+
+        _soloGameRepositoryMock
+            .Setup(x => x.UpdateAsync(It.IsAny<SoloGame>()))
+            .Returns(Task.CompletedTask);
+
+        // Mock: Nivel no encontrado
+        _levelRepositoryMock
+            .Setup(x => x.GetByIdAsync(levelId))
+            .ReturnsAsync((Level?)null);
+
+        // Act
+        var result = await _submitSoloAnswerUseCase.ExecuteAsync(gameId, correctAnswer, uid);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsCorrect.Should().BeTrue();
+        result.Game.Status.Should().Be(SoloGameStatus.PlayerWon);
+        result.ShouldOpenWorldCompletionChest.Should().BeFalse();
+        
+        _levelRepositoryMock.Verify(x => x.GetByIdAsync(levelId), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenPlayerDoesNotWin_ShouldNotCheckLevel()
+    {
+        // Arrange
+        const int gameId = 1;
+        const int correctAnswer = 5;
+        const string uid = "test-uid-123";
+        
+        var game = CreateTestSoloGame(uid);
+        game.Questions[0].CorrectAnswer = correctAnswer;
+        game.PlayerPosition = 5; // No está a punto de ganar
+
+        _soloGameRepositoryMock
+            .Setup(x => x.GetByIdAsync(gameId))
+            .ReturnsAsync(game);
+
+        _soloGameRepositoryMock
+            .Setup(x => x.UpdateAsync(It.IsAny<SoloGame>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _submitSoloAnswerUseCase.ExecuteAsync(gameId, correctAnswer, uid);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsCorrect.Should().BeTrue();
+        result.Game.Status.Should().Be(SoloGameStatus.InProgress);
+        result.ShouldOpenWorldCompletionChest.Should().BeFalse();
+        
+        // NO debe consultar el nivel porque no ganó
+        _levelRepositoryMock.Verify(x => x.GetByIdAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenPlayerLoses_ShouldNotCheckLevel()
+    {
+        // Arrange
+        const int gameId = 1;
+        const int incorrectAnswer = 3;
+        const string uid = "test-uid-123";
+        
+        var game = CreateTestSoloGame(uid);
+        game.LivesRemaining = 1; // Última vida
+
+        _soloGameRepositoryMock
+            .Setup(x => x.GetByIdAsync(gameId))
+            .ReturnsAsync(game);
+
+        _soloGameRepositoryMock
+            .Setup(x => x.UpdateAsync(It.IsAny<SoloGame>()))
+            .Returns(Task.CompletedTask);
+
+        _energyRepositoryMock
+            .Setup(x => x.ConsumeEnergyAsync(game.PlayerId))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _submitSoloAnswerUseCase.ExecuteAsync(gameId, incorrectAnswer, uid);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsCorrect.Should().BeFalse();
+        result.Game.Status.Should().Be(SoloGameStatus.PlayerLost);
+        result.ShouldOpenWorldCompletionChest.Should().BeFalse();
+        
+        // NO debe consultar el nivel porque perdió
+        _levelRepositoryMock.Verify(x => x.GetByIdAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(1, 15, true)]   // Mundo 1, Nivel 15 → Debe abrir cofre
+    [InlineData(2, 15, true)]   // Mundo 2, Nivel 15 → Debe abrir cofre
+    [InlineData(1, 14, false)]  // Mundo 1, Nivel 14 → No debe abrir cofre
+    [InlineData(1, 1, false)]   // Mundo 1, Nivel 1 → No debe abrir cofre
+    [InlineData(3, 15, true)]   // Mundo 3, Nivel 15 → Debe abrir cofre
+    public async Task ExecuteAsync_WithDifferentWorldsAndLevels_ShouldSetCorrectChestFlag(
+        int worldId, int levelNumber, bool expectedShouldOpenChest)
+    {
+        // Arrange
+        const int gameId = 1;
+        const int correctAnswer = 5;
+        const string uid = "test-uid-123";
+        const int levelId = 99;
+        
+        var game = CreateTestSoloGame(uid);
+        game.LevelId = levelId;
+        game.WorldId = worldId;
+        game.Questions[0].CorrectAnswer = correctAnswer;
+        game.PlayerPosition = game.TotalQuestions - 1; // A punto de ganar
+
+        _soloGameRepositoryMock
+            .Setup(x => x.GetByIdAsync(gameId))
+            .ReturnsAsync(game);
+
+        _soloGameRepositoryMock
+            .Setup(x => x.UpdateAsync(It.IsAny<SoloGame>()))
+            .Returns(Task.CompletedTask);
+
+        _levelRepositoryMock
+            .Setup(x => x.GetByIdAsync(levelId))
+            .ReturnsAsync(new Level 
+            { 
+                Id = levelId, 
+                WorldId = worldId, 
+                Number = levelNumber
+            });
+
+        // Act
+        var result = await _submitSoloAnswerUseCase.ExecuteAsync(gameId, correctAnswer, uid);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsCorrect.Should().BeTrue();
+        result.Game.Status.Should().Be(SoloGameStatus.PlayerWon);
+        result.ShouldOpenWorldCompletionChest.Should().Be(expectedShouldOpenChest);
     }
 
     #endregion
@@ -794,6 +1050,172 @@ public class SubmitSoloAnswerUseCaseTests
                 new PlayerProduct { ProductId = 2, Name = "Auto", ProductTypeId = 1 }
             }
         };
+    }
+
+    #endregion
+
+    #region Tests for World Completion Chest Conditions
+
+    [Fact]
+    public async Task ExecuteAsync_WhenPlayerRepeatsLevel15_ShouldNotOpenChest()
+    {
+        // Arrange
+        const int gameId = 1;
+        const int correctAnswer = 5;
+        const string uid = "test-uid-123";
+        const int levelId = 15;
+        
+        var player = new PlayerProfile
+        {
+            Id = 100,
+            Uid = uid,
+            Name = "TestPlayer",
+            Email = "test@test.com",
+            LastLevelId = 15 // Ya completó el nivel 15
+        };
+
+        var game = CreateTestSoloGame(uid);
+        game.LevelId = levelId;
+        game.Questions[0].CorrectAnswer = correctAnswer;
+        game.PlayerPosition = game.TotalQuestions - 1;
+
+        _soloGameRepositoryMock
+            .Setup(x => x.GetByIdAsync(gameId))
+            .ReturnsAsync(game);
+
+        _soloGameRepositoryMock
+            .Setup(x => x.UpdateAsync(It.IsAny<SoloGame>()))
+            .Returns(Task.CompletedTask);
+
+        _playerRepositoryMock
+            .Setup(x => x.GetByIdAsync(game.PlayerId))
+            .ReturnsAsync(player);
+
+        _levelRepositoryMock
+            .Setup(x => x.GetByIdAsync(levelId))
+            .ReturnsAsync(new Level 
+            { 
+                Id = levelId, 
+                WorldId = 1, 
+                Number = 15
+            });
+
+        // Act
+        var result = await _submitSoloAnswerUseCase.ExecuteAsync(gameId, correctAnswer, uid);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsCorrect.Should().BeTrue();
+        result.Game.Status.Should().Be(SoloGameStatus.PlayerWon);
+        result.ShouldOpenWorldCompletionChest.Should().BeFalse(); // No abre cofre
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenPlayerCompletesNewLevel15_ShouldOpenChest()
+    {
+        // Arrange
+        const int gameId = 1;
+        const int correctAnswer = 5;
+        const string uid = "test-uid-123";
+        const int levelId = 15;
+        
+        var player = new PlayerProfile
+        {
+            Id = 100,
+            Uid = uid,
+            Name = "TestPlayer",
+            Email = "test@test.com",
+            LastLevelId = 14 // Está en el nivel 14, completará el 15 por primera vez
+        };
+
+        var game = CreateTestSoloGame(uid);
+        game.LevelId = levelId;
+        game.Questions[0].CorrectAnswer = correctAnswer;
+        game.PlayerPosition = game.TotalQuestions - 1;
+
+        _soloGameRepositoryMock
+            .Setup(x => x.GetByIdAsync(gameId))
+            .ReturnsAsync(game);
+
+        _soloGameRepositoryMock
+            .Setup(x => x.UpdateAsync(It.IsAny<SoloGame>()))
+            .Returns(Task.CompletedTask);
+
+        _playerRepositoryMock
+            .Setup(x => x.GetByIdAsync(game.PlayerId))
+            .ReturnsAsync(player);
+
+        _levelRepositoryMock
+            .Setup(x => x.GetByIdAsync(levelId))
+            .ReturnsAsync(new Level 
+            { 
+                Id = levelId, 
+                WorldId = 1, 
+                Number = 15
+            });
+
+        // Act
+        var result = await _submitSoloAnswerUseCase.ExecuteAsync(gameId, correctAnswer, uid);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsCorrect.Should().BeTrue();
+        result.Game.Status.Should().Be(SoloGameStatus.PlayerWon);
+        result.ShouldOpenWorldCompletionChest.Should().BeTrue(); // Abre cofre
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenPlayerCompletesLevel30FirstTime_ShouldOpenChest()
+    {
+        // Arrange
+        const int gameId = 1;
+        const int correctAnswer = 5;
+        const string uid = "test-uid-123";
+        const int levelId = 30; // Nivel 15 del mundo 2
+        
+        var player = new PlayerProfile
+        {
+            Id = 100,
+            Uid = uid,
+            Name = "TestPlayer",
+            Email = "test@test.com",
+            LastLevelId = 29 // Nivel anterior
+        };
+
+        var game = CreateTestSoloGame(uid);
+        game.LevelId = levelId;
+        game.Questions[0].CorrectAnswer = correctAnswer;
+        game.PlayerPosition = game.TotalQuestions - 1;
+
+        _soloGameRepositoryMock
+            .Setup(x => x.GetByIdAsync(gameId))
+            .ReturnsAsync(game);
+
+        _soloGameRepositoryMock
+            .Setup(x => x.UpdateAsync(It.IsAny<SoloGame>()))
+            .Returns(Task.CompletedTask);
+
+        _playerRepositoryMock
+            .Setup(x => x.GetByIdAsync(game.PlayerId))
+            .ReturnsAsync(player);
+
+        _levelRepositoryMock
+            .Setup(x => x.GetByIdAsync(levelId))
+            .ReturnsAsync(new Level 
+            { 
+                Id = levelId, 
+                WorldId = 2, 
+                Number = 15 // Último nivel del mundo 2
+            });
+
+        // Act
+        var result = await _submitSoloAnswerUseCase.ExecuteAsync(gameId, correctAnswer, uid);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsCorrect.Should().BeTrue();
+        result.Game.Status.Should().Be(SoloGameStatus.PlayerWon);
+        result.ShouldOpenWorldCompletionChest.Should().BeTrue(); // Abre cofre
     }
 
     #endregion

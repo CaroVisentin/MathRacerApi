@@ -60,7 +60,9 @@ public class SoloControllerTests
         var submitSoloAnswerUseCase = new SubmitSoloAnswerUseCase(
             _soloGameRepositoryMock.Object,
             _energyRepositoryMock.Object,
-            grantLevelRewardUseCase); 
+            grantLevelRewardUseCase,
+            _levelRepositoryMock.Object,
+            _playerRepositoryMock.Object);
 
         // Crear controller con Use Cases reales
         _controller = new SoloController(
