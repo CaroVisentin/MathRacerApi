@@ -19,6 +19,16 @@ namespace MathRacerAPI.Infrastructure.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
+        public async Task UpdateAsync(PlayerProfile playerProfile)
+        {
+            var entity = await _context.Players.FirstOrDefaultAsync(p => p.Id == playerProfile.Id && !p.Deleted);
+            if (entity != null)
+            {
+                entity.Points = playerProfile.Points;
+                await _context.SaveChangesAsync();
+            }
+        }
+
         public async Task<PlayerProfile?> GetByIdAsync(int id)
         {
          
@@ -218,7 +228,6 @@ namespace MathRacerAPI.Infrastructure.Repositories
                 Points = 0,
                 Deleted = false
             };
-
             _context.Players.Add(entity);
             await _context.SaveChangesAsync();
 
@@ -309,6 +318,8 @@ namespace MathRacerAPI.Infrastructure.Repositories
         }
 
        
+
+
 
     }
 }

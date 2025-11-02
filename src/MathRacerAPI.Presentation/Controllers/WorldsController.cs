@@ -1,4 +1,5 @@
 using MathRacerAPI.Domain.UseCases;
+using MathRacerAPI.Domain.Services;
 using MathRacerAPI.Presentation.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
@@ -21,24 +22,30 @@ namespace MathRacerAPI.Presentation.Controllers
         }
 
         /// <summary>
-        /// Obtiene todos los mundos del juego y el progreso del jugador
+        /// Obtiene todos los mundos del juego y el progreso del jugador autenticado
         /// </summary>
-        /// <param name="playerId">ID del jugador</param>
         /// <returns>Todos los mundos disponibles y el último mundo accesible por el jugador</returns>
         /// <response code="200">Operación exitosa. Retorna todos los mundos y el último mundo disponible.</response>
-        /// <response code="400">Solicitud inválida. El ID del jugador debe ser mayor a 0.</response>
+        /// <response code="401">No autorizado. Token inválido o faltante.</response>
         /// <response code="404">Jugador no encontrado.</response>
         /// <response code="500">Error interno del servidor.</response>
         /// <remarks>
         /// Ejemplo de solicitud:
         /// 
-        ///     GET /api/worlds/player/1
+        ///     GET /api/worlds/player
+        ///     Headers:
+        ///       Authorization: Bearer {firebase-id-token}
         /// 
         /// **Descripción:**
         /// 
         /// Este endpoint retorna:
         /// - **Todos los mundos** del juego con sus configuraciones
         /// - **LastAvailableWorldId**: El ID del último mundo al que el jugador tiene acceso
+        /// 
+        /// **Seguridad:**
+        /// - Requiere token de Firebase en el header `Authorization`
+        /// - El endpoint identifica automáticamente al jugador por su UID de Firebase
+        /// - No necesita pasar el playerId en la URL
         /// 
         /// **Ejemplo de respuesta exitosa (200):**
         /// 
@@ -66,38 +73,48 @@ namespace MathRacerAPI.Presentation.Controllers
         ///     
         /// **Posibles errores:**
         /// 
-        /// Error 400 (ValidationException):
+        /// Error 401 (Sin token):
         /// 
         ///     {
-        ///       "statusCode": 400,
-        ///       "message": "El ID del jugador debe ser mayor a 0.",
+        ///       "statusCode": 401,
+        ///       "message": "Token de autenticación requerido."
         ///     }
         /// 
-        /// Error 400 (BusinessException):
+        /// Error 401 (Token inválido):
         /// 
         ///     {
-        ///       "statusCode": 400,
-        ///       "message": "No se encontraron mundos disponibles para el jugador Juan.",
+        ///       "statusCode": 401,
+        ///       "message": "Token de Firebase inválido."
         ///     }
         /// 
         /// Error 404 (NotFoundException):
         /// 
         ///     {
         ///       "statusCode": 404,
-        ///       "message": "Jugador con ID 123 no fue encontrado.",
+        ///       "message": "Jugador no encontrado. Por favor, regístrate primero."
         ///     }   
         ///     
-        /// 
         /// </remarks>
-        [HttpGet("player/{playerId}")]
+
+        [HttpGet]
         [ProducesResponseType(typeof(PlayerWorldsResponseDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetPlayerWorlds(int playerId)
+        public async Task<IActionResult> GetPlayerWorlds()
         {
-            var playerWorlds = await _getWorldsUseCase.ExecuteAsync(playerId);
+            // 1. Obtener el UID validado del contexto (ya validado por el middleware)
+            var uid = HttpContext.Items["FirebaseUid"] as string;
 
+            if (string.IsNullOrEmpty(uid))
+            {
+                return Unauthorized(new { message = "Token de autenticación requerido o inválido." });
+            }
+
+            // 2. Ejecutar el caso de uso con el UID validado
+            var playerWorlds = await _getWorldsUseCase.ExecuteByUidAsync(uid);
+
+            // 3. Mapear respuesta
             var response = new PlayerWorldsResponseDto
             {
                 Worlds = playerWorlds.Worlds.Select(w => new WorldDto

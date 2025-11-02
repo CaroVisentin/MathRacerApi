@@ -21,34 +21,37 @@ namespace MathRacerAPI.Domain.UseCases
             _worldRepository = worldRepository;
             _getPlayerByIdUseCase = getPlayerByIdUseCase;
         }
+      
+        /// <summary>
+        /// Ejecuta la lógica de obtención de mundos y progreso del jugador por UID
+        /// </summary>
+        /// <param name="uid">UID de Firebase del jugador</param>
+        /// <returns>Todos los mundos + ID del último mundo disponible</returns>
+        public async Task<PlayerWorlds> ExecuteByUidAsync(string uid)
+        {
+            var player = await _getPlayerByIdUseCase.ExecuteByUidAsync(uid);
+            return await GetWorldsForPlayer(player);
+        }
 
         /// <summary>
-        /// Ejecuta la lógica de obtención de mundos y progreso del jugador
+        /// Lógica común para obtener mundos de un jugador
         /// </summary>
-        /// <param name="playerId">ID del jugador</param>
-        /// <returns>Todos los mundos + ID del último mundo disponible</returns>
-        /// <exception cref="ValidationException">Cuando el ID del jugador es inválido</exception>
-        /// <exception cref="NotFoundException">Cuando el jugador no existe</exception>
-        /// <exception cref="BusinessException">Cuando no hay mundos disponibles</exception>
-        public async Task<PlayerWorlds> ExecuteAsync(int playerId)
+        private async Task<PlayerWorlds> GetWorldsForPlayer(PlayerProfile player)
         {
-            // 1. Validar y obtener jugador (delega validación a GetPlayerByIdUseCase)
-            var player = await _getPlayerByIdUseCase.ExecuteAsync(playerId);
-
-            // 2. Obtener todos los mundos del juego
+            // 1. Obtener todos los mundos del juego
             var allWorlds = await _worldRepository.GetAllWorldsAsync();
 
-            // 3. Obtener el WorldId del último nivel completado del jugador
+            // 2. Obtener el WorldId del último nivel completado del jugador
             var lastAvailableWorldId = await _worldRepository.GetWorldIdByLevelIdAsync(player.LastLevelId);
 
-            // 4. Validar que el mundo exista
+            // 3. Validar que el mundo exista
             if (!allWorlds.Any(w => w.Id == lastAvailableWorldId))
             {
                 throw new BusinessException(
                     $"El mundo con ID {lastAvailableWorldId} no existe en el sistema.");
             }
 
-            // 5. Retornar modelo completo
+            // 4. Retornar modelo completo
             return new PlayerWorlds
             {
                 Worlds = allWorlds,
