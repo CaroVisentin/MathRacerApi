@@ -62,6 +62,12 @@ public static class ServiceExtensions
         services.AddScoped<ProcessOnlineAnswerUseCase>();
         services.AddScoped<GetNextOnlineQuestionUseCase>();
 
+        // Registrar casos de uso de Store
+        services.AddScoped<GetStoreCarsUseCase>();
+        services.AddScoped<GetStoreCharactersUseCase>();
+        services.AddScoped<GetStoreBackgroundsUseCase>();
+        services.AddScoped<PurchaseStoreItemUseCase>();
+            
         // Registrar casos de uso de Garage
         services.AddScoped<GetPlayerGarageItemsUseCase>();
         services.AddScoped<ActivatePlayerItemUseCase>();
@@ -78,6 +84,7 @@ public static class ServiceExtensions
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IEnergyRepository, EnergyRepository>();
+        services.AddScoped<IStoreRepository, StoreRepository>();
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
         services.AddSingleton<ISoloGameRepository, InMemorySoloGameRepository>();
 

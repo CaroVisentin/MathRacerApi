@@ -70,6 +70,12 @@ public class ExceptionHandlingMiddleware
                 _logger.LogWarning(notFoundEx, "Recurso no encontrado: {Message}", notFoundEx.Message);
                 break;
 
+            case ConflictException conflictEx:
+                statusCode = HttpStatusCode.Conflict;
+                message = conflictEx.Message;
+                _logger.LogWarning(conflictEx, "Conflicto de estado: {Message}", conflictEx.Message);
+                break;
+
             case ValidationException validationEx:
                 statusCode = HttpStatusCode.BadRequest;
                 message = validationEx.Message;
