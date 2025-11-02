@@ -112,7 +112,7 @@ public class ChestController : ControllerBase
             {
                 Type = item.Type.ToString(),
                 Quantity = item.Quantity,
-                Product = item.Product != null ? new ProductDto
+                Product = item.Product != null ? new ChestProductDto
                 {
                     Id = item.Product.Id,
                     Name = item.Product.Name,
@@ -239,7 +239,7 @@ public class ChestController : ControllerBase
             {
                 Type = item.Type.ToString(),
                 Quantity = item.Quantity,
-                Product = item.Product != null ? new ProductDto
+                Product = item.Product != null ? new ChestProductDto
                 {
                     Id = item.Product.Id,
                     Name = item.Product.Name,

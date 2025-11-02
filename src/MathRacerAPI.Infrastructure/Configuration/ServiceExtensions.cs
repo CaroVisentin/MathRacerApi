@@ -164,6 +164,9 @@ public class ErrorResponseExamplesOperationFilter : IOperationFilter
 {
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
+        if (operation?.Responses == null)
+            return;
+
         // Ejemplos por código de error - TODOS con el mismo formato
         var errorExamples = new Dictionary<string, OpenApiObject>
         {
@@ -171,6 +174,22 @@ public class ErrorResponseExamplesOperationFilter : IOperationFilter
             {
                 ["statusCode"] = new OpenApiInteger(400),
                 ["message"] = new OpenApiString("Error de validación o regla de negocio"),
+                ["details"] = new OpenApiNull(),
+                ["stackTrace"] = new OpenApiString("StackTrace disponible solo en modo desarrollo"),
+                ["innerException"] = new OpenApiNull()
+            },
+            ["401"] = new OpenApiObject
+            {
+                ["statusCode"] = new OpenApiInteger(401),
+                ["message"] = new OpenApiString("No autorizado. Token inválido o faltante."),
+                ["details"] = new OpenApiNull(),
+                ["stackTrace"] = new OpenApiString("StackTrace disponible solo en modo desarrollo"),
+                ["innerException"] = new OpenApiNull()
+            },
+            ["403"] = new OpenApiObject
+            {
+                ["statusCode"] = new OpenApiInteger(403),
+                ["message"] = new OpenApiString("Prohibido. No tienes permiso para realizar esta acción."),
                 ["details"] = new OpenApiNull(),
                 ["stackTrace"] = new OpenApiString("StackTrace disponible solo en modo desarrollo"),
                 ["innerException"] = new OpenApiNull()
@@ -194,13 +213,17 @@ public class ErrorResponseExamplesOperationFilter : IOperationFilter
         };
 
         // Iterar sobre TODAS las respuestas
-        foreach (var response in operation.Responses)
+        foreach (var response in operation.Responses.ToList()) // ToList() para evitar modificar durante la iteración
         {
             // Solo aplicar a códigos de error (4xx, 5xx)
-            if (response.Key.StartsWith("4") || response.Key.StartsWith("5"))
+            if (string.IsNullOrEmpty(response.Key) || 
+                (!response.Key.StartsWith("4") && !response.Key.StartsWith("5")))
+                continue;
+
+            try
             {
                 // Si la respuesta tiene content
-                if (response.Value.Content != null && response.Value.Content.Any())
+                if (response.Value?.Content != null && response.Value.Content.Any())
                 {
                     foreach (var content in response.Value.Content.Values)
                     {
@@ -211,7 +234,7 @@ public class ErrorResponseExamplesOperationFilter : IOperationFilter
                         }
                     }
                 }
-                else
+                else if (response.Value != null)
                 {
                     // Si NO tiene content, crearlo (esto debería solucionar el problema del 500)
                     response.Value.Content = new Dictionary<string, OpenApiMediaType>
@@ -224,6 +247,11 @@ public class ErrorResponseExamplesOperationFilter : IOperationFilter
                         }
                     };
                 }
+            }
+            catch
+            {
+                // Si hay algún error al procesar esta respuesta, continuar con la siguiente
+                continue;
             }
         }
     }

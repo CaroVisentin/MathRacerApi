@@ -15,15 +15,15 @@ public class ChestItemDto
 {
     public string Type { get; set; } = string.Empty; // "Product", "Coins", "Wildcard"
     public int Quantity { get; set; }
-    public ProductDto? Product { get; set; }
+    public ChestProductDto? Product { get; set; }
     public WildcardDto? Wildcard { get; set; } 
     public int? CompensationCoins { get; set; }
 }
 
 /// <summary>
-/// Producto desbloqueado
+/// Producto desbloqueado desde un cofre
 /// </summary>
-public class ProductDto
+public class ChestProductDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
