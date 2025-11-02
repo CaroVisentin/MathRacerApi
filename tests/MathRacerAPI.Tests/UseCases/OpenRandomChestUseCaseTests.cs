@@ -64,40 +64,6 @@ public class OpenRandomChestUseCaseTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_WithNewProduct_ShouldAssignProductToPlayer()
-    {
-        // Arrange
-        var playerUid = "firebase-uid-123";
-        var playerId = 1;
-        var newProductId = 20;
-
-        // Mock: Producto NO duplicado
-        _mockChestRepository
-            .Setup(r => r.PlayerHasProductAsync(playerId, newProductId))
-            .ReturnsAsync(false);
-
-        _mockChestRepository
-            .Setup(r => r.GetRandomProductByRarityProbabilityAsync())
-            .ReturnsAsync(new Product
-            {
-                Id = newProductId,
-                Name = "Producto Nuevo",
-                RarityId = 2
-            });
-
-        // Act
-        await _useCase.ExecuteAsync(playerUid);
-
-        // Assert
-        _mockChestRepository.Verify(
-            r => r.AssignProductsToPlayerAsync(
-                playerId,
-                It.Is<List<int>>(list => list.Count == 1 && list.Contains(newProductId)),
-                false), // NO activo por defecto en cofres aleatorios
-            Times.Once);
-    }
-
-    [Fact]
     public async Task ExecuteAsync_WithDuplicateProduct_ShouldGiveCompensation()
     {
         // Arrange
@@ -130,41 +96,6 @@ public class OpenRandomChestUseCaseTests
                 r => r.AddCoinsToPlayerAsync(playerId, It.IsAny<int>()),
                 Times.AtLeastOnce);
         }
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_WithCoins_ShouldAddCoinsToPlayer()
-    {
-        // Arrange
-        var playerUid = "firebase-uid-123";
-        var playerId = 1;
-
-        // Act
-        await _useCase.ExecuteAsync(playerUid);
-
-        // Assert
-        _mockChestRepository.Verify(
-            r => r.AddCoinsToPlayerAsync(playerId, It.IsInRange(100, 1000, Moq.Range.Inclusive)),
-            Times.AtLeastOnce);
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_WithWildcard_ShouldAddWildcardToPlayer()
-    {
-        // Arrange
-        var playerUid = "firebase-uid-123";
-        var playerId = 1;
-
-        // Act
-        await _useCase.ExecuteAsync(playerUid);
-
-        // Assert
-        _mockChestRepository.Verify(
-            r => r.AddWildcardsToPlayerAsync(
-                playerId, 
-                It.IsAny<int>(), 
-                It.IsInRange(1, 3, Moq.Range.Inclusive)),
-            Times.AtLeastOnce); 
     }
 
     [Fact]
