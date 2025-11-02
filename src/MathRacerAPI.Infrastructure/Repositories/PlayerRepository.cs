@@ -41,7 +41,7 @@ namespace MathRacerAPI.Infrastructure.Repositories
                 Name = entity.Name,
                 Email = entity.Email,
                 Uid = entity.Uid,
-                LastLevelId = entity.LastLevelId,
+                LastLevelId = entity.LastLevelId ?? 0,
                 Points = entity.Points,
                 Coins = entity.Coins
             };
@@ -59,7 +59,7 @@ namespace MathRacerAPI.Infrastructure.Repositories
                 Name = entity.Name,
                 Email = entity.Email,
                 Uid = entity.Uid,
-                LastLevelId = entity.LastLevelId,
+                LastLevelId = entity.LastLevelId ?? 0,
                 Points = entity.Points,
                 Coins = entity.Coins
             };
@@ -77,7 +77,7 @@ namespace MathRacerAPI.Infrastructure.Repositories
                 Name = entity.Name,
                 Email = entity.Email,
                 Uid = entity.Uid,
-                LastLevelId = entity.LastLevelId,
+                LastLevelId = entity.LastLevelId ?? 0,
                 Points = entity.Points,
                 Coins = entity.Coins
             };
@@ -91,19 +91,43 @@ namespace MathRacerAPI.Infrastructure.Repositories
                 Email = playerProfile.Email,
                 Uid = playerProfile.Uid,
                 Coins = 0,
-                LastLevelId = 1,
+                LastLevelId = 0,
                 Points = 0,
                 Deleted = false
             };
             _context.Players.Add(entity);
             await _context.SaveChangesAsync();
+
+            var energyEntity = new EnergyEntity
+            {
+                PlayerId = entity.Id
+            };
+
+            _context.Energies.Add(energyEntity);
+            await _context.SaveChangesAsync();
+
             playerProfile.Id = entity.Id;
-            playerProfile.LastLevelId = entity.LastLevelId;
+            playerProfile.LastLevelId = entity.LastLevelId ?? 0;
             playerProfile.Points = entity.Points;
             playerProfile.Coins = entity.Coins;
             return playerProfile;
         }
 
+        public async Task AddCoinsAsync(int playerId, int coins)
+        {
+            await _context.Players
+                .Where(p => p.Id == playerId)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(p => p.Coins, p => p.Coins + coins));
+        }
+
+        public async Task UpdateLastLevelAsync(int playerId, int levelId)
+        {
+            await _context.Players
+                .Where(p => p.Id == playerId && p.LastLevelId < levelId)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(p => p.LastLevelId, levelId));
+        }
 
     }
 }

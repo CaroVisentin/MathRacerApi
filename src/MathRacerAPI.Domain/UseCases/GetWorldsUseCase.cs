@@ -41,17 +41,21 @@ namespace MathRacerAPI.Domain.UseCases
             // 1. Obtener todos los mundos del juego
             var allWorlds = await _worldRepository.GetAllWorldsAsync();
 
-            // 2. Obtener el WorldId del último nivel completado del jugador
-            var lastAvailableWorldId = await _worldRepository.GetWorldIdByLevelIdAsync(player.LastLevelId);
+            // 2. Obtener el LastLevelId del jugador (manejar nullable y valor 0)
+            // Si es null o 0, significa que no ha completado ningún nivel
+            int lastLevelId = player.LastLevelId ?? 0;
 
-            // 3. Validar que el mundo exista
+            // 3. Obtener el WorldId del último nivel completado del jugador
+            var lastAvailableWorldId = await _worldRepository.GetWorldIdByLevelIdAsync(lastLevelId);
+
+            // 4. Validar que el mundo exista
             if (!allWorlds.Any(w => w.Id == lastAvailableWorldId))
             {
                 throw new BusinessException(
                     $"El mundo con ID {lastAvailableWorldId} no existe en el sistema.");
             }
 
-            // 4. Retornar modelo completo
+            // 5. Retornar modelo completo
             return new PlayerWorlds
             {
                 Worlds = allWorlds,

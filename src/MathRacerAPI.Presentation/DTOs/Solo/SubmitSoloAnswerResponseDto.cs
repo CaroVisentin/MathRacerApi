@@ -24,4 +24,9 @@ public class SubmitSoloAnswerResponseDto
     public DateTime AnsweredAt { get; set; }
     
     public int CurrentQuestionIndex { get; set; }
+
+    /// <summary>
+    /// Indica si el jugador debe abrir un cofre por completar el último nivel del mundo
+    /// </summary>
+    public bool ShouldOpenWorldCompletionChest { get; set; }
 }

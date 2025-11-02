@@ -57,7 +57,7 @@ public class PlayerController : ControllerBase
             Id = playerProfile.Id,
             Name = playerProfile.Name,
             Email = playerProfile.Email,
-            LastLevelId = playerProfile.LastLevelId,
+            LastLevelId = playerProfile.LastLevelId ?? 0,
             Points = playerProfile.Points,
             Coins = playerProfile.Coins
         };
@@ -93,7 +93,7 @@ public class PlayerController : ControllerBase
             Id = playerProfile.Id,
             Name = playerProfile.Name,
             Email = playerProfile.Email,
-            LastLevelId = playerProfile.LastLevelId,
+            LastLevelId = playerProfile.LastLevelId ?? 0,
             Points = playerProfile.Points,
             Coins = playerProfile.Coins
         };
@@ -127,7 +127,7 @@ public class PlayerController : ControllerBase
             Id = playerProfile.Id,
             Name = playerProfile.Name,
             Email = playerProfile.Email,
-            LastLevelId = playerProfile.LastLevelId,
+            LastLevelId = playerProfile.LastLevelId ?? 0,
             Points = playerProfile.Points,
             Coins = playerProfile.Coins
         };
