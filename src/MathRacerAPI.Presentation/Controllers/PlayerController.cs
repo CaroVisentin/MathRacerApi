@@ -29,7 +29,7 @@ public class PlayerController : ControllerBase
     }
 
     /// <summary>
-    /// Registro de usuario con email y contraseña
+    /// Registro de usuario con Firebase Authentication
     /// </summary>
     [HttpPost("register")]
     [ProducesResponseType(typeof(PlayerProfileDto), StatusCodes.Status201Created)]
