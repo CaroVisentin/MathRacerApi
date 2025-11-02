@@ -62,8 +62,20 @@ public static class ServiceExtensions
         services.AddScoped<ProcessOnlineAnswerUseCase>();
         services.AddScoped<GetNextOnlineQuestionUseCase>();
 
-        // Registrar casos de uso de Ranking
+        // Registrar casos de uso de Store
+        services.AddScoped<GetStoreCarsUseCase>();
+        services.AddScoped<GetStoreCharactersUseCase>();
+        services.AddScoped<GetStoreBackgroundsUseCase>();
+
+
+        // Registrar casos de uso de Store
+            services.AddScoped<IGetStoreCarsUseCase, GetStoreCarsUseCase>();
+            services.AddScoped<IGetStoreCharactersUseCase, GetStoreCharactersUseCase>();
+            services.AddScoped<IGetStoreBackgroundsUseCase, GetStoreBackgroundsUseCase>();
+            services.AddScoped<IPurchaseStoreItemUseCase, PurchaseStoreItemUseCase>();
+            
         services.AddScoped<IGetPlayerRankingUseCase, GetPlayerRankingUseCase>();
+
 
         // Registrar repositorios
         services.AddScoped<ILevelRepository, LevelRepository>();
@@ -72,6 +84,7 @@ public static class ServiceExtensions
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IEnergyRepository, EnergyRepository>();
+        services.AddScoped<IStoreRepository, StoreRepository>();
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
         services.AddSingleton<ISoloGameRepository, InMemorySoloGameRepository>();
 
