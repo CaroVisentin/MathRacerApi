@@ -60,6 +60,7 @@ public static class ServiceExtensions
         services.AddScoped<ProcessOnlineAnswerUseCase>();
         services.AddScoped<GetNextOnlineQuestionUseCase>();
         services.AddScoped<GrantLevelRewardUseCase>();
+        services.AddScoped<UseWildcardUseCase>();
 
         // Registrar casos de uso de cofres
         services.AddScoped<OpenTutorialChestUseCase>();
@@ -74,6 +75,7 @@ public static class ServiceExtensions
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
         services.AddSingleton<ISoloGameRepository, InMemorySoloGameRepository>();
         services.AddScoped<IChestRepository, ChestRepository>();
+        services.AddScoped<IWildcardRepository, WildcardRepository>();
 
         // Registrar servicio de Firebase
         services.AddScoped<IFirebaseService, FirebaseService>();

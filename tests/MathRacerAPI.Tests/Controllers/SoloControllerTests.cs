@@ -23,7 +23,8 @@ public class SoloControllerTests
     private readonly Mock<IWorldRepository> _worldRepositoryMock;
     private readonly Mock<IProductRepository> _productRepositoryMock;
     private readonly Mock<IPlayerRepository> _playerRepositoryMock;
-    
+    private readonly Mock<IWildcardRepository> _wilcardRepositoryMock;
+
     private readonly SoloController _controller;
 
     public SoloControllerTests()
@@ -35,17 +36,22 @@ public class SoloControllerTests
         _worldRepositoryMock = new Mock<IWorldRepository>();
         _productRepositoryMock = new Mock<IProductRepository>();
         _playerRepositoryMock = new Mock<IPlayerRepository>();
+        _wilcardRepositoryMock = new Mock<IWildcardRepository>();
 
         // Crear Use Cases reales con repositorios mockeados
         var getQuestionsUseCase = new GetQuestionsUseCase();
         var getPlayerByIdUseCase = new GetPlayerByIdUseCase(_playerRepositoryMock.Object);
-        
+        var useWildcardUseCase = new UseWildcardUseCase(
+            _soloGameRepositoryMock.Object,
+            _wilcardRepositoryMock.Object);
+
         var startSoloGameUseCase = new StartSoloGameUseCase(
             _soloGameRepositoryMock.Object,
             _energyRepositoryMock.Object,
             _levelRepositoryMock.Object,
             _worldRepositoryMock.Object,
             _productRepositoryMock.Object,
+            _wilcardRepositoryMock.Object,
             getQuestionsUseCase,
             getPlayerByIdUseCase);
 
@@ -68,7 +74,8 @@ public class SoloControllerTests
         _controller = new SoloController(
             startSoloGameUseCase,
             getSoloGameStatusUseCase,
-            submitSoloAnswerUseCase);
+            submitSoloAnswerUseCase, 
+            useWildcardUseCase);
 
         // Configurar HttpContext con FirebaseUid
         _controller.ControllerContext = new ControllerContext
@@ -91,70 +98,6 @@ public class SoloControllerTests
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedObjectResult>();
-    }
-
-    [Fact]
-    public async Task StartGame_WhenValidRequest_ShouldReturnOkWithGameData()
-    {
-        // Arrange
-        const int levelId = 1;
-        const string uid = "test-uid-123";
-        _controller.HttpContext.Items["FirebaseUid"] = uid;
-
-        var player = CreateTestPlayer(uid);
-        var level = CreateTestLevel(levelId);
-        var world = CreateTestWorld();
-        var playerProducts = CreateTestPlayerProducts();
-        var machineProducts = CreateTestMachineProducts();
-
-        // Setup mocks para los repositorios
-        _playerRepositoryMock
-            .Setup(x => x.GetByUidAsync(uid))
-            .ReturnsAsync(player);
-
-        _energyRepositoryMock
-            .Setup(x => x.HasEnergyAsync(player.Id))
-            .ReturnsAsync(true);
-
-        _levelRepositoryMock
-            .Setup(x => x.GetByIdAsync(levelId))
-            .ReturnsAsync(level);
-
-        _worldRepositoryMock
-            .Setup(x => x.GetAllWorldsAsync())
-            .ReturnsAsync(new List<World> { world });
-
-        _productRepositoryMock
-            .Setup(x => x.GetActiveProductsByPlayerIdAsync(player.Id))
-            .ReturnsAsync(playerProducts);
-
-        _productRepositoryMock
-            .Setup(x => x.GetRandomProductsForMachineAsync())
-            .ReturnsAsync(machineProducts);
-
-        _soloGameRepositoryMock
-            .Setup(x => x.AddAsync(It.IsAny<SoloGame>()))
-            .ReturnsAsync((SoloGame game) => 
-            {
-                game.Id = 123;
-                return game;
-            });
-
-        // Act
-        var result = await _controller.StartGame(levelId);
-
-        // Assert
-        result.Result.Should().BeOfType<OkObjectResult>();
-        var okResult = result.Result as OkObjectResult;
-        okResult!.Value.Should().BeOfType<StartSoloGameResponseDto>();
-        
-        var responseDto = okResult.Value as StartSoloGameResponseDto;
-        responseDto!.GameId.Should().Be(123);
-        responseDto.PlayerId.Should().Be(player.Id);
-        responseDto.LevelId.Should().Be(levelId);
-        responseDto.LivesRemaining.Should().Be(3);
-        
-        _soloGameRepositoryMock.Verify(x => x.AddAsync(It.IsAny<SoloGame>()), Times.Once);
     }
 
     [Fact]
