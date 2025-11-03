@@ -7,26 +7,29 @@ using MathRacerAPI.Domain.Repositories;
 
 namespace MathRacerAPI.Domain.UseCases
 {
-    public class AcceptFriendRequestUseCase
+    public class DeleteFriendUseCase
     {
         private readonly IFriendshipRepository _repository;
 
-        public AcceptFriendRequestUseCase(IFriendshipRepository repository)
+        public DeleteFriendUseCase(IFriendshipRepository repository)
         {
             _repository = repository;
         }
 
-        public async Task ExecuteAsync(int fromPlayerId, int toPlayerId)
+        public async Task ExecuteAsync(int playerId1, int playerId2)
         {
-            var friendship = await _repository.GetFriendshipAsync(fromPlayerId, toPlayerId);
+            var friendship = await _repository.GetFriendshipAsync(playerId1, playerId2);
             if (friendship == null)
-                throw new InvalidOperationException("Friend request does not exist.");
+                throw new InvalidOperationException("Friendship does not exist.");
 
             var acceptedStatus = await _repository.GetRequestStatusByNameAsync("Aceptada");
-            friendship.RequestStatus = acceptedStatus;
-            friendship.Deleted = false;
 
+            if (friendship.RequestStatus.Id != acceptedStatus.Id)
+                throw new InvalidOperationException("Only accepted friends can be deleted.");
+
+            friendship.Deleted = true;
             await _repository.UpdateFriendshipAsync(friendship);
         }
     }
+
 }

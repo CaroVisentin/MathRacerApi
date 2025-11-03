@@ -239,89 +239,14 @@ namespace MathRacerAPI.Infrastructure.Repositories
             _context.Energies.Add(energyEntity);
             await _context.SaveChangesAsync();
 
-
-            var defaultCar = await _context.Products
-       .FirstOrDefaultAsync(p => p.ProductTypeId == 1 && p.Id == 1);
-
-            var defaultCharacter = await _context.Products
-                .FirstOrDefaultAsync(p => p.ProductTypeId == 2 && p.Id == 2);
-
-            var defaultBackground = await _context.Products
-                .FirstOrDefaultAsync(p => p.ProductTypeId == 3 && p.Id == 3);
-
-            //  Asignar los productos al jugador
-
-            var defaultProducts = new List<PlayerProductEntity>();
-
-            if (defaultCar != null)
-            {
-                defaultProducts.Add(new PlayerProductEntity
-                {
-                    PlayerId = entity.Id,
-                    ProductId = defaultCar.Id,
-                    IsActive = true 
-                });
-            }
-
-
-            if (defaultCharacter != null)
-            {
-                defaultProducts.Add(new PlayerProductEntity
-                {
-                    PlayerId = entity.Id,
-                    ProductId = defaultCharacter.Id,
-                    IsActive = true
-                });
-            }
-
-
-            if (defaultBackground != null)
-            {
-                defaultProducts.Add(new PlayerProductEntity
-                {
-                    PlayerId = entity.Id,
-                    ProductId = defaultBackground.Id,
-                    IsActive = true
-                });
-            }
-
-            if (defaultProducts.Any())
-            {
-                _context.PlayerProducts.AddRange(defaultProducts);
-                await _context.SaveChangesAsync();
-            }
+           
 
             playerProfile.Id = entity.Id;
             playerProfile.LastLevelId = entity.LastLevelId ?? 0;
             playerProfile.Points = entity.Points;
             playerProfile.Coins = entity.Coins;
 
-            playerProfile.Car = defaultCar == null ? null : new Product
-            {
-                Id = defaultCar.Id,
-                Name = defaultCar.Name,
-                Description = defaultCar.Description,
-                Price = defaultCar.Price,
-                ProductType = defaultCar.ProductTypeId
-            };
-
-            playerProfile.Background = defaultBackground == null ? null : new Product
-            {
-                Id = defaultBackground.Id,
-                Name = defaultBackground.Name,
-                Description = defaultBackground.Description,
-                Price = defaultBackground.Price,
-                ProductType = defaultBackground.ProductTypeId
-            };
-
-            playerProfile.Character = defaultCharacter == null ? null : new Product
-            {
-                Id = defaultCharacter.Id,
-                Name = defaultCharacter.Name,
-                Description = defaultCharacter.Description,
-                Price = defaultCharacter.Price,
-                ProductType = defaultCharacter.ProductTypeId
-            };
+           
 
             return playerProfile;
         }

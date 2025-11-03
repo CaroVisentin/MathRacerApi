@@ -16,6 +16,8 @@ namespace MathRacerAPI.Domain.Models
 
         public RequestStatus RequestStatus { get; set; } = null!;
 
+        public bool Deleted { get; set; }
+
         public PlayerProfile? Player1 { get; set; }
         public PlayerProfile? Player2 { get; set; }
 

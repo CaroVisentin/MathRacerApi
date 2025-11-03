@@ -10,11 +10,35 @@ namespace MathRacerAPI.Domain.Repositories
 {
     public interface IFriendshipRepository
     {
+ 
+        /// <summary>
+        /// Obtiene una relación de amistad entre dos jugadores.
+        /// </summary>
         Task<Friendship?> GetFriendshipAsync(int playerId1, int playerId2);
+
+        /// <summary>
+        /// Agrega una nueva amistad.
+        /// </summary>
+        Task AddFriendshipAsync(Friendship friendship);
+
+        /// <summary>
+        /// Actualiza una amistad existente.
+        /// </summary>
+        Task UpdateFriendshipAsync(Friendship friendship);
+
+        /// <summary>
+        /// Obtiene todas las amistades aceptadas de un jugador.
+        /// </summary>
         Task<IEnumerable<PlayerProfile>> GetFriendsAsync(int playerId);
-        Task SendFriendRequestAsync(int fromPlayerId, int toPlayerId);
-        Task AcceptFriendRequestAsync(int fromPlayerId, int toPlayerId);
-        Task RejectFriendRequestAsync(int fromPlayerId, int toPlayerId);
+
+        /// <summary>
+        /// Obtiene un estado de solicitud por nombre (Pendiente, Aceptada, Rechazada).
+        /// </summary>
+        Task<RequestStatus> GetRequestStatusByNameAsync(string statusName);
+
+        Task<IEnumerable<PlayerProfile>> GetPendingFriendRequestsAsync(int playerId);
     }
 
 }
+
+

@@ -64,10 +64,6 @@ public class PlayerController : ControllerBase
             LastLevelId = playerProfile.LastLevelId ?? 0,
             Points = playerProfile.Points,
             Coins = playerProfile.Coins,
-
-            Car = playerProfile.Car == null ? null : new ActiveProductDto { Id = playerProfile.Car.Id },
-            Background = playerProfile.Background == null ? null : new ActiveProductDto { Id = playerProfile.Background.Id },
-            Character = playerProfile.Character == null ? null : new ActiveProductDto { Id = playerProfile.Character.Id }
         };
         return StatusCode(StatusCodes.Status201Created, response);
     }

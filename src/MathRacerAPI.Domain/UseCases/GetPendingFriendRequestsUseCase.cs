@@ -8,19 +8,21 @@ using MathRacerAPI.Domain.Repositories;
 
 namespace MathRacerAPI.Domain.UseCases
 {
-    public class GetFriendsUseCase
+    public class GetPendingFriendRequestsUseCase
     {
         private readonly IFriendshipRepository _repository;
 
-        public GetFriendsUseCase(IFriendshipRepository repository)
+        public GetPendingFriendRequestsUseCase(IFriendshipRepository repository)
         {
             _repository = repository;
         }
 
-
         public async Task<IEnumerable<PlayerProfile>> ExecuteAsync(int playerId)
         {
-            return await _repository.GetFriendsAsync(playerId);
+           return await _repository.GetPendingFriendRequestsAsync(playerId);
+
+           
         }
     }
+
 }

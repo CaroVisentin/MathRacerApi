@@ -79,6 +79,8 @@ public static class ServiceExtensions
         services.AddScoped<AcceptFriendRequestUseCase>();
         services.AddScoped<RejectFriendRequestUseCase>();
         services.AddScoped<GetFriendsUseCase>();
+        services.AddScoped<DeleteFriendUseCase>();
+        services.AddScoped<GetPendingFriendRequestsUseCase>();
 
 
         // Registrar repositorios
@@ -91,8 +93,9 @@ public static class ServiceExtensions
         services.AddScoped<IEnergyRepository, EnergyRepository>();
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
         services.AddSingleton<ISoloGameRepository, InMemorySoloGameRepository>();
-    // Registrar repositorios de amistad
-    services.AddScoped<IFriendshipRepository, FriendshipRepository>();
+
+        // Registrar repositorios de amistad
+        services.AddScoped<IFriendshipRepository, FriendshipRepository>();
         services.AddScoped<IChestRepository, ChestRepository>();
 
         // Registrar servicio de Firebase

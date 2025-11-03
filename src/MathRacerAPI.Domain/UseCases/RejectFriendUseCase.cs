@@ -18,7 +18,15 @@ namespace MathRacerAPI.Domain.UseCases
 
         public async Task ExecuteAsync(int fromPlayerId, int toPlayerId)
         {
-            await _repository.RejectFriendRequestAsync(fromPlayerId, toPlayerId);
+            var friendship = await _repository.GetFriendshipAsync(fromPlayerId, toPlayerId);
+            if (friendship == null)
+                throw new InvalidOperationException("Friend request does not exist.");
+
+            var rejectedStatus = await _repository.GetRequestStatusByNameAsync("Rechazada");
+            friendship.RequestStatus = rejectedStatus;
+            friendship.Deleted = false;
+
+            await _repository.UpdateFriendshipAsync(friendship);
         }
     }
 }
