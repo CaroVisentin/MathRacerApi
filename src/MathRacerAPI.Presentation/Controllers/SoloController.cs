@@ -391,8 +391,8 @@ public class SoloController : ControllerBase
     /// </summary>
     /// <param name="gameId">ID de la partida</param>
     /// <param name="answer">Valor numérico de la respuesta seleccionada por el jugador</param>
-    /// <returns>Feedback de la respuesta procesada incluyendo si fue correcta y el estado actualizado del juego</returns>
-    /// <response code="200">Respuesta procesada exitosamente. Retorna feedback y nuevo estado.</response>
+    /// <returns>Feedback de la respuesta procesada incluyendo si fue correcta, el estado actualizado del juego y las monedas obtenidas si completó el nivel</returns>
+    /// <response code="200">Respuesta procesada exitosamente. Retorna feedback, nuevo estado y monedas obtenidas (si aplica).</response>
     /// <response code="400">Solicitud inválida. Partida finalizada, timeout, o no hay preguntas disponibles.</response>
     /// <response code="401">No autorizado. Token inválido o faltante.</response>
     /// <response code="403">Prohibido. El jugador no tiene permiso para responder en esta partida.</response>
@@ -414,14 +414,20 @@ public class SoloController : ControllerBase
     /// Este endpoint procesa la respuesta del jugador y aplica la lógica del juego:
     /// 
     /// **Si la respuesta es correcta:**
-    /// - Incrementa `PlayerPosition` en 1
+    /// - Incrementa `PlayerPosition` en 1 (o 2 si tiene doble progreso activo)
     /// - Incrementa `CorrectAnswers` en 1
     /// - Verifica si el jugador alcanzó `TotalQuestions` (gana)
+    /// - **Si gana**: Otorga recompensa de monedas según el mundo y si es primera vez
     /// 
     /// **Si la respuesta es incorrecta:**
     /// - Decrementa `LivesRemaining` en 1
     /// - Verifica si `LivesRemaining` llegó a 0 (pierde)
     /// - Consume 1 energía si el jugador pierde todas las vidas
+    /// 
+    /// **Sistema de Recompensas:**
+    /// - **Primera vez completando el nivel**: worldId × 100 ± 20% (Ejemplo: Mundo 2 = 160-240 monedas)
+    /// - **Repetición del nivel**: worldId × 10 ± 1% (Ejemplo: Mundo 2 = 18-22 monedas)
+    /// - El campo `CoinsEarned` indica las monedas obtenidas (0 si no completó el nivel)
     /// 
     /// **Validaciones de Tiempo:**
     /// - **Primera pregunta**: Valida tiempo desde `GameStartedAt`
@@ -457,7 +463,10 @@ public class SoloController : ControllerBase
     ///       "correctAnswers": 4,
     ///       "waitTimeSeconds": 3,
     ///       "answeredAt": "2025-11-01T10:31:25Z",
-    ///       "currentQuestionIndex": 4
+    ///       "currentQuestionIndex": 4,
+    ///       "shouldOpenWorldCompletionChest": false,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 0
     ///     }
     /// 
     /// **Ejemplo de respuesta exitosa (200) - Respuesta incorrecta:**
@@ -473,10 +482,13 @@ public class SoloController : ControllerBase
     ///       "correctAnswers": 3,
     ///       "waitTimeSeconds": 3,
     ///       "answeredAt": "2025-11-01T10:31:25Z",
-    ///       "currentQuestionIndex": 4
+    ///       "currentQuestionIndex": 4,
+    ///       "shouldOpenWorldCompletionChest": false,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 0
     ///     }
     /// 
-    /// **Ejemplo de respuesta exitosa (200) - Jugador ganó:**
+    /// **Ejemplo de respuesta exitosa (200) - Jugador ganó (primera vez):**
     /// 
     ///     {
     ///       "isCorrect": true,
@@ -489,7 +501,48 @@ public class SoloController : ControllerBase
     ///       "correctAnswers": 10,
     ///       "waitTimeSeconds": 3,
     ///       "answeredAt": "2025-11-01T10:32:15Z",
-    ///       "currentQuestionIndex": 10
+    ///       "currentQuestionIndex": 10,
+    ///       "shouldOpenWorldCompletionChest": false,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 195
+    ///     }
+    /// 
+    /// **Ejemplo de respuesta exitosa (200) - Jugador ganó (repetición):**
+    /// 
+    ///     {
+    ///       "isCorrect": true,
+    ///       "correctAnswer": 8,
+    ///       "playerAnswer": 8,
+    ///       "status": "PlayerWon",
+    ///       "livesRemaining": 2,
+    ///       "playerPosition": 10,
+    ///       "machinePosition": 7,
+    ///       "correctAnswers": 10,
+    ///       "waitTimeSeconds": 3,
+    ///       "answeredAt": "2025-11-01T10:32:15Z",
+    ///       "currentQuestionIndex": 10,
+    ///       "shouldOpenWorldCompletionChest": false,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 20
+    ///     }
+    /// 
+    /// **Ejemplo de respuesta exitosa (200) - Completó último nivel del mundo:**
+    /// 
+    ///     {
+    ///       "isCorrect": true,
+    ///       "correctAnswer": 8,
+    ///       "playerAnswer": 8,
+    ///       "status": "PlayerWon",
+    ///       "livesRemaining": 1,
+    ///       "playerPosition": 10,
+    ///       "machinePosition": 8,
+    ///       "correctAnswers": 10,
+    ///       "waitTimeSeconds": 3,
+    ///       "answeredAt": "2025-11-01T10:32:15Z",
+    ///       "currentQuestionIndex": 10,
+    ///       "shouldOpenWorldCompletionChest": true,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 195
     ///     }
     /// 
     /// **Ejemplo de respuesta exitosa (200) - Jugador perdió todas las vidas:**
@@ -505,7 +558,10 @@ public class SoloController : ControllerBase
     ///       "correctAnswers": 5,
     ///       "waitTimeSeconds": 3,
     ///       "answeredAt": "2025-11-01T10:31:45Z",
-    ///       "currentQuestionIndex": 8
+    ///       "currentQuestionIndex": 8,
+    ///       "shouldOpenWorldCompletionChest": false,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 0
     ///     }
     /// 
     /// **Ejemplo de respuesta exitosa (200) - Máquina ganó:**
@@ -521,7 +577,10 @@ public class SoloController : ControllerBase
     ///       "correctAnswers": 7,
     ///       "waitTimeSeconds": 3,
     ///       "answeredAt": "2025-11-01T10:33:00Z",
-    ///       "currentQuestionIndex": 7
+    ///       "currentQuestionIndex": 7,
+    ///       "shouldOpenWorldCompletionChest": false,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 0
     ///     }
     ///     
     /// **Posibles errores:**

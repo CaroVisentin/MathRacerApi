@@ -83,6 +83,7 @@ public class SubmitSoloAnswerUseCase
 
         bool shouldOpenChest = false;
         int progressIncrement = 1;
+        int coinsEarned = 0;
 
         // Aplicar doble progreso si está activo y la respuesta es correcta
         if (isCorrect && game.HasDoubleProgressActive)
@@ -103,8 +104,8 @@ public class SubmitSoloAnswerUseCase
                 game.Status = SoloGameStatus.PlayerWon;
                 game.GameFinishedAt = DateTime.UtcNow;
                 
-                // Otorgar recompensas usando el caso de uso dedicado
-                await _grantLevelRewardUseCase.ExecuteAsync(game.PlayerId, game.LevelId, game.WorldId);
+                // Otorgar recompensas usando el caso de uso dedicado y obtener monedas
+                coinsEarned = await _grantLevelRewardUseCase.ExecuteAsync(game.PlayerId, game.LevelId, game.WorldId);
 
                 // Verificar si es un nivel nuevo (primera vez que lo completa)
                 var player = await _playerRepository.GetByIdAsync(game.PlayerId);
@@ -157,7 +158,8 @@ public class SubmitSoloAnswerUseCase
             CorrectAnswer = correctAnswer,
             PlayerAnswer = answer,
             ShouldOpenWorldCompletionChest = shouldOpenChest,
-            ProgressIncrement = progressIncrement
+            ProgressIncrement = progressIncrement,
+            CoinsEarned = coinsEarned
         };
     }
 
