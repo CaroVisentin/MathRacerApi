@@ -101,7 +101,8 @@ public static class SoloGameMapper
             AnsweredAt = result.Game.LastAnswerTime ?? DateTime.UtcNow,
             CurrentQuestionIndex = result.Game.CurrentQuestionIndex,
             ShouldOpenWorldCompletionChest = result.ShouldOpenWorldCompletionChest,
-            ProgressIncrement = result.ProgressIncrement
+            ProgressIncrement = result.ProgressIncrement,
+            CoinsEarned = result.CoinsEarned
         };
     }
 

@@ -13,4 +13,5 @@ public class SoloAnswerResult
     public int PlayerAnswer { get; set; }
     public bool ShouldOpenWorldCompletionChest { get; set; }
     public int ProgressIncrement { get; set; } = 1;
+    public int CoinsEarned { get; set; }
 }
