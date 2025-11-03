@@ -24,6 +24,7 @@ public class StartSoloGameUseCaseTests
     private readonly Mock<IPlayerRepository> _playerRepositoryMock;
     private readonly GetQuestionsUseCase _getQuestionsUseCase;
     private readonly StartSoloGameUseCase _startSoloGameUseCase;
+    private readonly Mock<IWildcardRepository> _wildcardRepositoryMock;
 
     private static int _nextPlayerId = 100;
 
@@ -35,7 +36,8 @@ public class StartSoloGameUseCaseTests
         _worldRepositoryMock = new Mock<IWorldRepository>();
         _productRepositoryMock = new Mock<IProductRepository>();
         _playerRepositoryMock = new Mock<IPlayerRepository>();
-        
+        _wildcardRepositoryMock = new Mock<IWildcardRepository>();
+
         // GetQuestionsUseCase es real (no tiene dependencias externas)
         _getQuestionsUseCase = new GetQuestionsUseCase();
         
@@ -47,6 +49,7 @@ public class StartSoloGameUseCaseTests
             _levelRepositoryMock.Object,
             _worldRepositoryMock.Object,
             _productRepositoryMock.Object,
+            _wildcardRepositoryMock.Object,
             _getQuestionsUseCase,
             getPlayerByIdUseCase);
     }
@@ -81,7 +84,7 @@ public class StartSoloGameUseCaseTests
         result.TotalQuestions.Should().Be(10);
         result.LivesRemaining.Should().Be(3);
         result.Status.Should().Be(SoloGameStatus.InProgress);
-        result.Questions.Should().HaveCount(10);
+        result.Questions.Should().HaveCount(15);
         result.Questions.Should().OnlyContain(q => q.Options.Count == world.OptionsCount);
         result.PlayerProducts.Should().HaveCount(3);
         result.MachineProducts.Should().HaveCount(3);
@@ -130,7 +133,7 @@ public class StartSoloGameUseCaseTests
         var result = await _startSoloGameUseCase.ExecuteAsync(uid, levelId);
 
         // Assert
-        result.Questions.Should().HaveCount(10);
+        result.Questions.Should().HaveCount(15);
         result.Questions.Should().OnlyContain(q => q.Options.Count == 4);
         result.TimePerEquation.Should().Be(15);
         

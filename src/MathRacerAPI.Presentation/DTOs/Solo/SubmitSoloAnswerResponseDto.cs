@@ -29,4 +29,11 @@ public class SubmitSoloAnswerResponseDto
     /// Indica si el jugador debe abrir un cofre por completar el último nivel del mundo
     /// </summary>
     public bool ShouldOpenWorldCompletionChest { get; set; }
+    
+    public int ProgressIncrement { get; set; } = 1;
+    
+    /// <summary>
+    /// Cantidad de monedas obtenidas al completar el nivel (0 si no completó)
+    /// </summary>
+    public int CoinsEarned { get; set; }
 }

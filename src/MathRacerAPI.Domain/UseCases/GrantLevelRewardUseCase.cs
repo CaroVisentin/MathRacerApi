@@ -24,7 +24,8 @@ public class GrantLevelRewardUseCase
     /// <param name="playerId">ID del jugador</param>
     /// <param name="levelId">ID del nivel completado</param>
     /// <param name="worldId">ID del mundo al que pertenece el nivel</param>
-    public async Task ExecuteAsync(int playerId, int levelId, int worldId)
+    /// <returns>Cantidad de monedas otorgadas</returns>
+    public async Task<int> ExecuteAsync(int playerId, int levelId, int worldId)
     {
         // Obtener el jugador para verificar si es primera vez
         var player = await _playerRepository.GetByIdAsync(playerId);
@@ -46,6 +47,8 @@ public class GrantLevelRewardUseCase
         {
             await _playerRepository.UpdateLastLevelAsync(playerId, levelId);
         }
+
+        return coins;
     }
 
     /// <summary>

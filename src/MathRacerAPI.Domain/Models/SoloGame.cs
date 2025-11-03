@@ -14,6 +14,7 @@ public class SoloGame
     public string PlayerName { get; set; } = string.Empty;
     public int LevelId { get; set; }
     public int WorldId { get; set; }
+    public string ResultType { get; set; } = string.Empty;
 
     // Progreso del jugador
     public int PlayerPosition { get; set; } = 0;
@@ -43,6 +44,12 @@ public class SoloGame
 
     public List<PlayerProduct> PlayerProducts { get; set; } = new();
     public List<PlayerProduct> MachineProducts { get; set; } = new();
+
+    // Wildcards disponibles y usados en la partida
+    public List<PlayerWildcard> AvailableWildcards { get; set; } = new();
+    public HashSet<int> UsedWildcardTypes { get; set; } = new(); // IDs de wildcards ya usados en esta partida
+    public bool HasDoubleProgressActive { get; set; } = false; // Para el wildcard de doble progreso
+    public List<int>? ModifiedOptions { get; set; } // Opciones modificadas por RemoveWrongOption
 }
 
 /// <summary>
