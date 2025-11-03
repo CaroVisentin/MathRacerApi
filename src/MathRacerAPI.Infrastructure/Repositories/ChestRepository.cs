@@ -3,7 +3,6 @@ using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Infrastructure.Configuration;
 using MathRacerAPI.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
-using static MathRacerAPI.Domain.Models.ChestItem;
 
 namespace MathRacerAPI.Infrastructure.Repositories;
 
@@ -32,6 +31,7 @@ public class ChestRepository : IChestRepository
             var availableProducts = await _context.Products
                 .Where(p => p.RarityId == CommonRarityId && p.ProductTypeId == productTypeId)
                 .Include(p => p.Rarity)
+                .Include(p => p.ProductType)
                 .ToListAsync();
 
             if (availableProducts.Any())
@@ -82,7 +82,8 @@ public class ChestRepository : IChestRepository
         // 3. Obtener productos de esa rareza
         var products = await _context.Products
             .Where(p => p.RarityId == selectedRarityId)
-            .Include(p => p.Rarity) 
+            .Include(p => p.Rarity)
+            .Include(p => p.ProductType)
             .ToListAsync();
 
         if (!products.Any()) return null;

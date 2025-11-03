@@ -17,15 +17,18 @@ public class SoloController : ControllerBase
     private readonly StartSoloGameUseCase _startSoloGameUseCase;
     private readonly GetSoloGameStatusUseCase _getSoloGameStatusUseCase;
     private readonly SubmitSoloAnswerUseCase _submitSoloAnswerUseCase;
+    private readonly UseWildcardUseCase _useWildcardUseCase;
 
     public SoloController(
         StartSoloGameUseCase startSoloGameUseCase,
         GetSoloGameStatusUseCase getSoloGameStatusUseCase,
-        SubmitSoloAnswerUseCase submitSoloAnswerUseCase)
+        SubmitSoloAnswerUseCase submitSoloAnswerUseCase,
+        UseWildcardUseCase useWildcardUseCase)
     {
         _startSoloGameUseCase = startSoloGameUseCase;
         _getSoloGameStatusUseCase = getSoloGameStatusUseCase;
         _submitSoloAnswerUseCase = submitSoloAnswerUseCase;
+        _useWildcardUseCase = useWildcardUseCase;
     }
 
     /// <summary>
@@ -593,5 +596,193 @@ public class SoloController : ControllerBase
         var result = await _submitSoloAnswerUseCase.ExecuteAsync(gameId, answer, uid);
 
         return Ok(result.ToAnswerDto());
+    }
+
+    /// <summary>
+    /// Activa un wildcard en la partida individual actual
+    /// </summary>
+    /// <param name="gameId">ID de la partida</param>
+    /// <param name="wildcardId">ID del wildcard a usar (1: Eliminar opción, 2: Saltar pregunta, 3: Doble progreso)</param>
+    /// <returns>Resultado de activar el wildcard incluyendo efectos aplicados</returns>
+    /// <response code="200">Wildcard activado exitosamente. Retorna el resultado con los efectos aplicados.</response>
+    /// <response code="400">Solicitud inválida. Wildcard ya usado en esta partida, juego finalizado, wildcard no disponible o cantidad insuficiente.</response>
+    /// <response code="401">No autorizado. Token inválido o faltante.</response>
+    /// <response code="403">Prohibido. El jugador no tiene permiso para usar wildcards en esta partida.</response>
+    /// <response code="404">Partida o wildcard no encontrado.</response>
+    /// <response code="500">Error interno del servidor.</response>
+    /// <remarks>
+    /// Ejemplo de solicitud:
+    /// 
+    ///     POST /api/solo/123/wildcard/1
+    ///     Headers:
+    ///       Authorization: Bearer {firebase-id-token}
+    /// 
+    /// **Descripción:**
+    /// 
+    /// Este endpoint activa un wildcard (comodín) en una partida individual en progreso. Cada wildcard tiene un efecto único:
+    /// 
+    /// **Wildcards Disponibles:**
+    /// 
+    /// 1. **Eliminar Opción Incorrecta (ID: 1)**
+    ///    - Elimina una opcion incorrecta de la pregunta actual
+    ///    - Facilita acertar la respuesta correcta
+    ///    - Solo puede usarse una vez por partida
+    /// 
+    /// 2. **Saltar Pregunta (ID: 2)**
+    ///    - Salta a la siguiente pregunta sin penalización
+    ///    - No consume vidas ni afecta el progreso
+    ///    - Útil para preguntas muy difíciles
+    /// 
+    /// 3. **Doble Progreso (ID: 3)**
+    ///    - La siguiente respuesta correcta avanza 2 posiciones en lugar de 1
+    ///    - Se activa como un efecto temporal
+    ///    - Se consume al responder correctamente la siguiente pregunta
+    /// 
+    /// **Restricciones:**
+    /// - Solo se puede usar **un wildcard de cada tipo por partida**
+    /// - El jugador debe tener al menos **1 unidad** del wildcard en su inventario
+    /// - El juego debe estar en estado **InProgress**
+    /// - Solo el jugador dueño de la partida puede usar wildcards
+    /// 
+    /// **Seguridad:**
+    /// - Requiere token de Firebase en el header `Authorization`
+    /// - Valida que el jugador sea dueño de la partida
+    /// - Verifica disponibilidad y cantidad del wildcard
+    /// 
+    /// **Ejemplo de respuesta exitosa (200) - Eliminar Opción (ID 1):**
+    /// 
+    ///     {
+    ///       "wildcardId": 1,
+    ///       "success": true,
+    ///       "message": "Se eliminó una opción incorrecta",
+    ///       "remainingQuantity": 2,
+    ///       "modifiedOptions": [5, 8],
+    ///       "newQuestionIndex": null,
+    ///       "newQuestion": null,
+    ///       "doubleProgressActive": false
+    ///     }
+    /// 
+    /// **Ejemplo de respuesta exitosa (200) - Saltar Pregunta (ID 2):**
+    /// 
+    ///     {
+    ///       "wildcardId": 2,
+    ///       "success": true,
+    ///       "message": "Pregunta cambiada exitosamente",
+    ///       "remainingQuantity": 1,
+    ///       "modifiedOptions": null,
+    ///       "newQuestionIndex": 5,
+    ///       "newQuestion": {
+    ///         "id": 9821,
+    ///         "equation": "y = 4*x + 1",
+    ///         "options": [-3, 1, 5, 9],
+    ///         "startedAt": "2025-11-01T10:32:10Z"
+    ///       },
+    ///       "doubleProgressActive": false
+    ///     }
+    /// 
+    /// **Ejemplo de respuesta exitosa (200) - Doble Progreso (ID 3):**
+    /// 
+    ///     {
+    ///       "wildcardId": 3,
+    ///       "success": true,
+    ///       "message": "Doble progreso activado. La siguiente respuesta correcta valdrá doble.",
+    ///       "remainingQuantity": 0,
+    ///       "modifiedOptions": null,
+    ///       "newQuestionIndex": null,
+    ///       "newQuestion": null,
+    ///       "doubleProgressActive": true
+    ///     }
+    ///     
+    /// **Posibles errores:**
+    /// 
+    /// Error 400 (BusinessException - wildcard ya usado):
+    /// 
+    ///     {
+    ///       "statusCode": 400,
+    ///       "message": "Ya usaste este tipo de comodín en esta partida"
+    ///     }
+    /// 
+    /// Error 400 (BusinessException - juego finalizado):
+    /// 
+    ///     {
+    ///       "statusCode": 400,
+    ///       "message": "No puedes usar comodines en un juego finalizado"
+    ///     }
+    /// 
+    /// Error 400 (BusinessException - wildcard no disponible):
+    /// 
+    ///     {
+    ///       "statusCode": 400,
+    ///       "message": "No tienes este comodín disponible"
+    ///     }
+    /// 
+    /// Error 400 (BusinessException - cantidad insuficiente):
+    /// 
+    ///     {
+    ///       "statusCode": 400,
+    ///       "message": "No tienes suficientes unidades de este comodín"
+    ///     }
+    /// 
+    /// Error 401 (Sin token):
+    /// 
+    ///     {
+    ///       "statusCode": 401,
+    ///       "message": "Token de autenticación requerido."
+    ///     }
+    /// 
+    /// Error 401 (Token inválido):
+    /// 
+    ///     {
+    ///       "statusCode": 401,
+    ///       "message": "Token de Firebase inválido."
+    ///     }
+    /// 
+    /// Error 403 (BusinessException - no autorizado):
+    /// 
+    ///     {
+    ///       "statusCode": 403,
+    ///       "message": "No tienes permiso para usar wildcards en esta partida"
+    ///     }
+    /// 
+    /// Error 404 (NotFoundException - partida):
+    /// 
+    ///     {
+    ///       "statusCode": 404,
+    ///       "message": "Partida con ID 123 no encontrada"
+    ///     }
+    /// 
+    /// Error 404 (NotFoundException - wildcard):
+    /// 
+    ///     {
+    ///       "statusCode": 404,
+    ///       "message": "Comodín con ID 1 no encontrado"
+    ///     }
+    /// 
+    /// Error 500 (Error interno):
+    /// 
+    ///     {
+    ///       "statusCode": 500,
+    ///       "message": "Ocurrió un error interno en el servidor."
+    ///     }
+    /// 
+    /// </remarks>
+    [HttpPost("{gameId}/wildcard/{wildcardId}")]
+    [ProducesResponseType(typeof(UseWildcardResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<UseWildcardResponseDto>> UseWildcard(int gameId, int wildcardId)
+    {
+        var uid = HttpContext.Items["FirebaseUid"] as string;
+        if (string.IsNullOrEmpty(uid))
+        {
+            return Unauthorized(new { message = "Token de autenticación requerido o inválido." });
+        }
+
+        var result = await _useWildcardUseCase.ExecuteAsync(gameId, wildcardId, uid);
+
+        return Ok(result.ToWildcardResponseDto());
     }
 }

@@ -17,6 +17,7 @@ public class StartSoloGameUseCase
     private readonly ILevelRepository _levelRepository;
     private readonly IWorldRepository _worldRepository;
     private readonly IProductRepository _productRepository;
+    private readonly IWildcardRepository _wildcardRepository;
     private readonly GetQuestionsUseCase _getQuestionsUseCase;
     private readonly GetPlayerByIdUseCase _getPlayerByIdUseCase;
 
@@ -26,6 +27,7 @@ public class StartSoloGameUseCase
         ILevelRepository levelRepository,
         IWorldRepository worldRepository,
         IProductRepository productRepository,
+        IWildcardRepository wildcardRepository,
         GetQuestionsUseCase getQuestionsUseCase,
         GetPlayerByIdUseCase getPlayerByIdUseCase)
     {
@@ -34,6 +36,7 @@ public class StartSoloGameUseCase
         _levelRepository = levelRepository;
         _worldRepository = worldRepository;
         _productRepository = productRepository;
+        _wildcardRepository = wildcardRepository;
         _getQuestionsUseCase = getQuestionsUseCase;
         _getPlayerByIdUseCase = getPlayerByIdUseCase;
     }
@@ -79,7 +82,10 @@ public class StartSoloGameUseCase
             throw new BusinessException("Error al cargar productos de la máquina");
         }
 
-        // 7. Generar preguntas según la configuración del nivel
+        // 7. Obtener wildcards disponibles del jugador
+        var wildcards = await _wildcardRepository.GetPlayerWildcardsAsync(player.Id);
+
+        // 8. Generar preguntas según la configuración del nivel
         var equationParams = new EquationParams
         {
             TermCount = level.TermsCount,
@@ -94,9 +100,9 @@ public class StartSoloGameUseCase
             TimePerEquation = world.TimePerEquation
         };
 
-        var questions = await _getQuestionsUseCase.GetQuestions(equationParams, 10);
+        var questions = await _getQuestionsUseCase.GetQuestions(equationParams, 15);
 
-        // 8. Crear partida 
+        // 9. Crear partida 
         var soloGame = new SoloGame
         {
             PlayerId = player.Id,
@@ -104,6 +110,7 @@ public class StartSoloGameUseCase
             PlayerName = player.Name,
             LevelId = levelId,
             WorldId = level.WorldId,
+            ResultType = level.ResultType,
             Questions = questions,
             TotalQuestions = 10,
             TimePerEquation = world.TimePerEquation,
@@ -111,10 +118,11 @@ public class StartSoloGameUseCase
             Status = SoloGameStatus.InProgress,
             PlayerProducts = playerProducts,    
             MachineProducts = machineProducts,
+            AvailableWildcards = wildcards,
             ReviewTimeSeconds = 3 
         };
 
-        // 9. Guardar partida
+        // 10. Guardar partida
         await _soloGameRepository.AddAsync(soloGame);
 
         return soloGame;

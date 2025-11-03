@@ -1,5 +1,6 @@
 using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Presentation.DTOs.Chest;
+using MathRacerAPI.Presentation.Mappers;
 using Microsoft.AspNetCore.Mvc;
 using static MathRacerAPI.Domain.Models.ChestItem;
 
@@ -52,9 +53,9 @@ public class ChestController : ControllerBase
     /// 
     /// **Ejemplo de respuesta exitosa (200):**
     /// 
-    ///    {
-    ///     "items": [
-    ///       {
+    ///     {
+    ///       "items": [
+    ///         {
     ///           "type": "Product",
     ///           "quantity": 1,
     ///           "product": {
@@ -68,37 +69,35 @@ public class ChestController : ControllerBase
     ///           },
     ///           "wildcard": null,
     ///           "compensationCoins": 400  
-    ///          },
-    ///          {
+    ///         },
+    ///         {
     ///           "type": "Coins",
     ///           "quantity": 650,
     ///           "product": null,
     ///           "wildcard": null,
     ///           "compensationCoins": null
-    ///          },
-    ///          {
-    ///          "type": "Wildcard",
-    ///          "quantity": 2,
-    ///          "product": null,
-    ///          "wildcard": {
+    ///         },
+    ///         {
+    ///           "type": "Wildcard",
+    ///           "quantity": 2,
+    ///           "product": null,
+    ///           "wildcard": {
     ///             "id": 1,
     ///             "name": "Matafuego",
     ///             "description": "Permite eliminar una opción incorrecta"
-    ///          },
-    ///          "compensationCoins": null
-    ///       }
-    ///      ]
-    ///    }
+    ///           },
+    ///           "compensationCoins": null
+    ///         }
+    ///       ]
+    ///     }
     /// </remarks>
     [HttpPost("open")]
     [ProducesResponseType(typeof(ChestResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ChestResponseDto>> OpenRandomChest()
     {
         var uid = HttpContext.Items["FirebaseUid"] as string;
-
         if (string.IsNullOrEmpty(uid))
         {
             return Unauthorized(new { message = "Token de autenticación requerido o inválido." });
@@ -106,33 +105,7 @@ public class ChestController : ControllerBase
 
         var chest = await _openRandomChest.ExecuteAsync(uid);
 
-        var response = new ChestResponseDto
-        {
-            Items = chest.Items.Select(item => new ChestItemDto
-            {
-                Type = item.Type.ToString(),
-                Quantity = item.Quantity,
-                Product = item.Product != null ? new ChestProductDto
-                {
-                    Id = item.Product.Id,
-                    Name = item.Product.Name,
-                    Description = item.Product.Description,
-                    ProductType = item.Product.ProductType,
-                    RarityId = item.Product.RarityId,
-                    RarityName = item.Product.RarityName,
-                    RarityColor = item.Product.RarityColor
-                } : null,
-                Wildcard = item.Wildcard != null ? new WildcardDto
-                {
-                    Id = item.Wildcard.Id,
-                    Name = item.Wildcard.Name,
-                    Description = item.Wildcard.Description
-                } : null,
-                CompensationCoins = item.CompensationCoins
-            }).ToList()
-        };
-
-        return Ok(response);
+        return Ok(chest.ToResponseDto());
     }
 
     /// <summary>
@@ -219,13 +192,12 @@ public class ChestController : ControllerBase
     /// </remarks>
     [HttpPost("complete-tutorial")]
     [ProducesResponseType(typeof(ChestResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ChestResponseDto>> CompleteTutorial()
+    public async Task<ActionResult<ChestResponseDto>> OpenTutorialChest()
     {
         var uid = HttpContext.Items["FirebaseUid"] as string;
-
         if (string.IsNullOrEmpty(uid))
         {
             return Unauthorized(new { message = "Token de autenticación requerido o inválido." });
@@ -233,27 +205,6 @@ public class ChestController : ControllerBase
 
         var chest = await _openTutorialChest.ExecuteAsync(uid);
 
-        var response = new ChestResponseDto
-        {
-            Items = chest.Items.Select(item => new ChestItemDto
-            {
-                Type = item.Type.ToString(),
-                Quantity = item.Quantity,
-                Product = item.Product != null ? new ChestProductDto
-                {
-                    Id = item.Product.Id,
-                    Name = item.Product.Name,
-                    Description = item.Product.Description,
-                    ProductType = item.Product.ProductType,
-                    RarityId = item.Product.RarityId,
-                    RarityName = item.Product.RarityName,
-                    RarityColor = item.Product.RarityColor
-                } : null,
-                Wildcard = null, // Tutorial chest no contiene wildcards
-                CompensationCoins = null // Tutorial chest no tiene compensación
-            }).ToList()
-        };
-
-        return Ok(response);
+        return Ok(chest.ToResponseDto());
     }
 }
