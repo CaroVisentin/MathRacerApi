@@ -35,6 +35,8 @@ public static class ServiceExtensions
         // Registrar casos de uso de Players
         services.AddScoped<CreatePlayerUseCase>();
         services.AddScoped<GetPlayerByIdUseCase>();
+        services.AddScoped<GetPlayerByEmailUseCase>();
+
 
         // Registrar casos de uso de Worlds
         services.AddScoped<GetWorldsUseCase>();
@@ -79,6 +81,14 @@ public static class ServiceExtensions
         // Registrar casos de uso de Ranking
         services.AddScoped<IGetPlayerRankingUseCase, GetPlayerRankingUseCase>();
 
+        // Registrar casos de uso de amistad
+        services.AddScoped<SendFriendRequestUseCase>();
+        services.AddScoped<AcceptFriendRequestUseCase>();
+        services.AddScoped<RejectFriendRequestUseCase>();
+        services.AddScoped<GetFriendsUseCase>();
+        services.AddScoped<DeleteFriendUseCase>();
+        services.AddScoped<GetPendingFriendRequestsUseCase>();
+
 
         // Registrar repositorios
         services.AddScoped<ILevelRepository, LevelRepository>();
@@ -91,6 +101,9 @@ public static class ServiceExtensions
         services.AddScoped<IStoreRepository, StoreRepository>();
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
         services.AddSingleton<ISoloGameRepository, InMemorySoloGameRepository>();
+
+        // Registrar repositorios de amistad
+        services.AddScoped<IFriendshipRepository, FriendshipRepository>();
         services.AddScoped<IChestRepository, ChestRepository>();
         services.AddScoped<IWildcardRepository, WildcardRepository>();
 
@@ -109,6 +122,8 @@ public static class ServiceExtensions
         // Registrar servicios de dominio (lógica compartida)
         services.AddScoped<IGameLogicService, GameLogicService>();
         services.AddScoped<IPowerUpService, PowerUpService>();
+
+  
 
         // Configurar SignalR
         services.AddSignalR();
