@@ -82,11 +82,20 @@ public class SubmitSoloAnswerUseCase
         }
 
         bool shouldOpenChest = false;
+        int progressIncrement = 1;
+        int coinsEarned = 0;
+
+        // Aplicar doble progreso si está activo y la respuesta es correcta
+        if (isCorrect && game.HasDoubleProgressActive)
+        {
+            progressIncrement = 2;
+            game.HasDoubleProgressActive = false; // Desactivar después de usar
+        }
 
         // Procesar resultado
         if (isCorrect)
         {
-            game.PlayerPosition++;
+            game.PlayerPosition += progressIncrement;
             game.CorrectAnswers++;
             
             // Verificar si el jugador ganó
@@ -95,8 +104,8 @@ public class SubmitSoloAnswerUseCase
                 game.Status = SoloGameStatus.PlayerWon;
                 game.GameFinishedAt = DateTime.UtcNow;
                 
-                // Otorgar recompensas usando el caso de uso dedicado
-                await _grantLevelRewardUseCase.ExecuteAsync(game.PlayerId, game.LevelId, game.WorldId);
+                // Otorgar recompensas usando el caso de uso dedicado y obtener monedas
+                coinsEarned = await _grantLevelRewardUseCase.ExecuteAsync(game.PlayerId, game.LevelId, game.WorldId);
 
                 // Verificar si es un nivel nuevo (primera vez que lo completa)
                 var player = await _playerRepository.GetByIdAsync(game.PlayerId);
@@ -129,6 +138,9 @@ public class SubmitSoloAnswerUseCase
         game.LastAnswerTime = DateTime.UtcNow;
         game.CurrentQuestionIndex++;
 
+        // Limpiar opciones modificadas después de responder
+        game.ModifiedOptions = null;
+
         UpdateMachinePosition(game);
 
         if (game.MachinePosition >= game.TotalQuestions && game.Status == SoloGameStatus.InProgress)
@@ -145,7 +157,9 @@ public class SubmitSoloAnswerUseCase
             IsCorrect = isCorrect,
             CorrectAnswer = correctAnswer,
             PlayerAnswer = answer,
-            ShouldOpenWorldCompletionChest = shouldOpenChest
+            ShouldOpenWorldCompletionChest = shouldOpenChest,
+            ProgressIncrement = progressIncrement,
+            CoinsEarned = coinsEarned
         };
     }
 

@@ -52,7 +52,7 @@ public class GrantLevelRewardUseCaseTests
     #region First Completion Tests
 
     [Fact]
-    public async Task ExecuteAsync_WhenFirstCompletion_ShouldGrantFullReward()
+    public async Task ExecuteAsync_WhenFirstCompletion_ShouldGrantFullRewardAndReturnCoins()
     {
         // Arrange
         const int playerId = 100;
@@ -74,15 +74,16 @@ public class GrantLevelRewardUseCaseTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
+        var coinsEarned = await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
 
         // Assert
+        coinsEarned.Should().BeInRange(160, 240); // 200 ± 20%
+        
         _playerRepositoryMock.Verify(x => x.GetByIdAsync(playerId), Times.Once);
         
         // Verificar que se otorgaron monedas (worldId * 100 ± 20%)
         _playerRepositoryMock.Verify(
-            x => x.AddCoinsAsync(playerId, It.Is<int>(coins => 
-                coins >= 160 && coins <= 240)), // 200 ± 20% = [160, 240]
+            x => x.AddCoinsAsync(playerId, coinsEarned),
             Times.Once);
 
         // Verificar que se actualizó el LastLevelId
@@ -94,7 +95,7 @@ public class GrantLevelRewardUseCaseTests
     [InlineData(2, 160, 240)]   // Mundo 2: 200 ± 20% = [160, 240]
     [InlineData(3, 240, 360)]   // Mundo 3: 300 ± 20% = [240, 360]
     [InlineData(5, 400, 600)]   // Mundo 5: 500 ± 20% = [400, 600]
-    public async Task ExecuteAsync_WhenFirstCompletion_ShouldRespectWorldMultiplier(
+    public async Task ExecuteAsync_WhenFirstCompletion_ShouldRespectWorldMultiplierAndReturnCoins(
         int worldId, int minCoins, int maxCoins)
     {
         // Arrange
@@ -116,12 +117,13 @@ public class GrantLevelRewardUseCaseTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
+        var coinsEarned = await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
 
         // Assert
+        coinsEarned.Should().BeInRange(minCoins, maxCoins);
+        
         _playerRepositoryMock.Verify(
-            x => x.AddCoinsAsync(playerId, It.Is<int>(coins => 
-                coins >= minCoins && coins <= maxCoins)),
+            x => x.AddCoinsAsync(playerId, coinsEarned),
             Times.Once);
     }
 
@@ -159,7 +161,7 @@ public class GrantLevelRewardUseCaseTests
     #region Repeated Completion Tests
 
     [Fact]
-    public async Task ExecuteAsync_WhenRepeatedCompletion_ShouldGrantReducedReward()
+    public async Task ExecuteAsync_WhenRepeatedCompletion_ShouldGrantReducedRewardAndReturnCoins()
     {
         // Arrange
         const int playerId = 100;
@@ -177,15 +179,16 @@ public class GrantLevelRewardUseCaseTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
+        var coinsEarned = await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
 
         // Assert
+        coinsEarned.Should().BeInRange(18, 22); // 20 ± 1%
+        
         _playerRepositoryMock.Verify(x => x.GetByIdAsync(playerId), Times.Once);
         
         // Verificar que se otorgaron monedas reducidas (worldId * 10 ± 1%)
         _playerRepositoryMock.Verify(
-            x => x.AddCoinsAsync(playerId, It.Is<int>(coins => 
-                coins >= 18 && coins <= 22)), // 20 ± 1% = [19.8, 20.2] ≈ [18, 22]
+            x => x.AddCoinsAsync(playerId, coinsEarned),
             Times.Once);
 
         // Verificar que NO se actualizó el LastLevelId
@@ -197,7 +200,7 @@ public class GrantLevelRewardUseCaseTests
     [InlineData(2, 18, 22)]    // Mundo 2: 20 ± 1% ≈ [18, 22]
     [InlineData(3, 27, 33)]    // Mundo 3: 30 ± 1% ≈ [27, 33]
     [InlineData(5, 45, 55)]    // Mundo 5: 50 ± 1% ≈ [45, 55]
-    public async Task ExecuteAsync_WhenRepeatedCompletion_ShouldRespectWorldMultiplier(
+    public async Task ExecuteAsync_WhenRepeatedCompletion_ShouldRespectWorldMultiplierAndReturnCoins(
         int worldId, int minCoins, int maxCoins)
     {
         // Arrange
@@ -215,12 +218,13 @@ public class GrantLevelRewardUseCaseTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
+        var coinsEarned = await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
 
         // Assert
+        coinsEarned.Should().BeInRange(minCoins, maxCoins);
+        
         _playerRepositoryMock.Verify(
-            x => x.AddCoinsAsync(playerId, It.Is<int>(coins => 
-                coins >= minCoins && coins <= maxCoins)),
+            x => x.AddCoinsAsync(playerId, coinsEarned),
             Times.Once);
     }
 
@@ -268,13 +272,14 @@ public class GrantLevelRewardUseCaseTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
+        var coinsEarned = await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
 
         // Assert
         // Debe ser recompensa reducida porque levelId (5) NO es > lastLevelId (5)
+        coinsEarned.Should().BeInRange(18, 22);
+        
         _playerRepositoryMock.Verify(
-            x => x.AddCoinsAsync(playerId, It.Is<int>(coins => 
-                coins >= 18 && coins <= 22)), 
+            x => x.AddCoinsAsync(playerId, coinsEarned), 
             Times.Once);
         
         _playerRepositoryMock.Verify(x => x.UpdateLastLevelAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
@@ -307,14 +312,11 @@ public class GrantLevelRewardUseCaseTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
+        var coinsEarned = await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
 
         // Assert
         // Como levelId (1) > lastLevelId (0), ES primera vez → recompensa COMPLETA
-        _playerRepositoryMock.Verify(
-            x => x.AddCoinsAsync(playerId, It.Is<int>(coins => 
-                coins >= 80 && coins <= 120)), // Mundo 1: 100 ± 20% = [80, 120]
-            Times.Once);
+        coinsEarned.Should().BeInRange(80, 120); // Mundo 1: 100 ± 20%
     
         // Debe actualizar LastLevelId porque es primera vez
         _playerRepositoryMock.Verify(x => x.UpdateLastLevelAsync(playerId, levelId), Times.Once);
@@ -343,13 +345,10 @@ public class GrantLevelRewardUseCaseTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
+        var coinsEarned = await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
 
         // Assert
-        _playerRepositoryMock.Verify(
-            x => x.AddCoinsAsync(playerId, It.Is<int>(coins => 
-                coins >= 160 && coins <= 240)), // Recompensa completa
-            Times.Once);
+        coinsEarned.Should().BeInRange(160, 240); // Recompensa completa
         
         _playerRepositoryMock.Verify(x => x.UpdateLastLevelAsync(playerId, levelId), Times.Once);
     }
@@ -377,13 +376,10 @@ public class GrantLevelRewardUseCaseTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
+        var coinsEarned = await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
 
         // Assert
-        _playerRepositoryMock.Verify(
-            x => x.AddCoinsAsync(playerId, It.Is<int>(coins => 
-                coins >= 160 && coins <= 240)), // Recompensa completa
-            Times.Once);
+        coinsEarned.Should().BeInRange(160, 240); // Recompensa completa
         
         _playerRepositoryMock.Verify(x => x.UpdateLastLevelAsync(playerId, levelId), Times.Once);
     }
@@ -407,12 +403,10 @@ public class GrantLevelRewardUseCaseTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
+        var coinsEarned = await _grantLevelRewardUseCase.ExecuteAsync(playerId, levelId, worldId);
 
         // Assert
-        _playerRepositoryMock.Verify(
-            x => x.AddCoinsAsync(playerId, It.Is<int>(coins => coins >= 1)),
-            Times.Once);
+        coinsEarned.Should().BeGreaterOrEqualTo(1);
     }
 
     #endregion

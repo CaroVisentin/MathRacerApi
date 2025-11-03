@@ -3,17 +3,15 @@
 namespace MathRacerAPI.Domain.Models;
 
 /// <summary>
-/// Resultado del procesamiento de una respuesta en modo individual
+/// Resultado de procesar una respuesta en modo individual
 /// </summary>
 public class SoloAnswerResult
 {
-    public SoloGame Game { get; set; } = new();
+    public SoloGame Game { get; set; } = null!;
     public bool IsCorrect { get; set; }
     public int CorrectAnswer { get; set; }
     public int PlayerAnswer { get; set; }
-    
-    /// <summary>
-    /// Indica si el jugador completó el último nivel del mundo y debe abrir un cofre
-    /// </summary>
     public bool ShouldOpenWorldCompletionChest { get; set; }
+    public int ProgressIncrement { get; set; } = 1;
+    public int CoinsEarned { get; set; }
 }

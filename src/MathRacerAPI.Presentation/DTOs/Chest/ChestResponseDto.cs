@@ -16,7 +16,7 @@ public class ChestItemDto
     public string Type { get; set; } = string.Empty; // "Product", "Coins", "Wildcard"
     public int Quantity { get; set; }
     public ChestProductDto? Product { get; set; }
-    public WildcardDto? Wildcard { get; set; } 
+    public ChestWildcardDto? Wildcard { get; set; }
     public int? CompensationCoins { get; set; }
 }
 
@@ -37,7 +37,7 @@ public class ChestProductDto
 /// <summary>
 /// Wildcard obtenido del cofre
 /// </summary>
-public class WildcardDto
+public class ChestWildcardDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;

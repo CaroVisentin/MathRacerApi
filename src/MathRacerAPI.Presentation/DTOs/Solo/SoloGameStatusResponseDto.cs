@@ -1,5 +1,6 @@
 using MathRacerAPI.Presentation.DTOs.SignalR;
 using System;
+using System.Collections.Generic;
 
 namespace MathRacerAPI.Presentation.DTOs.Solo;
 
@@ -28,4 +29,9 @@ public class SoloGameStatusResponseDto
     public DateTime? GameFinishedAt { get; set; }
     public double ElapsedTime { get; set; }
 
+    // Wildcards
+    public List<WildcardDto> AvailableWildcards { get; set; } = new();
+    public List<int> UsedWildcardTypes { get; set; } = new();
+    public bool HasDoubleProgressActive { get; set; }
+    public List<int>? ModifiedOptions { get; set; }
 }

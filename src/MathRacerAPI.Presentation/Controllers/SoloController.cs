@@ -17,15 +17,18 @@ public class SoloController : ControllerBase
     private readonly StartSoloGameUseCase _startSoloGameUseCase;
     private readonly GetSoloGameStatusUseCase _getSoloGameStatusUseCase;
     private readonly SubmitSoloAnswerUseCase _submitSoloAnswerUseCase;
+    private readonly UseWildcardUseCase _useWildcardUseCase;
 
     public SoloController(
         StartSoloGameUseCase startSoloGameUseCase,
         GetSoloGameStatusUseCase getSoloGameStatusUseCase,
-        SubmitSoloAnswerUseCase submitSoloAnswerUseCase)
+        SubmitSoloAnswerUseCase submitSoloAnswerUseCase,
+        UseWildcardUseCase useWildcardUseCase)
     {
         _startSoloGameUseCase = startSoloGameUseCase;
         _getSoloGameStatusUseCase = getSoloGameStatusUseCase;
         _submitSoloAnswerUseCase = submitSoloAnswerUseCase;
+        _useWildcardUseCase = useWildcardUseCase;
     }
 
     /// <summary>
@@ -388,8 +391,8 @@ public class SoloController : ControllerBase
     /// </summary>
     /// <param name="gameId">ID de la partida</param>
     /// <param name="answer">Valor numérico de la respuesta seleccionada por el jugador</param>
-    /// <returns>Feedback de la respuesta procesada incluyendo si fue correcta y el estado actualizado del juego</returns>
-    /// <response code="200">Respuesta procesada exitosamente. Retorna feedback y nuevo estado.</response>
+    /// <returns>Feedback de la respuesta procesada incluyendo si fue correcta, el estado actualizado del juego y las monedas obtenidas si completó el nivel</returns>
+    /// <response code="200">Respuesta procesada exitosamente. Retorna feedback, nuevo estado y monedas obtenidas (si aplica).</response>
     /// <response code="400">Solicitud inválida. Partida finalizada, timeout, o no hay preguntas disponibles.</response>
     /// <response code="401">No autorizado. Token inválido o faltante.</response>
     /// <response code="403">Prohibido. El jugador no tiene permiso para responder en esta partida.</response>
@@ -411,14 +414,20 @@ public class SoloController : ControllerBase
     /// Este endpoint procesa la respuesta del jugador y aplica la lógica del juego:
     /// 
     /// **Si la respuesta es correcta:**
-    /// - Incrementa `PlayerPosition` en 1
+    /// - Incrementa `PlayerPosition` en 1 (o 2 si tiene doble progreso activo)
     /// - Incrementa `CorrectAnswers` en 1
     /// - Verifica si el jugador alcanzó `TotalQuestions` (gana)
+    /// - **Si gana**: Otorga recompensa de monedas según el mundo y si es primera vez
     /// 
     /// **Si la respuesta es incorrecta:**
     /// - Decrementa `LivesRemaining` en 1
     /// - Verifica si `LivesRemaining` llegó a 0 (pierde)
     /// - Consume 1 energía si el jugador pierde todas las vidas
+    /// 
+    /// **Sistema de Recompensas:**
+    /// - **Primera vez completando el nivel**: worldId × 100 ± 20% (Ejemplo: Mundo 2 = 160-240 monedas)
+    /// - **Repetición del nivel**: worldId × 10 ± 1% (Ejemplo: Mundo 2 = 18-22 monedas)
+    /// - El campo `CoinsEarned` indica las monedas obtenidas (0 si no completó el nivel)
     /// 
     /// **Validaciones de Tiempo:**
     /// - **Primera pregunta**: Valida tiempo desde `GameStartedAt`
@@ -454,7 +463,10 @@ public class SoloController : ControllerBase
     ///       "correctAnswers": 4,
     ///       "waitTimeSeconds": 3,
     ///       "answeredAt": "2025-11-01T10:31:25Z",
-    ///       "currentQuestionIndex": 4
+    ///       "currentQuestionIndex": 4,
+    ///       "shouldOpenWorldCompletionChest": false,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 0
     ///     }
     /// 
     /// **Ejemplo de respuesta exitosa (200) - Respuesta incorrecta:**
@@ -470,10 +482,13 @@ public class SoloController : ControllerBase
     ///       "correctAnswers": 3,
     ///       "waitTimeSeconds": 3,
     ///       "answeredAt": "2025-11-01T10:31:25Z",
-    ///       "currentQuestionIndex": 4
+    ///       "currentQuestionIndex": 4,
+    ///       "shouldOpenWorldCompletionChest": false,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 0
     ///     }
     /// 
-    /// **Ejemplo de respuesta exitosa (200) - Jugador ganó:**
+    /// **Ejemplo de respuesta exitosa (200) - Jugador ganó (primera vez):**
     /// 
     ///     {
     ///       "isCorrect": true,
@@ -486,7 +501,48 @@ public class SoloController : ControllerBase
     ///       "correctAnswers": 10,
     ///       "waitTimeSeconds": 3,
     ///       "answeredAt": "2025-11-01T10:32:15Z",
-    ///       "currentQuestionIndex": 10
+    ///       "currentQuestionIndex": 10,
+    ///       "shouldOpenWorldCompletionChest": false,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 195
+    ///     }
+    /// 
+    /// **Ejemplo de respuesta exitosa (200) - Jugador ganó (repetición):**
+    /// 
+    ///     {
+    ///       "isCorrect": true,
+    ///       "correctAnswer": 8,
+    ///       "playerAnswer": 8,
+    ///       "status": "PlayerWon",
+    ///       "livesRemaining": 2,
+    ///       "playerPosition": 10,
+    ///       "machinePosition": 7,
+    ///       "correctAnswers": 10,
+    ///       "waitTimeSeconds": 3,
+    ///       "answeredAt": "2025-11-01T10:32:15Z",
+    ///       "currentQuestionIndex": 10,
+    ///       "shouldOpenWorldCompletionChest": false,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 20
+    ///     }
+    /// 
+    /// **Ejemplo de respuesta exitosa (200) - Completó último nivel del mundo:**
+    /// 
+    ///     {
+    ///       "isCorrect": true,
+    ///       "correctAnswer": 8,
+    ///       "playerAnswer": 8,
+    ///       "status": "PlayerWon",
+    ///       "livesRemaining": 1,
+    ///       "playerPosition": 10,
+    ///       "machinePosition": 8,
+    ///       "correctAnswers": 10,
+    ///       "waitTimeSeconds": 3,
+    ///       "answeredAt": "2025-11-01T10:32:15Z",
+    ///       "currentQuestionIndex": 10,
+    ///       "shouldOpenWorldCompletionChest": true,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 195
     ///     }
     /// 
     /// **Ejemplo de respuesta exitosa (200) - Jugador perdió todas las vidas:**
@@ -502,7 +558,10 @@ public class SoloController : ControllerBase
     ///       "correctAnswers": 5,
     ///       "waitTimeSeconds": 3,
     ///       "answeredAt": "2025-11-01T10:31:45Z",
-    ///       "currentQuestionIndex": 8
+    ///       "currentQuestionIndex": 8,
+    ///       "shouldOpenWorldCompletionChest": false,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 0
     ///     }
     /// 
     /// **Ejemplo de respuesta exitosa (200) - Máquina ganó:**
@@ -518,7 +577,10 @@ public class SoloController : ControllerBase
     ///       "correctAnswers": 7,
     ///       "waitTimeSeconds": 3,
     ///       "answeredAt": "2025-11-01T10:33:00Z",
-    ///       "currentQuestionIndex": 7
+    ///       "currentQuestionIndex": 7,
+    ///       "shouldOpenWorldCompletionChest": false,
+    ///       "progressIncrement": 1,
+    ///       "coinsEarned": 0
     ///     }
     ///     
     /// **Posibles errores:**
@@ -593,5 +655,193 @@ public class SoloController : ControllerBase
         var result = await _submitSoloAnswerUseCase.ExecuteAsync(gameId, answer, uid);
 
         return Ok(result.ToAnswerDto());
+    }
+
+    /// <summary>
+    /// Activa un wildcard en la partida individual actual
+    /// </summary>
+    /// <param name="gameId">ID de la partida</param>
+    /// <param name="wildcardId">ID del wildcard a usar (1: Eliminar opción, 2: Saltar pregunta, 3: Doble progreso)</param>
+    /// <returns>Resultado de activar el wildcard incluyendo efectos aplicados</returns>
+    /// <response code="200">Wildcard activado exitosamente. Retorna el resultado con los efectos aplicados.</response>
+    /// <response code="400">Solicitud inválida. Wildcard ya usado en esta partida, juego finalizado, wildcard no disponible o cantidad insuficiente.</response>
+    /// <response code="401">No autorizado. Token inválido o faltante.</response>
+    /// <response code="403">Prohibido. El jugador no tiene permiso para usar wildcards en esta partida.</response>
+    /// <response code="404">Partida o wildcard no encontrado.</response>
+    /// <response code="500">Error interno del servidor.</response>
+    /// <remarks>
+    /// Ejemplo de solicitud:
+    /// 
+    ///     POST /api/solo/123/wildcard/1
+    ///     Headers:
+    ///       Authorization: Bearer {firebase-id-token}
+    /// 
+    /// **Descripción:**
+    /// 
+    /// Este endpoint activa un wildcard (comodín) en una partida individual en progreso. Cada wildcard tiene un efecto único:
+    /// 
+    /// **Wildcards Disponibles:**
+    /// 
+    /// 1. **Eliminar Opción Incorrecta (ID: 1)**
+    ///    - Elimina una opcion incorrecta de la pregunta actual
+    ///    - Facilita acertar la respuesta correcta
+    ///    - Solo puede usarse una vez por partida
+    /// 
+    /// 2. **Saltar Pregunta (ID: 2)**
+    ///    - Salta a la siguiente pregunta sin penalización
+    ///    - No consume vidas ni afecta el progreso
+    ///    - Útil para preguntas muy difíciles
+    /// 
+    /// 3. **Doble Progreso (ID: 3)**
+    ///    - La siguiente respuesta correcta avanza 2 posiciones en lugar de 1
+    ///    - Se activa como un efecto temporal
+    ///    - Se consume al responder correctamente la siguiente pregunta
+    /// 
+    /// **Restricciones:**
+    /// - Solo se puede usar **un wildcard de cada tipo por partida**
+    /// - El jugador debe tener al menos **1 unidad** del wildcard en su inventario
+    /// - El juego debe estar en estado **InProgress**
+    /// - Solo el jugador dueño de la partida puede usar wildcards
+    /// 
+    /// **Seguridad:**
+    /// - Requiere token de Firebase en el header `Authorization`
+    /// - Valida que el jugador sea dueño de la partida
+    /// - Verifica disponibilidad y cantidad del wildcard
+    /// 
+    /// **Ejemplo de respuesta exitosa (200) - Eliminar Opción (ID 1):**
+    /// 
+    ///     {
+    ///       "wildcardId": 1,
+    ///       "success": true,
+    ///       "message": "Se eliminó una opción incorrecta",
+    ///       "remainingQuantity": 2,
+    ///       "modifiedOptions": [5, 8],
+    ///       "newQuestionIndex": null,
+    ///       "newQuestion": null,
+    ///       "doubleProgressActive": false
+    ///     }
+    /// 
+    /// **Ejemplo de respuesta exitosa (200) - Saltar Pregunta (ID 2):**
+    /// 
+    ///     {
+    ///       "wildcardId": 2,
+    ///       "success": true,
+    ///       "message": "Pregunta cambiada exitosamente",
+    ///       "remainingQuantity": 1,
+    ///       "modifiedOptions": null,
+    ///       "newQuestionIndex": 5,
+    ///       "newQuestion": {
+    ///         "id": 9821,
+    ///         "equation": "y = 4*x + 1",
+    ///         "options": [-3, 1, 5, 9],
+    ///         "startedAt": "2025-11-01T10:32:10Z"
+    ///       },
+    ///       "doubleProgressActive": false
+    ///     }
+    /// 
+    /// **Ejemplo de respuesta exitosa (200) - Doble Progreso (ID 3):**
+    /// 
+    ///     {
+    ///       "wildcardId": 3,
+    ///       "success": true,
+    ///       "message": "Doble progreso activado. La siguiente respuesta correcta valdrá doble.",
+    ///       "remainingQuantity": 0,
+    ///       "modifiedOptions": null,
+    ///       "newQuestionIndex": null,
+    ///       "newQuestion": null,
+    ///       "doubleProgressActive": true
+    ///     }
+    ///     
+    /// **Posibles errores:**
+    /// 
+    /// Error 400 (BusinessException - wildcard ya usado):
+    /// 
+    ///     {
+    ///       "statusCode": 400,
+    ///       "message": "Ya usaste este tipo de comodín en esta partida"
+    ///     }
+    /// 
+    /// Error 400 (BusinessException - juego finalizado):
+    /// 
+    ///     {
+    ///       "statusCode": 400,
+    ///       "message": "No puedes usar comodines en un juego finalizado"
+    ///     }
+    /// 
+    /// Error 400 (BusinessException - wildcard no disponible):
+    /// 
+    ///     {
+    ///       "statusCode": 400,
+    ///       "message": "No tienes este comodín disponible"
+    ///     }
+    /// 
+    /// Error 400 (BusinessException - cantidad insuficiente):
+    /// 
+    ///     {
+    ///       "statusCode": 400,
+    ///       "message": "No tienes suficientes unidades de este comodín"
+    ///     }
+    /// 
+    /// Error 401 (Sin token):
+    /// 
+    ///     {
+    ///       "statusCode": 401,
+    ///       "message": "Token de autenticación requerido."
+    ///     }
+    /// 
+    /// Error 401 (Token inválido):
+    /// 
+    ///     {
+    ///       "statusCode": 401,
+    ///       "message": "Token de Firebase inválido."
+    ///     }
+    /// 
+    /// Error 403 (BusinessException - no autorizado):
+    /// 
+    ///     {
+    ///       "statusCode": 403,
+    ///       "message": "No tienes permiso para usar wildcards en esta partida"
+    ///     }
+    /// 
+    /// Error 404 (NotFoundException - partida):
+    /// 
+    ///     {
+    ///       "statusCode": 404,
+    ///       "message": "Partida con ID 123 no encontrada"
+    ///     }
+    /// 
+    /// Error 404 (NotFoundException - wildcard):
+    /// 
+    ///     {
+    ///       "statusCode": 404,
+    ///       "message": "Comodín con ID 1 no encontrado"
+    ///     }
+    /// 
+    /// Error 500 (Error interno):
+    /// 
+    ///     {
+    ///       "statusCode": 500,
+    ///       "message": "Ocurrió un error interno en el servidor."
+    ///     }
+    /// 
+    /// </remarks>
+    [HttpPost("{gameId}/wildcard/{wildcardId}")]
+    [ProducesResponseType(typeof(UseWildcardResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<UseWildcardResponseDto>> UseWildcard(int gameId, int wildcardId)
+    {
+        var uid = HttpContext.Items["FirebaseUid"] as string;
+        if (string.IsNullOrEmpty(uid))
+        {
+            return Unauthorized(new { message = "Token de autenticación requerido o inválido." });
+        }
+
+        var result = await _useWildcardUseCase.ExecuteAsync(gameId, wildcardId, uid);
+
+        return Ok(result.ToWildcardResponseDto());
     }
 }
