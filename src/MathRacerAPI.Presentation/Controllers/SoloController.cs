@@ -3,15 +3,14 @@ using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Presentation.DTOs.Solo;
 using MathRacerAPI.Presentation.Mappers;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using System.Threading.Tasks;
 
 namespace MathRacerAPI.Presentation.Controllers;
 
-/// <summary>
-/// Controlador para el modo de juego individual contra la máquina
-/// </summary>
 [ApiController]
 [Route("api/solo")]
+
 public class SoloController : ControllerBase
 {
     private readonly StartSoloGameUseCase _startSoloGameUseCase;
@@ -219,12 +218,17 @@ public class SoloController : ControllerBase
     ///     }
     /// 
     /// </remarks>
+    [SwaggerOperation(
+        Summary = "Iniciar partida individual",
+        Description = "Inicia una nueva partida individual en el nivel especificado",
+        OperationId = "StartSoloGame",
+        Tags = new[] { "Solo - Modo individual" })]
+    [SwaggerResponse(200, "Partida iniciada exitosamente", typeof(StartSoloGameResponseDto))]
+    [SwaggerResponse(400, "Solicitud inválida")]
+    [SwaggerResponse(401, "No autorizado")]
+    [SwaggerResponse(404, "Nivel no encontrado")]
+    [SwaggerResponse(500, "Error interno del servidor")]
     [HttpPost("start/{levelId}")]
-    [ProducesResponseType(typeof(StartSoloGameResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<StartSoloGameResponseDto>> StartGame(int levelId)
     {
         var uid = HttpContext.Items["FirebaseUid"] as string;
@@ -366,13 +370,18 @@ public class SoloController : ControllerBase
     ///     }
     /// 
     /// </remarks>
+    [SwaggerOperation(
+        Summary = "Obtener estado de partida",
+        Description = "Obtiene el estado actual de una partida individual",
+        OperationId = "GetSoloGameStatus",
+        Tags = new[] { "Solo - Modo individual" })]
+    [SwaggerResponse(200, "Estado obtenido exitosamente", typeof(SoloGameStatusResponseDto))]
+    [SwaggerResponse(400, "Solicitud inválida")]
+    [SwaggerResponse(401, "No autorizado")]
+    [SwaggerResponse(403, "Acceso prohibido")]
+    [SwaggerResponse(404, "Partida no encontrada")]
+    [SwaggerResponse(500, "Error interno del servidor")]
     [HttpGet("{gameId}")]
-    [ProducesResponseType(typeof(SoloGameStatusResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<SoloGameStatusResponseDto>> GetGameStatus(int gameId)
     {
         var uid = HttpContext.Items["FirebaseUid"] as string;
@@ -635,13 +644,18 @@ public class SoloController : ControllerBase
     ///     }
     /// 
     /// </remarks>
+    [SwaggerOperation(
+        Summary = "Enviar respuesta",
+        Description = "Envía una respuesta a la pregunta actual de la partida individual",
+        OperationId = "SubmitSoloAnswer",
+        Tags = new[] { "Solo - Modo individual" })]
+    [SwaggerResponse(200, "Respuesta procesada exitosamente", typeof(SubmitSoloAnswerResponseDto))]
+    [SwaggerResponse(400, "Solicitud inválida")]
+    [SwaggerResponse(401, "No autorizado")]
+    [SwaggerResponse(403, "Acceso prohibido")]
+    [SwaggerResponse(404, "Partida no encontrada")]
+    [SwaggerResponse(500, "Error interno del servidor")]
     [HttpPost("{gameId}/answer")]
-    [ProducesResponseType(typeof(SubmitSoloAnswerResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<SubmitSoloAnswerResponseDto>> SubmitAnswer(
         int gameId, 
         [FromBody] int answer)
@@ -825,13 +839,18 @@ public class SoloController : ControllerBase
     ///     }
     /// 
     /// </remarks>
+    [SwaggerOperation(
+        Summary = "Usar wildcard",
+        Description = "Utiliza un wildcard (power-up) en la pregunta actual de la partida individual",
+        OperationId = "UseWildcard",
+        Tags = new[] { "Solo - Modo individual" })]
+    [SwaggerResponse(200, "Wildcard usado exitosamente", typeof(UseWildcardResponseDto))]
+    [SwaggerResponse(400, "Solicitud inválida")]
+    [SwaggerResponse(401, "No autorizado")]
+    [SwaggerResponse(403, "Acceso prohibido")]
+    [SwaggerResponse(404, "Partida o wildcard no encontrado")]
+    [SwaggerResponse(500, "Error interno del servidor")]
     [HttpPost("{gameId}/wildcard/{wildcardId}")]
-    [ProducesResponseType(typeof(UseWildcardResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<UseWildcardResponseDto>> UseWildcard(int gameId, int wildcardId)
     {
         var uid = HttpContext.Items["FirebaseUid"] as string;

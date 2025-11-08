@@ -13,10 +13,13 @@ public static class ApplicationExtensions
         app.UseSwagger();
         app.UseSwaggerUI(c =>
         {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "MathRacer API v1");
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "MathRacer API v1.0.0");
             c.RoutePrefix = "swagger";
             c.DocumentTitle = "MathRacer API Documentation";
             c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
+            c.DefaultModelsExpandDepth(-1); // Ocultar modelos por defecto
+            c.EnableValidator();
+            c.EnableDeepLinking();
         });
 
         return app;

@@ -1,15 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Presentation.DTOs;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace MathRacerAPI.Presentation.Controllers;
 
-/// <summary>
-/// Controller para health checks
-/// </summary>
 [ApiController]
 [Route("[controller]")]
-[Tags("Health Check")]
+
 public class HealthController : ControllerBase
 {
     private readonly GetHealthStatusUseCase _getHealthStatusUseCase;
@@ -19,12 +17,14 @@ public class HealthController : ControllerBase
         _getHealthStatusUseCase = getHealthStatusUseCase;
     }
 
-    /// <summary>
-    /// Verifica el estado de salud de la aplicación
-    /// </summary>
-    /// <returns>Estado de salud detallado de la aplicación</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(HealthCheckResponseDto), StatusCodes.Status200OK)]
+    [SwaggerOperation(
+        Summary = "Verifica el estado de salud de la aplicación",
+        Description = "Retorna el estado detallado de salud de la aplicación, incluyendo información del sistema, uptime y uso de memoria.",
+        OperationId = "GetHealthStatus",
+        Tags = new[] { "Health - Estado del sistema" }
+    )]
+    [SwaggerResponse(200, "Estado de salud de la aplicación.", typeof(HealthCheckResponseDto))]
     public ActionResult<HealthCheckResponseDto> GetHealth()
     {
         var healthStatus = _getHealthStatusUseCase.Execute();

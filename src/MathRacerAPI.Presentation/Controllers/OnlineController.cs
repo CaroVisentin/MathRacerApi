@@ -1,14 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Domain.Exceptions;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace MathRacerAPI.Presentation.Controllers;
 
-/// <summary>
-/// Controlador para operaciones relacionadas con el modo multijugador online
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
+
 [Produces("application/json")]
 public class OnlineController : ControllerBase
 {
@@ -19,11 +18,15 @@ public class OnlineController : ControllerBase
         _gameRepository = gameRepository;
     }
 
-    /// <summary>
-    /// Obtiene información sobre una partida online
-    /// </summary>
-    /// <param name="gameId">ID de la partida</param>
-    /// <returns>Información de la partida</returns>
+    [SwaggerOperation(
+        Summary = "Obtiene información sobre una partida online",
+        Description = "Retorna el estado completo de una partida multijugador incluyendo jugadores, progreso y configuración del juego.",
+        OperationId = "GetOnlineGame",
+        Tags = new[] { "Online - Multijugador" }
+    )]
+    [SwaggerResponse(200, "Información de la partida obtenida exitosamente.")]
+    [SwaggerResponse(404, "Partida no encontrada.")]
+    [SwaggerResponse(500, "Error interno del servidor.")]
     [HttpGet("game/{gameId}")]
     public async Task<IActionResult> GetGame(int gameId)
     {
@@ -56,10 +59,14 @@ public class OnlineController : ControllerBase
         });
     }
 
-    /// <summary>
-    /// Obtiene información sobre la conexión SignalR
-    /// </summary>
-    /// <returns>Información de configuración de SignalR</returns>
+    [SwaggerOperation(
+        Summary = "Obtiene información de configuración para SignalR",
+        Description = "Proporciona la configuración necesaria para establecer conexiones SignalR para el modo multijugador, incluyendo eventos y URL del hub.",
+        OperationId = "GetSignalRConnectionInfo",
+        Tags = new[] { "Online - Multijugador" }
+    )]
+    [SwaggerResponse(200, "Información de conexión SignalR obtenida exitosamente.")]
+    [SwaggerResponse(500, "Error interno del servidor.")]
     [HttpGet("connection-info")]
     public IActionResult GetConnectionInfo()
     {

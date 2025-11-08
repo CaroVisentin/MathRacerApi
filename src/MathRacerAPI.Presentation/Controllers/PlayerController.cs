@@ -2,15 +2,13 @@ using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Infrastructure.Services;
 using MathRacerAPI.Presentation.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace MathRacerAPI.Presentation.Controllers;
 
-/// <summary>
-/// Controlador para gestionar jugadores
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Tags("Player")]
+
 public class PlayerController : ControllerBase
 {
     private readonly RegisterPlayerUseCase _registerPlayerUseCase;
@@ -32,13 +30,16 @@ public class PlayerController : ControllerBase
         _getPlayerByEmailUseCase = getPlayerByEmailUseCase;
     }
 
-    /// <summary>
-    /// Registro de usuario con Firebase Authentication
-    /// </summary>
     [HttpPost("register")]
-    [ProducesResponseType(typeof(PlayerProfileDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(
+        Summary = "Registro de usuario con Firebase Authentication",
+        Description = "Registra un nuevo usuario en el sistema utilizando Firebase Authentication. El token de Firebase debe enviarse en el header Authorization.",
+        OperationId = "RegisterPlayer",
+        Tags = new[] { "Player - Gesti�n de jugadores" }
+    )]
+    [SwaggerResponse(201, "Usuario registrado exitosamente.", typeof(PlayerProfileDto))]
+    [SwaggerResponse(400, "Datos inválidos o email ya registrado.")]
+    [SwaggerResponse(500, "Error interno del servidor.")]
     public async Task<ActionResult<PlayerProfileDto>> Register([FromBody] RegisterRequestDto request)
     {
         if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Email))
@@ -68,14 +69,17 @@ public class PlayerController : ControllerBase
         return StatusCode(StatusCodes.Status201Created, response);
     }
 
-    /// <summary>
-    /// Login de usuario con email y contraseña
-    /// </summary>
     [HttpPost("login")]
-    [ProducesResponseType(typeof(PlayerProfileDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(
+        Summary = "Login de usuario con email y contraseña",
+        Description = "Autentica un usuario existente en el sistema usando email y contraseña. Retorna el perfil del jugador si las credenciales son válidas.",
+        OperationId = "LoginPlayer",
+        Tags = new[] { "Player - Gesti�n de jugadores" }
+    )]
+    [SwaggerResponse(200, "Login exitoso.", typeof(PlayerProfileDto))]
+    [SwaggerResponse(400, "Datos de login inválidos.")]
+    [SwaggerResponse(401, "Credenciales incorrectas.")]
+    [SwaggerResponse(500, "Error interno del servidor.")]
     public async Task<ActionResult<PlayerProfileDto>> Login([FromBody] LoginRequestDto request)
     {
         if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
@@ -109,14 +113,17 @@ public class PlayerController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>
-    /// Login/registro con Google (Firebase)
-    /// </summary>
+    [SwaggerOperation(
+        Summary = "Autenticación con Google Firebase",
+        Description = "Permite el login o registro automático de usuarios utilizando Google Firebase Authentication. Si el usuario no existe, se crea automáticamente.",
+        OperationId = "GoogleAuth",
+        Tags = new[] { "Player - Gesti�n de jugadores" }
+    )]
+    [SwaggerResponse(200, "Autenticación exitosa.", typeof(PlayerProfileDto))]
+    [SwaggerResponse(400, "Token de Firebase requerido o datos inválidos.")]
+    [SwaggerResponse(401, "Token de Firebase inválido.")]
+    [SwaggerResponse(500, "Error interno del servidor.")]
     [HttpPost("google")]
-    [ProducesResponseType(typeof(PlayerProfileDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<PlayerProfileDto>> Google([FromBody] GoogleRequestDto request)
     {
         string? idToken = null;
@@ -148,10 +155,16 @@ public class PlayerController : ControllerBase
         return Ok(response);
     }
 
+    [SwaggerOperation(
+        Summary = "Buscar jugador por email",
+        Description = "Obtiene el perfil de un jugador específico utilizando su dirección de email. Útil para funciones de búsqueda de amigos.",
+        OperationId = "GetPlayerByEmail",
+        Tags = new[] { "Player - Gesti�n de jugadores" }
+    )]
+    [SwaggerResponse(200, "Jugador encontrado exitosamente.", typeof(PlayerProfileDto))]
+    [SwaggerResponse(404, "Usuario no encontrado con el email especificado.")]
+    [SwaggerResponse(500, "Error interno del servidor.")]
     [HttpGet("email/{email}")]
-    [ProducesResponseType(typeof(FriendProfileDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<FriendProfileDto>> GetPlayerByEmail(string email)
     {
         var user = await _getPlayerByEmailUseCase.ExecuteAsync(email);
