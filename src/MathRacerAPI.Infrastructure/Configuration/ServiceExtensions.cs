@@ -37,7 +37,7 @@ public static class ServiceExtensions
         services.AddScoped<CreatePlayerUseCase>();
         services.AddScoped<GetPlayerByIdUseCase>();
         services.AddScoped<GetPlayerByEmailUseCase>();
-
+        services.AddScoped<GetPlayerEnergyStatusUseCase>();
 
         // Registrar casos de uso de Worlds
         services.AddScoped<GetWorldsUseCase>();
@@ -53,6 +53,9 @@ public static class ServiceExtensions
         // Registrar casos de uso de Ecuaciones
         services.AddScoped<GetQuestionsUseCase>();
 
+        // Registrar casos de uso de Wildcards
+        services.AddScoped<GetPlayerWildcardsUseCase>();
+
         // Registrar casos de uso de modo individual
         services.AddScoped<StartSoloGameUseCase>();
         services.AddScoped<GetSoloGameStatusUseCase>();
@@ -65,7 +68,7 @@ public static class ServiceExtensions
         services.AddScoped<GrantLevelRewardUseCase>();
         services.AddScoped<UseWildcardUseCase>();
 
-        // Registrar casos de uso de cofres
+        // Registrar casos de uso de Chests
         services.AddScoped<OpenTutorialChestUseCase>();
         services.AddScoped<OpenRandomChestUseCase>();
 
