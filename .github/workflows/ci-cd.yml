@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -11,9 +11,10 @@ env:
   SOLUTION_FILE: 'MathRacerAPI.sln'
 
 jobs:
-  ci:
+  # Job 1: Build del proyecto
+  build:
     runs-on: ubuntu-latest
-    name: Build and Test
+    name: 🏗️ Build Project
     
     steps:
     - name: Checkout code
@@ -47,23 +48,89 @@ jobs:
     - name: Build Tests
       run: dotnet build tests/MathRacerAPI.Tests/MathRacerAPI.Tests.csproj --no-restore --configuration Release
       
-    - name: Run Unit Tests with Coverage
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          **/bin/Release/**
+          **/obj/Release/**
+        retention-days: 1
+
+  # Job 2: Ejecutar Tests Unitarios
+  test:
+    runs-on: ubuntu-latest
+    name: 🧪 Run Tests
+    needs: build
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+        
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.SOLUTION_FILE }}
+      
+    - name: Run Unit Tests
       run: |
         dotnet test tests/MathRacerAPI.Tests/MathRacerAPI.Tests.csproj \
-          --no-build \
+          --configuration Release \
+          --verbosity normal \
+          --logger "trx;LogFileName=test_results.trx" \
+          --results-directory ./TestResults
+          
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: "TestResults/test_results.trx"
+        retention-days: 7
+
+  # Job 3: Análisis de Cobertura de Código
+  coverage:
+    runs-on: ubuntu-latest
+    name: 📊 Code Coverage Analysis
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+        
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.SOLUTION_FILE }}
+      
+    - name: Run Tests with Coverage Collection
+      run: |
+        dotnet test tests/MathRacerAPI.Tests/MathRacerAPI.Tests.csproj \
           --configuration Release \
           --verbosity normal \
           --collect:"XPlat Code Coverage" \
           --results-directory ./TestResults \
-          --logger "trx;LogFileName=test_results.trx" \
           /p:CollectCoverage=true \
           /p:CoverletOutputFormat=cobertura \
           /p:CoverletOutput=./TestResults/coverage.cobertura.xml \
           /p:Include="[MathRacerAPI.Domain]*" \
-          /p:Exclude="[MathRacerAPI.Domain]*.Program,[MathRacerAPI.Domain]*.*Test*" \
-          /p:Threshold=70 \
-          /p:ThresholdType=line \
-          /p:ThresholdStat=total
+          /p:Exclude="[MathRacerAPI.Domain]*.Program"
       
     - name: Install ReportGenerator
       run: dotnet tool install --global dotnet-reportgenerator-globaltool
@@ -76,28 +143,36 @@ jobs:
           -reporttypes:"Html;Badges" \
           -verbosity:Info
           
-    - name: Validate Coverage Threshold
+    - name: Validate Coverage Threshold (70% Domain Layer)
       run: |
-        # Extraer porcentaje de cobertura del archivo XML
-        COVERAGE=$(grep -o 'line-rate="[^"]*"' TestResults/**/coverage.cobertura.xml | head -1 | sed 's/line-rate="//g' | sed 's/"//g')
-        COVERAGE_PERCENT=$(echo "$COVERAGE * 100" | bc -l | cut -d. -f1)
+        # Buscar archivo de cobertura
+        COVERAGE_FILE=$(find TestResults -name "coverage.cobertura.xml" | head -1)
         
-        echo "📊 Cobertura de líneas: ${COVERAGE_PERCENT}%"
+        if [ ! -f "$COVERAGE_FILE" ]; then
+          echo "❌ No se encontró archivo de cobertura"
+          exit 1
+        fi
         
-        if [ "$COVERAGE_PERCENT" -lt 70 ]; then
+        # Extraer cobertura específica de MathRacerAPI.Domain
+        DOMAIN_COVERAGE=$(grep 'package name="MathRacerAPI.Domain"' "$COVERAGE_FILE" | grep -o 'line-rate="[^"]*"' | sed 's/line-rate="//g' | sed 's/"//g')
+        
+        if [ -z "$DOMAIN_COVERAGE" ]; then
+          echo "❌ No se encontró cobertura para MathRacerAPI.Domain"
+          exit 1
+        fi
+        
+        COVERAGE_PERCENT=$(echo "$DOMAIN_COVERAGE * 100" | bc -l)
+        COVERAGE_INT=$(printf "%.0f" "$COVERAGE_PERCENT")
+        
+        echo "📊 Cobertura MathRacerAPI.Domain: ${COVERAGE_PERCENT}%"
+        
+        if [ "$COVERAGE_INT" -lt 70 ]; then
           echo "❌ La cobertura (${COVERAGE_PERCENT}%) está por debajo del 70% requerido"
           exit 1
         else
           echo "✅ La cobertura (${COVERAGE_PERCENT}%) cumple con el requisito mínimo del 70%"
         fi
       
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results
-        path: "TestResults/test_results.trx"
-        
     - name: Upload Coverage Reports
       uses: actions/upload-artifact@v4
       if: always()
@@ -106,15 +181,56 @@ jobs:
         path: |
           TestResults/**/coverage.cobertura.xml
           TestResults/CoverageReport/**
+        retention-days: 7
+
+  # Job 4: Validaciones adicionales del proyecto
+  validate:
+    runs-on: ubuntu-latest
+    name: 🔍 Project Validation
+    needs: build
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
       
-    - name: Test Docker build
-      run: docker build -t mathracer-api-test .
-      
-    - name: Validate API Structure
+    - name: Validate Clean Architecture Structure
       run: |
-        echo "Validating Clean Architecture structure..."
-        test -d src/MathRacerAPI.Domain || (echo "Domain layer missing" && exit 1)
-        test -d src/MathRacerAPI.Infrastructure || (echo "Infrastructure layer missing" && exit 1)
-        test -d src/MathRacerAPI.Presentation || (echo "Presentation layer missing" && exit 1)
-        test -d tests/MathRacerAPI.Tests || (echo "Tests missing" && exit 1)
-        echo "Architecture validation passed!"
+        echo "🏗️ Validating Clean Architecture structure..."
+        test -d src/MathRacerAPI.Domain || (echo "❌ Domain layer missing" && exit 1)
+        test -d src/MathRacerAPI.Infrastructure || (echo "❌ Infrastructure layer missing" && exit 1)
+        test -d src/MathRacerAPI.Presentation || (echo "❌ Presentation layer missing" && exit 1)
+        test -d tests/MathRacerAPI.Tests || (echo "❌ Tests missing" && exit 1)
+        echo "✅ Architecture validation passed!"
+        
+    - name: Test Docker Build
+      run: |
+        echo "🐳 Testing Docker build..."
+        docker build -t mathracer-api-test .
+        echo "✅ Docker build successful!"
+
+  # Job 5: Resumen final (solo si todos los jobs anteriores pasan)
+  summary:
+    runs-on: ubuntu-latest
+    name: 📋 Pipeline Summary
+    needs: [build, test, coverage, validate]
+    if: always()
+    
+    steps:
+    - name: Pipeline Summary
+      run: |
+        echo "🎉 Pipeline execution completed!"
+        echo "📊 Results summary:"
+        echo "   🏗️  Build: ${{ needs.build.result }}"
+        echo "   🧪 Tests: ${{ needs.test.result }}"
+        echo "   📊 Coverage: ${{ needs.coverage.result }}"
+        echo "   🔍 Validation: ${{ needs.validate.result }}"
+        
+        if [[ "${{ needs.build.result }}" == "success" && 
+              "${{ needs.test.result }}" == "success" && 
+              "${{ needs.coverage.result }}" == "success" && 
+              "${{ needs.validate.result }}" == "success" ]]; then
+          echo "✅ All checks passed! Ready for deployment."
+        else
+          echo "❌ Some checks failed. Please review the results above."
+          exit 1
+        fi
