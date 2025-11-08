@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Linq;
 
 
 namespace MathRacerAPI.Infrastructure.Configuration;
@@ -142,38 +143,20 @@ public static class ServiceExtensions
             c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
             { 
                 Title = "MathRacer API", 
-                Version = "v1",
+                Version = "1.0.0",
                 Description = "API para el juego MathRacer - Competencias matemáticas en tiempo real",
-                Contact = new Microsoft.OpenApi.Models.OpenApiContact
+                License = new Microsoft.OpenApi.Models.OpenApiLicense
                 {
-                    Name = "MathRacer Team"
+                    Name = "MIT License"
                 }
             });
 
-            // Incluir comentarios XML del proyecto Presentation (Controladores)
-            var presentationXmlFile = "MathRacerAPI.Presentation.xml";
-            var presentationXmlPath = Path.Combine(AppContext.BaseDirectory, presentationXmlFile);
-            if (File.Exists(presentationXmlPath))
-            {
-                c.IncludeXmlComments(presentationXmlPath);
-            }
+            // Habilitar anotaciones Swagger
+            c.EnableAnnotations();
 
-            // Incluir comentarios XML del proyecto Domain (Modelos y DTOs)
-            var domainXmlFile = "MathRacerAPI.Domain.xml";
-            var domainXmlPath = Path.Combine(AppContext.BaseDirectory, domainXmlFile);
-            if (File.Exists(domainXmlPath))
-            {
-                c.IncludeXmlComments(domainXmlPath);
-            }
-
-            // Incluir comentarios XML del proyecto Infrastructure
-            var infrastructureXmlFile = "MathRacerAPI.Infrastructure.xml";
-            var infrastructureXmlPath = Path.Combine(AppContext.BaseDirectory, infrastructureXmlFile);
-            if (File.Exists(infrastructureXmlPath))
-            {
-                c.IncludeXmlComments(infrastructureXmlPath);
-            }
-
+            // Configurar para OpenAPI 3.0
+            c.DescribeAllParametersInCamelCase();
+            
             c.OperationFilter<ErrorResponseExamplesOperationFilter>();
 
         });

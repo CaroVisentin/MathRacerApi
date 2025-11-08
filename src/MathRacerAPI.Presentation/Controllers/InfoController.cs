@@ -1,15 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Presentation.DTOs;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace MathRacerAPI.Presentation.Controllers;
 
-/// <summary>
-/// Controller para información general de la API
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Tags("API Information")]
+
 public class InfoController : ControllerBase
 {
     private readonly GetApiInfoUseCase _getApiInfoUseCase;
@@ -21,12 +19,14 @@ public class InfoController : ControllerBase
         _environment = environment;
     }
 
-    /// <summary>
-    /// Obtiene información general de la API
-    /// </summary>
-    /// <returns>Información de la API incluyendo versión, endpoints disponibles, etc.</returns>
+    [SwaggerOperation(
+        Summary = "Obtiene información general de la API",
+        Description = "Retorna metadatos de la API incluyendo versión, descripción, ambiente actual, estado del servicio y endpoints disponibles.",
+        OperationId = "GetApiInfo",
+        Tags = new[] { "Info - Información general" }
+    )]
+    [SwaggerResponse(200, "Información de la API obtenida exitosamente.", typeof(ApiInfoResponseDto))]
     [HttpGet]
-    [ProducesResponseType(typeof(ApiInfoResponseDto), StatusCodes.Status200OK)]
     public ActionResult<ApiInfoResponseDto> GetApiInfo()
     {
         var apiInfo = _getApiInfoUseCase.Execute(_environment.EnvironmentName);

@@ -1,12 +1,13 @@
-﻿using MathRacerAPI.Domain.UseCases;
+using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Presentation.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace MathRacerAPI.Presentation.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Tags("Friendship")]
+    
     public class FriendshipController : ControllerBase
     {
         private readonly SendFriendRequestUseCase _sendFriendRequestUseCase;
@@ -36,15 +37,16 @@ namespace MathRacerAPI.Presentation.Controllers
             _getPlayerByIdUseCase = getPlayerByIdUseCase;
         }
 
-        /// <summary>
-        /// Retrieves all friends for a given player.
-        /// </summary>
-        /// <param name="playerId">The ID of the player whose friends are being requested.</param>
-        /// <returns>A list of friends as FriendProfileDto.</returns>
+        [SwaggerOperation(
+            Summary = "Obtiene la lista de amigos de un jugador",
+            Description = "Retorna todos los amigos confirmados de un jugador específico con su información de perfil y estado.",
+            OperationId = "GetPlayerFriends",
+            Tags = new[] { "Friendship - Sistema de amistades" }
+        )]
+        [SwaggerResponse(200, "Lista de amigos obtenida exitosamente.", typeof(IEnumerable<FriendProfileDto>))]
+        [SwaggerResponse(404, "Jugador no encontrado.")]
+        [SwaggerResponse(500, "Error interno del servidor.")]
         [HttpGet("{playerId}/friends")]
-        [ProducesResponseType(typeof(IEnumerable<FriendProfileDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<FriendProfileDto>>> GetFriends(int playerId)
         {
 
@@ -80,14 +82,16 @@ namespace MathRacerAPI.Presentation.Controllers
             }
         }
 
-        /// <summary>
-        /// Sends a friend request from one player to another.
-        /// </summary>
-        /// <param name="request">Contains FromPlayerId and ToPlayerId.</param>
+        [SwaggerOperation(
+            Summary = "Envía una solicitud de amistad",
+            Description = "Permite a un jugador enviar una solicitud de amistad a otro jugador. El sistema valida que no sea una auto-solicitud.",
+            OperationId = "SendFriendRequest",
+            Tags = new[] { "Friendship - Sistema de amistades" }
+        )]
+        [SwaggerResponse(201, "Solicitud de amistad enviada exitosamente.")]
+        [SwaggerResponse(400, "Solicitud inv�lida o jugadores iguales.")]
+        [SwaggerResponse(500, "Error interno del servidor.")]
         [HttpPost("request")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> SendFriendRequest([FromBody] FriendRequestDto request)
         {
             if (request.FromPlayerId == request.ToPlayerId)
@@ -114,14 +118,16 @@ namespace MathRacerAPI.Presentation.Controllers
         }
 
 
-        /// <summary>
-        /// Accepts a pending friend request.
-        /// </summary>
-        /// <param name="request">Contains FromPlayerId and ToPlayerId.</param>
+        [SwaggerOperation(
+            Summary = "Acepta una solicitud de amistad pendiente",
+            Description = "Permite al jugador receptor aceptar una solicitud de amistad previamente enviada, estableciendo una relaci�n de amistad bidireccional.",
+            OperationId = "AcceptFriendRequest",
+            Tags = new[] { "Friendship - Sistema de amistades" }
+        )]
+        [SwaggerResponse(200, "Solicitud de amistad aceptada exitosamente.")]
+        [SwaggerResponse(400, "Solicitud inv�lida o no existe.")]
+        [SwaggerResponse(500, "Error interno del servidor.")]
         [HttpPost("accept")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> AcceptFriendRequest([FromBody] FriendRequestDto request)
         {
             try
@@ -145,14 +151,16 @@ namespace MathRacerAPI.Presentation.Controllers
         }
 
 
-        /// <summary>
-        /// Rejects a pending friend request.
-        /// </summary>
-        /// <param name="request">Contains FromPlayerId and ToPlayerId.</param>
+        [SwaggerOperation(
+            Summary = "Rechaza una solicitud de amistad pendiente",
+            Description = "Permite al jugador receptor rechazar una solicitud de amistad, eliminando la solicitud del sistema.",
+            OperationId = "RejectFriendRequest",
+            Tags = new[] { "Friendship - Sistema de amistades" }
+        )]
+        [SwaggerResponse(200, "Solicitud de amistad rechazada exitosamente.")]
+        [SwaggerResponse(400, "Solicitud inv�lida o no existe.")]
+        [SwaggerResponse(500, "Error interno del servidor.")]
         [HttpPost("reject")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> RejectFriendRequest([FromBody] FriendRequestDto request)
         {
             try
@@ -177,14 +185,16 @@ namespace MathRacerAPI.Presentation.Controllers
         }
 
 
-        /// <summary>
-        /// Deletes an accepted friendship between two players.
-        /// </summary>
-        /// <param name="request">Contains FromPlayerId and ToPlayerId.</param>
+        [SwaggerOperation(
+            Summary = "Elimina una amistad aceptada",
+            Description = "Elimina la amistad establecida entre dos jugadores",
+            OperationId = "DeleteFriend",
+            Tags = new[] { "Friendship - Sistema de amistades" })]
+        [SwaggerResponse(200, "Amistad eliminada correctamente")]
+        [SwaggerResponse(400, "Solicitud inv�lida")]
+        [SwaggerResponse(401, "No autorizado")]
+        [SwaggerResponse(500, "Error interno del servidor")]
         [HttpPost("delete")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> DeleteFriend([FromBody] FriendRequestDto request)
         {
             try
@@ -209,14 +219,15 @@ namespace MathRacerAPI.Presentation.Controllers
             }
         }
 
-        /// <summary>
-        /// Retrieves all pending friend requests for a given player.
-        /// </summary>
-        /// <param name="playerId">The ID of the player whose pending friend requests are being requested.</param>
-        /// <returns>A list of pending friend requests as FriendProfileDto.</returns>
+        [SwaggerOperation(
+            Summary = "Obtiene solicitudes de amistad pendientes",
+            Description = "Obtiene todas las solicitudes de amistad pendientes para un jugador espec�fico",
+            OperationId = "GetPendingFriendRequests", 
+            Tags = new[] { "Friendship - Sistema de amistades" })]
+        [SwaggerResponse(200, "Solicitudes de amistad pendientes obtenidas correctamente", typeof(IEnumerable<FriendProfileDto>))]
+        [SwaggerResponse(401, "No autorizado")]
+        [SwaggerResponse(500, "Error interno del servidor")]
         [HttpGet("{playerId}/pending")]
-        [ProducesResponseType(typeof(IEnumerable<FriendProfileDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<FriendProfileDto>>> GetPendingFriendRequests(int playerId)
         {
             try

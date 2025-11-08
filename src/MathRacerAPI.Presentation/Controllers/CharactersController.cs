@@ -3,15 +3,13 @@ using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Domain.Exceptions;
 using MathRacerAPI.Presentation.DTOs;
 using MathRacerAPI.Presentation.Mappers;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace MathRacerAPI.Presentation.Controllers;
 
-/// <summary>
-/// API REST para la tienda de personajes - Permite consultar catálogo y realizar compras
-/// </summary>
 [ApiController]
 [Route("api/characters")]
-[Tags("Characters Store")]
+
 public class CharactersController : ControllerBase
 {
     private readonly GetStoreCharactersUseCase _getStoreCharactersUseCase;
@@ -25,49 +23,16 @@ public class CharactersController : ControllerBase
         _purchaseStoreItemUseCase = purchaseStoreItemUseCase;
     }
 
-    /// <summary>
-    /// Obtiene el catálogo completo de personajes disponibles en la tienda
-    /// </summary>
-    /// <param name="playerId">ID del jugador para verificar personajes ya adquiridos</param>
-    /// <returns>Catálogo de personajes con precios, rareza e información de propiedad</returns>
-    /// <response code="200">Catálogo obtenido exitosamente</response>
-    /// <response code="400">ID de jugador inválido (debe ser mayor a 0)</response>
-    /// <response code="404">Jugador no encontrado</response>
-    /// <response code="500">Error interno del servidor</response>
-    /// <remarks>
-    /// **Endpoint REST:** `GET /api/characters?playerId={id}`
-    /// 
-    /// **Funcionalidad:**
-    /// - Retorna todos los personajes disponibles para compra
-    /// - Indica cuáles ya posee el jugador (`isOwned`)
-    /// - Incluye precios, descripciones y información de rareza
-    /// 
-    /// **Ejemplo de respuesta:**
-    /// ```json
-    /// {
-    ///   "items": [
-    ///     {
-    ///       "id": 2,
-    ///       "name": "Mago Matemático",
-    ///       "description": "Especialista en álgebra y geometría",
-    ///       "price": 200.00,
-    ///       "imageUrl": "/images/characters/wizard.png",
-    ///       "productTypeId": 2,
-    ///       "productTypeName": "Personaje",
-    ///       "rarity": "Raro",
-    ///       "isOwned": true,
-    ///       "currency": "Coins"
-    ///     }
-    ///   ],
-    ///   "totalCount": 8
-    /// }
-    /// ```
-    /// </remarks>
+    [SwaggerOperation(
+        Summary = "Obtiene el catálogo de personajes disponibles",
+        Description = "Retorna el catálogo completo de personajes en la tienda con precios, rareza e información de propiedad del jugador específico",
+        OperationId = "GetAllCharacters",
+        Tags = new[] { "Characters - Tienda de personajes" })]
+    [SwaggerResponse(200, "Catálogo de personajes obtenido exitosamente", typeof(StoreResponseDto))]
+    [SwaggerResponse(400, "ID de jugador inválido")]
+    [SwaggerResponse(404, "Jugador no encontrado")]
+    [SwaggerResponse(500, "Error interno del servidor")]
     [HttpGet]
-    [ProducesResponseType(typeof(StoreResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<StoreResponseDto>> GetAllCharacters([FromQuery] int playerId)
     {
         if (playerId <= 0)
@@ -80,45 +45,17 @@ public class CharactersController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>
-    /// Compra un personaje específico para el jugador
-    /// </summary>
-    /// <param name="playerId">ID del jugador</param>
-    /// <param name="characterId">ID del personaje a comprar</param>
-    /// <returns>Confirmación de compra con monedas restantes</returns>
-    /// <response code="200">Personaje comprado exitosamente</response>
-    /// <response code="400">Fondos insuficientes</response>
-    /// <response code="404">Jugador o personaje no encontrado</response>
-    /// <response code="409">El jugador ya posee este personaje</response>
-    /// <response code="500">Error interno del servidor</response>
-    /// <remarks>
-    /// **Endpoint REST:** `POST /api/players/{playerId}/characters/{characterId}`
-    /// 
-    /// **Proceso de compra:**
-    /// 1. Valida existencia del jugador y personaje
-    /// 2. Verifica que el jugador no posea el personaje
-    /// 3. Confirma fondos suficientes
-    /// 4. Realiza la transacción y registra propiedad
-    /// 
-    /// **Respuesta exitosa:**
-    /// ```json
-    /// {
-    ///   "message": "Compra realizada exitosamente",
-    ///   "remainingCoins": 300.00
-    /// }
-    /// ```
-    /// 
-    /// **Códigos de error comunes:**
-    /// - `400`: Fondos insuficientes
-    /// - `409`: Personaje ya poseído
-    /// - `404`: Jugador o personaje no existe
-    /// </remarks>
+    [SwaggerOperation(
+        Summary = "Compra un personaje específico",
+        Description = "Realiza la compra de un personaje específico para el jugador. Valida fondos suficientes y que el jugador no posea el personaje previamente.",
+        OperationId = "PurchaseCharacter",
+        Tags = new[] { "Characters - Tienda de personajes" })]
+    [SwaggerResponse(200, "Personaje comprado exitosamente", typeof(PurchaseSuccessResponseDto))]
+    [SwaggerResponse(400, "Fondos insuficientes")]
+    [SwaggerResponse(404, "Jugador o personaje no encontrado")]
+    [SwaggerResponse(409, "El jugador ya posee este personaje")]
+    [SwaggerResponse(500, "Error interno del servidor")]
     [HttpPost("/api/players/{playerId}/characters/{characterId}")]
-    [ProducesResponseType(typeof(PurchaseSuccessResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<PurchaseSuccessResponseDto>> PurchaseCharacter(int playerId, int characterId)
     {
         var remainingCoins = await _purchaseStoreItemUseCase.ExecuteAsync(playerId, characterId);

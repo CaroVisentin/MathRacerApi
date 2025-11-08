@@ -2,6 +2,7 @@ using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Presentation.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,7 @@ namespace MathRacerAPI.Presentation.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+
     public class GarageController : ControllerBase
     {
         private readonly GetPlayerGarageItemsUseCase _getPlayerGarageItemsUseCase;
@@ -27,11 +29,15 @@ namespace MathRacerAPI.Presentation.Controllers
 
 
 
-        /// <summary>
-        /// Get player's cars
-        /// </summary>
-        /// <param name="playerId">The player ID</param>
-        /// <returns>List of cars with ownership and active status</returns>
+        [SwaggerOperation(
+            Summary = "Obtiene los autos del jugador",
+            Description = "Retorna la lista completa de autos disponibles indicando cuáles posee el jugador y cuál tiene actualmente activado.",
+            OperationId = "GetPlayerCars",
+            Tags = new[] { "Garage - Inventario del jugador" }
+        )]
+        [SwaggerResponse(200, "Lista de autos obtenida exitosamente.", typeof(GarageItemsResponseDto))]
+        [SwaggerResponse(404, "Jugador no encontrado.")]
+        [SwaggerResponse(500, "Error interno del servidor.")]
         [HttpGet("cars/{playerId}")]
         public async Task<ActionResult<GarageItemsResponseDto>> GetPlayerCars(int playerId)
         {
@@ -69,11 +75,15 @@ namespace MathRacerAPI.Presentation.Controllers
             }
         }
 
-        /// <summary>
-        /// Get player's characters
-        /// </summary>
-        /// <param name="playerId">The player ID</param>
-        /// <returns>List of characters with ownership and active status</returns>
+        [SwaggerOperation(
+            Summary = "Obtiene los personajes del jugador",
+            Description = "Retorna la lista completa de personajes disponibles indicando cuáles posee el jugador y cuál tiene actualmente activado.",
+            OperationId = "GetPlayerCharacters",
+            Tags = new[] { "Garage - Inventario del jugador" }
+        )]
+        [SwaggerResponse(200, "Lista de personajes obtenida exitosamente.", typeof(GarageItemsResponseDto))]
+        [SwaggerResponse(404, "Jugador no encontrado.")]
+        [SwaggerResponse(500, "Error interno del servidor.")]
         [HttpGet("characters/{playerId}")]
         public async Task<ActionResult<GarageItemsResponseDto>> GetPlayerCharacters(int playerId)
         {
@@ -111,11 +121,15 @@ namespace MathRacerAPI.Presentation.Controllers
             }
         }
 
-        /// <summary>
-        /// Get player's backgrounds
-        /// </summary>
-        /// <param name="playerId">The player ID</param>
-        /// <returns>List of backgrounds with ownership and active status</returns>
+        [SwaggerOperation(
+            Summary = "Obtiene los fondos del jugador",
+            Description = "Retorna la lista completa de fondos disponibles indicando cuáles posee el jugador y cuál tiene actualmente activado.",
+            OperationId = "GetPlayerBackgrounds",
+            Tags = new[] { "Garage - Inventario del jugador" }
+        )]
+        [SwaggerResponse(200, "Lista de fondos obtenida exitosamente.", typeof(GarageItemsResponseDto))]
+        [SwaggerResponse(404, "Jugador no encontrado.")]
+        [SwaggerResponse(500, "Error interno del servidor.")]
         [HttpGet("backgrounds/{playerId}")]
         public async Task<ActionResult<GarageItemsResponseDto>> GetPlayerBackgrounds(int playerId)
         {
@@ -153,13 +167,16 @@ namespace MathRacerAPI.Presentation.Controllers
             }
         }
 
-        /// <summary>
-        /// Activate a player's item (car, character, or background)
-        /// </summary>
-        /// <param name="playerId">The player ID</param>
-        /// <param name="productId">The product ID to activate</param>
-        /// <param name="productType">The product type (Auto, Personaje, Fondo)</param>
-        /// <returns>Success or failure status</returns>
+        [SwaggerOperation(
+            Summary = "Activa un elemento del garaje del jugador",
+            Description = "Permite al jugador activar un auto, personaje o fondo que posea en su inventario. Solo se puede tener un elemento activo de cada tipo.",
+            OperationId = "ActivatePlayerItem",
+            Tags = new[] { "Garage - Inventario del jugador" }
+        )]
+        [SwaggerResponse(200, "Elemento activado exitosamente.", typeof(ActivateItemResponseDto))]
+        [SwaggerResponse(400, "Solicitud inválida o elemento no poseído por el jugador.")]
+        [SwaggerResponse(404, "Jugador o producto no encontrado.")]
+        [SwaggerResponse(500, "Error interno del servidor.")]
         [HttpPut("players/{playerId}/items/{productId}/activate")]
         public async Task<ActionResult<ActivateItemResponseDto>> ActivatePlayerItem(
             int playerId, 

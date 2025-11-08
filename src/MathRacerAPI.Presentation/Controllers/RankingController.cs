@@ -1,12 +1,13 @@
 using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Presentation.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace MathRacerAPI.Presentation.Controllers;
 
 [ApiController]
 [Route("api/ranking")]
-[Tags("Ranking")]
+
 public class RankingController : ControllerBase
 {
     private readonly IGetPlayerRankingUseCase _getPlayerRankingUseCase;
@@ -16,59 +17,16 @@ public class RankingController : ControllerBase
         _getPlayerRankingUseCase = getPlayerRankingUseCase;
     }
 
-    /// <summary>
-    /// Devuelve el top 10 de jugadores y la posición del jugador actual en el ranking.
-    /// </summary>
-    /// <remarks>
-    /// **Ejemplo de solicitud:**
-    ///
-    ///     GET /api/ranking?playerId=123
-    ///
-    /// **Descripción:**
-    ///
-    /// Devuelve una lista con el top 10 de jugadores y la posición del jugador actual.
-    ///
-    /// **Ejemplo de respuesta exitosa (200):**
-    ///
-    ///     {
-    ///       "top10": [
-    ///         {
-    ///           "position": 1,
-    ///           "playerId": 123,
-    ///           "name": "Juan",
-    ///           "points": 150
-    ///         },
-    ///         {
-    ///           "position": 2,
-    ///           "playerId": 456,
-    ///           "name": "Ana",
-    ///           "points": 120
-    ///         }
-    ///       ],
-    ///       "currentPlayerPosition": 5
-    ///     }
-    ///
-    /// **Posibles errores:**
-    ///
-    /// Error 404 (Jugador no encontrado):
-    ///
-    ///     {
-    ///       "message": "El jugador con id 999 no existe en el ranking."
-    ///     }
-    ///
-    /// Error 500 (Error interno):
-    ///
-    ///     {
-    ///       "statusCode": 500,
-    ///       "message": "Error interno del servidor."
-    ///     }
-    /// </remarks>
-    /// <response code="200">Top 10 y posición del jugador</response>
-    /// <response code="404">Jugador no encontrado</response>
-    /// <response code="500">Error interno del servidor</response>
+    [SwaggerOperation(
+        Summary = "Obtiene el top 10 del ranking y la posición del jugador especificado",
+        Description = "Retorna la clasificación de los 10 mejores jugadores por puntos junto con la posición actual del jugador consultado en el ranking global.",
+        OperationId = "GetRanking",
+        Tags = new[] { "Ranking - Clasificaciones" }
+    )]
+    [SwaggerResponse(200, "Ranking obtenido exitosamente.", typeof(RankingTop10ResponseDto))]
+    [SwaggerResponse(404, "Jugador no encontrado en el ranking.")]
+    [SwaggerResponse(500, "Error interno del servidor.")]
     [HttpGet]
-    [ProducesResponseType(typeof(RankingTop10ResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RankingTop10ResponseDto>> GetRanking([FromQuery] int playerId)
     {
         var (top10, position) = await _getPlayerRankingUseCase.ExecuteAsync(playerId);
