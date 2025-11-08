@@ -47,25 +47,65 @@ jobs:
     - name: Build Tests
       run: dotnet build tests/MathRacerAPI.Tests/MathRacerAPI.Tests.csproj --no-restore --configuration Release
       
-    - name: Run Unit Tests
-      run: dotnet test tests/MathRacerAPI.Tests/MathRacerAPI.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx"
+    - name: Run Unit Tests with Coverage
+      run: |
+        dotnet test tests/MathRacerAPI.Tests/MathRacerAPI.Tests.csproj \
+          --no-build \
+          --configuration Release \
+          --verbosity normal \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults \
+          --logger "trx;LogFileName=test_results.trx" \
+          /p:CollectCoverage=true \
+          /p:CoverletOutputFormat=cobertura \
+          /p:CoverletOutput=./TestResults/coverage.cobertura.xml \
+          /p:Include="[MathRacerAPI.Domain]*" \
+          /p:Exclude="[MathRacerAPI.Domain]*.Program,[MathRacerAPI.Domain]*.*Test*" \
+          /p:Threshold=70 \
+          /p:ThresholdType=line \
+          /p:ThresholdStat=total
+      
+    - name: Install ReportGenerator
+      run: dotnet tool install --global dotnet-reportgenerator-globaltool
+      
+    - name: Generate Coverage HTML Report
+      run: |
+        reportgenerator \
+          -reports:"TestResults/**/coverage.cobertura.xml" \
+          -targetdir:"TestResults/CoverageReport" \
+          -reporttypes:"Html;Badges" \
+          -verbosity:Info
+          
+    - name: Validate Coverage Threshold
+      run: |
+        # Extraer porcentaje de cobertura del archivo XML
+        COVERAGE=$(grep -o 'line-rate="[^"]*"' TestResults/**/coverage.cobertura.xml | head -1 | sed 's/line-rate="//g' | sed 's/"//g')
+        COVERAGE_PERCENT=$(echo "$COVERAGE * 100" | bc -l | cut -d. -f1)
+        
+        echo "📊 Cobertura de líneas: ${COVERAGE_PERCENT}%"
+        
+        if [ "$COVERAGE_PERCENT" -lt 70 ]; then
+          echo "❌ La cobertura (${COVERAGE_PERCENT}%) está por debajo del 70% requerido"
+          exit 1
+        else
+          echo "✅ La cobertura (${COVERAGE_PERCENT}%) cumple con el requisito mínimo del 70%"
+        fi
       
     - name: Upload Test Results
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results
-        path: "**/test_results.trx"
+        path: "TestResults/test_results.trx"
         
-    - name: Generate Test Coverage Report
-      run: dotnet test tests/MathRacerAPI.Tests/MathRacerAPI.Tests.csproj --configuration Release --collect:"XPlat Code Coverage" --results-directory ./coverage
-      
     - name: Upload Coverage Reports
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: coverage-report
-        path: ./coverage/**/coverage.cobertura.xml
+        path: |
+          TestResults/**/coverage.cobertura.xml
+          TestResults/CoverageReport/**
       
     - name: Test Docker build
       run: docker build -t mathracer-api-test .

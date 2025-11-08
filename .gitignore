@@ -506,3 +506,16 @@ jspm_packages/
 
 # TernJS port file
 .tern-port
+
+# Code Coverage Results
+TestResults/
+coverage/
+*.cobertura.xml
+*.coverage
+*.coveragexml
+lcov.info
+coverage.json
+coverage.lcov
+
+# ReportGenerator files
+CoverageReport/
