@@ -36,6 +36,7 @@ public static class ServiceExtensions
         services.AddScoped<CreatePlayerUseCase>();
         services.AddScoped<GetPlayerByIdUseCase>();
         services.AddScoped<GetPlayerByEmailUseCase>();
+        services.AddScoped<GetPlayerEnergyStatusUseCase>();
 
 
         // Registrar casos de uso de Worlds
