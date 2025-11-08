@@ -100,6 +100,21 @@ MathRacerApi/
 └── docs/                               # Documentation
 ```
 
+### 📊 Cobertura de Código
+- **🎯 Objetivo**: 70% mínimo en MathRacerAPI.Domain layer
+- **🔧 Herramienta**: Coverlet + ReportGenerator
+- **✅ CI/CD**: Validación automática en pipeline
+
+```bash
+# Ejecutar tests con cobertura (Windows)
+.\scripts\run-coverage.ps1
+
+# Ejecutar tests con cobertura (Linux/Mac)  
+./scripts/run-coverage.sh
+
+# Ver reporte HTML: TestResults/CoverageReport/index.html
+```
+
 ### Comandos de Desarrollo
 ```bash
 # Compilar por capas (orden de dependencias)
