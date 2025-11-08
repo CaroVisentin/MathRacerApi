@@ -12,6 +12,11 @@ namespace MathRacerAPI.Presentation.DTOs
         public int Points { get; set; }
         public int Coins { get; set; }
 
+        // En el perfil del jugador sólo exponemos el Id del producto
+        public ActiveProductDto? Car { get; set; }
+        public ActiveProductDto? Background { get; set; }
+        public ActiveProductDto? Character { get; set; }
+
     }
 
 }

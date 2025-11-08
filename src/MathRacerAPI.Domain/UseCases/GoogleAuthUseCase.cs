@@ -28,9 +28,6 @@ namespace MathRacerAPI.Domain.UseCases
                     Name = username,
                     Email = email,
                     Uid = uid,
-                    LastLevelId = 1,
-                    Points = 0,
-                    Coins = 0
                 };
                 player = await _playerRepository.AddAsync(newPlayer);
             }

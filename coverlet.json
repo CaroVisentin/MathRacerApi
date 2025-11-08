@@ -1,0 +1,21 @@
+{
+  "configurations": {
+    "default": {
+      "format": "cobertura",
+      "threshold": "70",
+      "thresholdType": "line",
+      "thresholdStat": "total",
+      "include": [
+        "[MathRacerAPI.Domain]*"
+      ],
+      "exclude": [
+        "[MathRacerAPI.Domain]*.Program",
+        "[MathRacerAPI.Domain]*.*Test*"
+      ],
+      "excludeByFile": [
+        "**/Migrations/**",
+        "**/Program.cs"
+      ]
+    }
+  }
+}

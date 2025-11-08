@@ -35,7 +35,7 @@ namespace MathRacerAPI.Domain.UseCases
 
             // Lanzar excepción si no existe
             if (playerProfile == null)
-                throw new NotFoundException("No se encontró un jugador con el UID proporcionado");
+                throw new NotFoundException("No se encontró un jugador con el UID proporcionado.");
 
             return playerProfile;
         }

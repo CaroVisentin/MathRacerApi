@@ -137,6 +137,10 @@ namespace MathRacerAPI.Infrastructure.Configuration
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
+                entity.Property(e => e.Deleted) 
+                    .IsRequired()
+                    .HasDefaultValue(false);
+
                 entity.HasOne(e => e.Player1)
                     .WithMany(p => p.Friendships1)
                     .HasForeignKey(e => e.PlayerId1)
@@ -245,12 +249,10 @@ namespace MathRacerAPI.Infrastructure.Configuration
                     .IsRequired()
                     .HasDefaultValue(false);
 
-                entity.HasOne(e => e.LastLevel)
-                    .WithMany(l => l.Players)
-                    .HasForeignKey(e => e.LastLevelId)
-                    .OnDelete(DeleteBehavior.Restrict);
-   
-
+                entity.Property(e => e.LastLevelId)
+                    .IsRequired(false)
+                    .HasDefaultValue(0);
+  
             });
 
             // --- PLAYER PRODUCT ---
@@ -378,6 +380,11 @@ namespace MathRacerAPI.Infrastructure.Configuration
                 entity.Property(e => e.Color)
                     .IsRequired()
                     .HasMaxLength(30);
+
+                entity.Property(e => e.Probability)
+                    .IsRequired()
+                    .HasColumnType("float") 
+                    .HasDefaultValue(0.0);
 
                 entity.HasMany(e => e.Products)
                   .WithOne(r => r.Rarity)
