@@ -14,6 +14,7 @@ public class PlayerController : ControllerBase
     private readonly RegisterPlayerUseCase _registerPlayerUseCase;
     private readonly LoginPlayerUseCase _loginPlayerUseCase;
     private readonly GoogleAuthUseCase _googleAuthUseCase;
+    private readonly GetPlayerByIdUseCase _getPlayerByIdUseCase;
     private readonly GetPlayerByEmailUseCase _getPlayerByEmailUseCase;
 
     public PlayerController(
@@ -27,6 +28,7 @@ public class PlayerController : ControllerBase
         _registerPlayerUseCase = registerPlayerUseCase;
         _loginPlayerUseCase = loginPlayerUseCase;
         _googleAuthUseCase = googleAuthUseCase;
+        _getPlayerByIdUseCase = getPlayerByIdUseCase;
         _getPlayerByEmailUseCase = getPlayerByEmailUseCase;
     }
 
@@ -187,6 +189,44 @@ public class PlayerController : ControllerBase
             Background = user.Background == null ? null : new ActiveProductDto
             {
                 Id = user.Background.Id
+            }
+        };
+
+        return Ok(response);
+    }
+
+    [SwaggerOperation(
+        Summary = "Obtener jugador por ID",
+        Description = "Obtiene el perfil de un jugador específico utilizando su UID. Retorna información completa del jugador incluyendo puntos y productos activos.",
+        OperationId = "GetPlayerById",
+        Tags = new[] { "Player - Gestión de jugadores" }
+    )]
+    [SwaggerResponse(200, "Jugador encontrado exitosamente.", typeof(PlayerProfileDto))]
+    [SwaggerResponse(400, "UID inválido o no proporcionado.")]
+    [SwaggerResponse(404, "Jugador no encontrado con el UID especificado.")]
+    [SwaggerResponse(500, "Error interno del servidor.")]
+    [HttpGet("{uid}")]
+    public async Task<ActionResult<PlayerProfileDto>> GetById(string uid)
+    {
+        var player = await _getPlayerByIdUseCase.ExecuteByUidAsync(uid);
+
+        var response = new PlayerProfileDto
+        {
+            Id = player.Id,
+            Name = player.Name,
+            Email = player.Email,
+            Points = player.Points,
+            Character = player.Character == null ? null : new ActiveProductDto
+            {
+                Id = player.Character.Id
+            },
+            Car = player.Car == null ? null : new ActiveProductDto
+            {
+                Id = player.Car.Id
+            },
+            Background = player.Background == null ? null : new ActiveProductDto
+            {
+                Id = player.Background.Id
             }
         };
 
