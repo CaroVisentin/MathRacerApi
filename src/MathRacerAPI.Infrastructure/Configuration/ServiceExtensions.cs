@@ -67,6 +67,10 @@ public static class ServiceExtensions
         services.AddScoped<GetNextOnlineQuestionUseCase>();
         services.AddScoped<GrantLevelRewardUseCase>();
         services.AddScoped<UseWildcardUseCase>();
+        services.AddScoped<JoinCreatedGameUseCase>();
+
+        services.AddScoped<CreateCustomOnlineGameUseCase>();
+        services.AddScoped<GetAvailableGamesUseCase>();
 
         // Registrar casos de uso de Chests
         services.AddScoped<OpenTutorialChestUseCase>();
