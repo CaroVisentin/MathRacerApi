@@ -39,5 +39,28 @@ namespace MathRacerAPI.Domain.UseCases
 
             return playerProfile;
         }
+
+        /// <summary>
+        /// Ejecuta la lógica de obtención de un jugador por su ID
+        /// </summary>
+        /// <param name="id">ID del jugador</param>
+        /// <returns>Jugador encontrado</returns>
+        /// <exception cref="ValidationException">Cuando el ID es inválido</exception>
+        /// <exception cref="NotFoundException">Cuando el jugador no existe</exception>
+        public async Task<PlayerProfile> ExecuteByIdAsync(int id)
+        {
+            // Validación del ID
+            if (id <= 0)
+                throw new ValidationException("El ID debe ser mayor a cero");
+
+            // Obtener jugador del repositorio
+            var playerProfile = await _playerRepository.GetByIdAsync(id);
+
+            // Lanzar excepción si no existe
+            if (playerProfile == null)
+                throw new NotFoundException("No se encontró un jugador con el ID proporcionado.");
+
+            return playerProfile;
+        }
     }
 }

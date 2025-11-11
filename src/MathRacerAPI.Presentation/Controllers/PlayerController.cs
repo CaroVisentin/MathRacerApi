@@ -37,7 +37,7 @@ public class PlayerController : ControllerBase
         Summary = "Registro de usuario con Firebase Authentication",
         Description = "Registra un nuevo usuario en el sistema utilizando Firebase Authentication. El token de Firebase debe enviarse en el header Authorization.",
         OperationId = "RegisterPlayer",
-        Tags = new[] { "Player - Gesti�n de jugadores" }
+        Tags = new[] { "Player - Gestión de jugadores" }
     )]
     [SwaggerResponse(201, "Usuario registrado exitosamente.", typeof(PlayerProfileDto))]
     [SwaggerResponse(400, "Datos inválidos o email ya registrado.")]
@@ -76,7 +76,7 @@ public class PlayerController : ControllerBase
         Summary = "Login de usuario con email y contraseña",
         Description = "Autentica un usuario existente en el sistema usando email y contraseña. Retorna el perfil del jugador si las credenciales son válidas.",
         OperationId = "LoginPlayer",
-        Tags = new[] { "Player - Gesti�n de jugadores" }
+        Tags = new[] { "Player - Gestión de jugadores" }
     )]
     [SwaggerResponse(200, "Login exitoso.", typeof(PlayerProfileDto))]
     [SwaggerResponse(400, "Datos de login inválidos.")]
@@ -119,7 +119,7 @@ public class PlayerController : ControllerBase
         Summary = "Autenticación con Google Firebase",
         Description = "Permite el login o registro automático de usuarios utilizando Google Firebase Authentication. Si el usuario no existe, se crea automáticamente.",
         OperationId = "GoogleAuth",
-        Tags = new[] { "Player - Gesti�n de jugadores" }
+        Tags = new[] { "Player - Gestión de jugadores" }
     )]
     [SwaggerResponse(200, "Autenticación exitosa.", typeof(PlayerProfileDto))]
     [SwaggerResponse(400, "Token de Firebase requerido o datos inválidos.")]
@@ -161,7 +161,7 @@ public class PlayerController : ControllerBase
         Summary = "Buscar jugador por email",
         Description = "Obtiene el perfil de un jugador específico utilizando su dirección de email. Útil para funciones de búsqueda de amigos.",
         OperationId = "GetPlayerByEmail",
-        Tags = new[] { "Player - Gesti�n de jugadores" }
+        Tags = new[] { "Player - Gestión de jugadores" }
     )]
     [SwaggerResponse(200, "Jugador encontrado exitosamente.", typeof(PlayerProfileDto))]
     [SwaggerResponse(404, "Usuario no encontrado con el email especificado.")]

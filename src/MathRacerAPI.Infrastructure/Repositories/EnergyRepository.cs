@@ -77,4 +77,65 @@ public class EnergyRepository : IEnergyRepository
         
         await _context.SaveChangesAsync();
     }
+
+    public async Task<(int Price, int MaxAmount)?> GetEnergyConfigurationAsync()
+    {
+        var config = await _context.EnergyConfigurations.FirstOrDefaultAsync();
+        
+        if (config == null)
+            return null;
+            
+        return (config.Price, config.MaxAmount);
+    }
+
+    public async Task<bool> PurchaseEnergyAsync(int playerId, int quantity, int totalPrice)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        
+        try
+        {
+            // Obtener el jugador
+            var player = await _context.Players.FirstOrDefaultAsync(p => p.Id == playerId);
+            if (player == null)
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
+
+            // Verificar que tiene suficientes monedas
+            if (player.Coins < (decimal)totalPrice)
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
+
+            // Obtener energía actual
+            var energy = await _context.Energies.FirstOrDefaultAsync(e => e.PlayerId == playerId);
+            if (energy == null)
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
+
+            // Actualizar monedas del jugador
+            player.Coins -= totalPrice;
+
+            // Actualizar energía
+            energy.Amount += quantity;
+            
+            // Resetear la fecha para que no se considere tiempo de recarga pendiente
+            energy.LastConsumptionDate = DateTime.UtcNow;
+
+            // Guardar cambios
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            
+            return true;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            return false;
+        }
+    }
 }

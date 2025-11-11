@@ -9,7 +9,7 @@ namespace MathRacerAPI.Infrastructure.Entities
     public class EnergyConfigurationEntity
     {
         public int Id { get; set; }
-        public double Price { get; set; }
+        public int Price { get; set; }
         public int MaxAmount { get; set; }
     }
 }

@@ -93,6 +93,10 @@ public static class ServiceExtensions
         services.AddScoped<DeleteFriendUseCase>();
         services.AddScoped<GetPendingFriendRequestsUseCase>();
 
+        // Registrar casos de uso de tienda/energía
+        services.AddScoped<PurchaseEnergyUseCase>();
+        services.AddScoped<GetEnergyStoreInfoUseCase>();
+
 
         // Registrar repositorios
         services.AddScoped<ILevelRepository, LevelRepository>();
