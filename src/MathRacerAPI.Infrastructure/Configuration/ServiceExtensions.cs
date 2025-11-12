@@ -55,6 +55,8 @@ public static class ServiceExtensions
 
         // Registrar casos de uso de Wildcards
         services.AddScoped<GetPlayerWildcardsUseCase>();
+        services.AddScoped<GetStoreWildcardsUseCase>();
+        services.AddScoped<PurchaseWildcardUseCase>();
 
         // Registrar casos de uso de modo individual
         services.AddScoped<StartSoloGameUseCase>();

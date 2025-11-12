@@ -25,7 +25,7 @@ public class GetEnergyStoreInfoUseCase
     /// <returns>Información de energía de la tienda</returns>
     /// <exception cref="NotFoundException">Se lanza cuando el jugador no existe</exception>
     /// <exception cref="BusinessException">Se lanza cuando hay un error de configuración</exception>
-    public async Task<(int PricePerUnit, int MaxAmount, int CurrentAmount, int MaxCanBuy)> ExecuteAsync(int playerId)
+    public async Task<EnergyStoreInfo> ExecuteAsync(int playerId)
     {
         // Verificar que el jugador existe
         var player = await _playerRepository.GetByIdAsync(playerId);
@@ -55,6 +55,12 @@ public class GetEnergyStoreInfoUseCase
         // Calcular cuánta energía puede comprar
         var maxCanBuy = Math.Max(0, maxAmount - currentAmount);
 
-        return (pricePerUnit, maxAmount, currentAmount, maxCanBuy);
+        return new EnergyStoreInfo
+        {
+            PricePerUnit = pricePerUnit,
+            MaxAmount = maxAmount,
+            CurrentAmount = currentAmount,
+            MaxCanBuy = maxCanBuy
+        };
     }
 }

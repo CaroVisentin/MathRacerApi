@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Presentation.DTOs;
+using MathRacerAPI.Presentation.Mappers;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace MathRacerAPI.Presentation.Controllers;
@@ -46,14 +47,7 @@ public class EnergyController : ControllerBase
         }
 
         var energyStatus = await _getPlayerEnergyStatusUseCase.ExecuteByUidAsync(uid);
-
-        var dto = new EnergyStatusDto
-        {
-            CurrentAmount = energyStatus.CurrentAmount,
-            MaxAmount = energyStatus.MaxAmount,
-            SecondsUntilNextRecharge = energyStatus.SecondsUntilNextRecharge
-        };
-
+        var dto = energyStatus.ToDto();
         return Ok(dto);
     }
 
@@ -74,16 +68,8 @@ public class EnergyController : ControllerBase
         if (playerId != authenticatedPlayerId)
             return Unauthorized("No puedes acceder a la información de tienda de otro jugador.");
 
-        var (pricePerUnit, maxAmount, currentAmount, maxCanBuy) = await _getEnergyStoreInfoUseCase.ExecuteAsync(playerId);
-
-        var response = new EnergyStoreInfoDto
-        {
-            PricePerUnit = pricePerUnit,
-            MaxAmount = maxAmount,
-            CurrentAmount = currentAmount,
-            MaxCanBuy = maxCanBuy
-        };
-
+        var storeInfo = await _getEnergyStoreInfoUseCase.ExecuteAsync(playerId);
+        var response = storeInfo.ToDto();
         return Ok(response);
     }
 
@@ -109,25 +95,9 @@ public class EnergyController : ControllerBase
         if (playerId != authenticatedPlayerId)
             return Unauthorized("No puedes comprar energía para otro jugador.");
 
-        // Obtener información antes de la compra para calcular precio
-        var (pricePerUnit, _, _, _) = await _getEnergyStoreInfoUseCase.ExecuteAsync(playerId);
-        var totalPrice = pricePerUnit * request.Quantity;
-
         // Procesar la compra
-        var newEnergyAmount = await _purchaseEnergyUseCase.ExecuteAsync(playerId, request.Quantity);
-
-        // Obtener jugador actualizado para monedas restantes
-        var player = await _getPlayerByIdUseCase.ExecuteByIdAsync(playerId);
-
-        var response = new PurchaseEnergyResponseDto
-        {
-            Success = true,
-            Message = $"Compra exitosa: {request.Quantity} unidades de energía",
-            NewEnergyAmount = newEnergyAmount,
-            RemainingCoins = player.Coins,
-            TotalPrice = totalPrice
-        };
-
+        var purchaseResult = await _purchaseEnergyUseCase.ExecuteAsync(playerId, request.Quantity);
+        var response = purchaseResult.ToDto();
         return Ok(response);
     }
 

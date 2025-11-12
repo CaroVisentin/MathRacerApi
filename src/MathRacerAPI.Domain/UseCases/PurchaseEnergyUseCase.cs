@@ -1,5 +1,6 @@
 using MathRacerAPI.Domain.Constants;
 using MathRacerAPI.Domain.Exceptions;
+using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
 
 namespace MathRacerAPI.Domain.UseCases;
@@ -23,10 +24,10 @@ public class PurchaseEnergyUseCase
     /// </summary>
     /// <param name="playerId">ID del jugador que compra energía</param>
     /// <param name="quantity">Cantidad de energía a comprar (por defecto 1)</param>
-    /// <returns>Nueva cantidad de energía del jugador</returns>
+    /// <returns>Resultado completo de la compra de energía</returns>
     /// <exception cref="NotFoundException">Se lanza cuando el jugador no existe</exception>
     /// <exception cref="BusinessException">Se lanza cuando hay un error de lógica de negocio</exception>
-    public async Task<int> ExecuteAsync(int playerId, int quantity = 1)
+    public async Task<EnergyPurchaseResult> ExecuteAsync(int playerId, int quantity = 1)
     {
         // Verificar que el jugador existe
         var player = await _playerRepository.GetByIdAsync(playerId);
@@ -87,7 +88,26 @@ public class PurchaseEnergyUseCase
             throw new BusinessException("Error al procesar la compra de energía");
         }
 
-        // Devolver la nueva cantidad de energía
-        return currentAmount + quantity;
+        // Obtener jugador actualizado para monedas restantes
+        var updatedPlayer = await _playerRepository.GetByIdAsync(playerId);
+        if (updatedPlayer == null)
+        {
+            throw new BusinessException("No se pudo obtener la información actualizada del jugador");
+        }
+
+        var newEnergyAmount = currentAmount + quantity;
+        var message = quantity == 1 
+            ? $"Compra exitosa: 1 unidad de energía"
+            : $"Compra exitosa: {quantity} unidades de energía";
+
+        // Devolver resultado completo
+        return new EnergyPurchaseResult
+        {
+            Success = true,
+            Message = message,
+            NewEnergyAmount = newEnergyAmount,
+            RemainingCoins = updatedPlayer.Coins,
+            TotalPrice = totalPrice
+        };
     }
 }
