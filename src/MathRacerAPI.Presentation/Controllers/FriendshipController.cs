@@ -1,4 +1,4 @@
-using MathRacerAPI.Domain.UseCases;
+﻿using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Presentation.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -49,37 +49,24 @@ namespace MathRacerAPI.Presentation.Controllers
         [HttpGet("{playerId}/friends")]
         public async Task<ActionResult<IEnumerable<FriendProfileDto>>> GetFriends(int playerId)
         {
+            var authenticatedPlayerId = await GetAuthenticatedPlayerId();
 
-            try
+            if (playerId != authenticatedPlayerId)
+                return Unauthorized("You cannot fetch friends of another user.");
+
+            var friends = await _getFriendsUseCase.ExecuteAsync(authenticatedPlayerId);
+
+            var response = friends.Select(p => new FriendProfileDto
             {
-                var authenticatedPlayerId = await GetAuthenticatedPlayerId();
+                Id = p.Id,
+                Name = p.Name,
+                Email = p.Email,
+                Uid = p.Uid,
+                Points = p.Points,
+                Character = p.Character == null ? null : new ActiveProductDto { Id = p.Character.Id }
+            });
 
-                if (playerId != authenticatedPlayerId)
-                    return Unauthorized("You cannot fetch friends of another user.");
-
-                var friends = await _getFriendsUseCase.ExecuteAsync(authenticatedPlayerId);
-
-                var response = friends.Select(p => new FriendProfileDto
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Email = p.Email,
-                    Uid = p.Uid,
-                    Points = p.Points,
-                    Character = p.Character == null ? null : new ActiveProductDto { Id = p.Character.Id }
-                });
-
-                return Ok(response);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while fetching friends.");
-
-            }
+            return Ok(response);
         }
 
         [SwaggerOperation(
@@ -97,24 +84,9 @@ namespace MathRacerAPI.Presentation.Controllers
             if (request.FromPlayerId == request.ToPlayerId)
                 return BadRequest("You cannot send a friend request to yourself");
 
-            try
-            {
-                var fromPlayerId = await GetAuthenticatedPlayerId();
-                await _sendFriendRequestUseCase.ExecuteAsync(fromPlayerId, request.ToPlayerId);
-                return Created(string.Empty, null);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error ocurred while sending the friend request.");
-            }
+            var fromPlayerId = await GetAuthenticatedPlayerId();
+            await _sendFriendRequestUseCase.ExecuteAsync(fromPlayerId, request.ToPlayerId);
+            return Created(string.Empty, null);
         }
 
 
@@ -130,24 +102,9 @@ namespace MathRacerAPI.Presentation.Controllers
         [HttpPost("accept")]
         public async Task<ActionResult> AcceptFriendRequest([FromBody] FriendRequestDto request)
         {
-            try
-            {
-                var toPlayerId = await GetAuthenticatedPlayerId();
-                await _acceptFriendRequestUseCase.ExecuteAsync(request.FromPlayerId, toPlayerId);
-                return Ok("Friend request accepted.");
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while accepting the friend request.");
-            }
+            var toPlayerId = await GetAuthenticatedPlayerId();
+            await _acceptFriendRequestUseCase.ExecuteAsync(request.FromPlayerId, toPlayerId);
+            return Ok("Friend request accepted.");
         }
 
 
@@ -163,25 +120,10 @@ namespace MathRacerAPI.Presentation.Controllers
         [HttpPost("reject")]
         public async Task<ActionResult> RejectFriendRequest([FromBody] FriendRequestDto request)
         {
-            try
-            {
-                var toPlayerId = await GetAuthenticatedPlayerId();
+            var toPlayerId = await GetAuthenticatedPlayerId();
 
-                await _rejectFriendRequestUseCase.ExecuteAsync(request.FromPlayerId, toPlayerId);
-                return Ok("Friend request rejected.");
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while rejecting the friend request.");
-            }
+            await _rejectFriendRequestUseCase.ExecuteAsync(request.FromPlayerId, toPlayerId);
+            return Ok("Friend request rejected.");
         }
 
 
@@ -197,26 +139,11 @@ namespace MathRacerAPI.Presentation.Controllers
         [HttpPost("delete")]
         public async Task<ActionResult> DeleteFriend([FromBody] FriendRequestDto request)
         {
-            try
-            {
-                var authenticatedPlayerId = await GetAuthenticatedPlayerId();
-                int otherPlayerId = request.FromPlayerId == authenticatedPlayerId ? request.ToPlayerId : request.FromPlayerId;
+            var authenticatedPlayerId = await GetAuthenticatedPlayerId();
+            int otherPlayerId = request.FromPlayerId == authenticatedPlayerId ? request.ToPlayerId : request.FromPlayerId;
 
-                await _deleteFriendUseCase.ExecuteAsync(authenticatedPlayerId, otherPlayerId);
-                return Ok("Friend deleted.");
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while deleting the friend.");
-            }
+            await _deleteFriendUseCase.ExecuteAsync(authenticatedPlayerId, otherPlayerId);
+            return Ok("Friend deleted.");
         }
 
         [SwaggerOperation(
@@ -230,36 +157,24 @@ namespace MathRacerAPI.Presentation.Controllers
         [HttpGet("{playerId}/pending")]
         public async Task<ActionResult<IEnumerable<FriendProfileDto>>> GetPendingFriendRequests(int playerId)
         {
-            try
+            var authenticatedPlayerId = await GetAuthenticatedPlayerId();
+
+            if (playerId != authenticatedPlayerId)
+                return Unauthorized("You cannot fetch pending friend requests of another user.");
+
+            var pendingFriends = await _getPendingFriendRequestsUseCase.ExecuteAsync(authenticatedPlayerId);
+
+            var response = pendingFriends.Select(p => new FriendProfileDto
             {
-                var authenticatedPlayerId = await GetAuthenticatedPlayerId();
+                Id = p.Id,
+                Name = p.Name,
+                Email = p.Email,
+                Uid = p.Uid,
+                Points = p.Points,
+                Character = p.Character == null ? null : new ActiveProductDto { Id = p.Character.Id }
+            });
 
-                if (playerId != authenticatedPlayerId)
-                    return Unauthorized("You cannot fetch pending friend requests of another user.");
-
-                var pendingFriends = await _getPendingFriendRequestsUseCase.ExecuteAsync(authenticatedPlayerId);
-
-                var response = pendingFriends.Select(p => new FriendProfileDto
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Email = p.Email,
-                    Uid = p.Uid,
-                    Points = p.Points,
-                    Character = p.Character == null ? null : new ActiveProductDto { Id = p.Character.Id }
-                });
-
-                return Ok(response);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    "An error occurred while fetching pending friend requests.");
-            }
+            return Ok(response);
         }
 
         private async Task<int> GetAuthenticatedPlayerId()
@@ -268,6 +183,9 @@ namespace MathRacerAPI.Presentation.Controllers
                 throw new UnauthorizedAccessException("Usuario no autenticado");
 
             var uid = uidObj.ToString();
+            if (string.IsNullOrEmpty(uid))
+                throw new UnauthorizedAccessException("UID de usuario inválido");
+                
             var player = await _getPlayerByIdUseCase.ExecuteByUidAsync(uid);
             Console.WriteLine($"Auth UID: {uid}, PlayerId: {player.Id}");
 

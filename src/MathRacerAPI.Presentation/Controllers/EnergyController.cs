@@ -1,132 +1,43 @@
 using Microsoft.AspNetCore.Mvc;
 using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Presentation.DTOs;
+using MathRacerAPI.Presentation.Mappers;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace MathRacerAPI.Presentation.Controllers;
 
-/// <summary>
-/// Controller para gestionar la energía de los jugadores
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class EnergyController : ControllerBase
 {
     private readonly GetPlayerEnergyStatusUseCase _getPlayerEnergyStatusUseCase;
+    private readonly PurchaseEnergyUseCase _purchaseEnergyUseCase;
+    private readonly GetEnergyStoreInfoUseCase _getEnergyStoreInfoUseCase;
+    private readonly GetPlayerByIdUseCase _getPlayerByIdUseCase;
 
-    public EnergyController(GetPlayerEnergyStatusUseCase getPlayerEnergyStatusUseCase)
+    public EnergyController(
+        GetPlayerEnergyStatusUseCase getPlayerEnergyStatusUseCase,
+        PurchaseEnergyUseCase purchaseEnergyUseCase,
+        GetEnergyStoreInfoUseCase getEnergyStoreInfoUseCase,
+        GetPlayerByIdUseCase getPlayerByIdUseCase)
     {
         _getPlayerEnergyStatusUseCase = getPlayerEnergyStatusUseCase ?? throw new ArgumentNullException(nameof(getPlayerEnergyStatusUseCase));
+        _purchaseEnergyUseCase = purchaseEnergyUseCase ?? throw new ArgumentNullException(nameof(purchaseEnergyUseCase));
+        _getEnergyStoreInfoUseCase = getEnergyStoreInfoUseCase ?? throw new ArgumentNullException(nameof(getEnergyStoreInfoUseCase));
+        _getPlayerByIdUseCase = getPlayerByIdUseCase ?? throw new ArgumentNullException(nameof(getPlayerByIdUseCase));
     }
 
-    /// <summary>
-    /// Obtiene el estado actual de energía del jugador autenticado
-    /// GET /api/energy
-    /// Requiere token de Firebase en header Authorization
-    /// </summary>
-    /// <returns>Estado de energía con cantidad actual y tiempo para próxima recarga</returns>
-    /// <response code="200">Devuelve el estado de energía del jugador</response>
-    /// <response code="401">No autorizado. Token inválido o faltante</response>
-    /// <response code="404">Jugador no encontrado</response>
-    /// <response code="500">Error interno del servidor</response>
-    /// <remarks>
-    /// Ejemplo de solicitud:
-    /// 
-    ///     GET /api/energy
-    ///     Headers:
-    ///       Authorization: Bearer {firebase-id-token}
-    /// 
-    /// **Descripción:**
-    /// 
-    /// Este endpoint:
-    /// - Identifica automáticamente al jugador por su UID de Firebase
-    /// - Calcula la energía actual basándose en el tiempo transcurrido desde el último consumo
-    /// - Recarga automáticamente 1 punto de energía cada 15 minutos (máximo 3)
-    /// - Persiste los cambios en la base de datos si hubo recarga
-    /// - Devuelve el tiempo restante en segundos para la próxima recarga
-    /// - **Preserva el progreso de recarga** al consumir energía
-    /// 
-    /// **Lógica de recarga:**
-    /// - **Energía máxima:** 3 puntos
-    /// - **Tiempo de recarga:** 15 minutos (900 segundos) por punto
-    /// - Si está al máximo: `secondsUntilNextRecharge` será `null`
-    /// - Si está recargando: `secondsUntilNextRecharge` indica segundos restantes con precisión
-    /// 
-    /// **Preservación del progreso:**
-    /// 
-    /// Cuando consumes energía mientras estás recargando, el sistema preserva el progreso:
-    /// 
-    /// - Tienes 3 energía → pierdes un nivel → baja a 2 (timer: 15 min)
-    /// - Esperas 7 minutos → (timer: 8 min restantes)
-    /// - Pierdes otro nivel → baja a 1 (timer: 8 min restantes) ← **Progreso preservado**
-    /// - El tiempo NO se resetea a 15 minutos
-    /// 
-    /// **Ejemplo de respuesta exitosa (200):**
-    /// 
-    ///     {
-    ///       "currentAmount": 2,
-    ///       "maxAmount": 3,
-    ///       "secondsUntilNextRecharge": 780
-    ///     }
-    /// 
-    /// **Escenarios comunes:**
-    /// 
-    /// 1. **Energía completa (no necesita recarga):**
-    ///    ```json
-    ///    {
-    ///      "currentAmount": 3,
-    ///      "maxAmount": 3,
-    ///      "secondsUntilNextRecharge": null
-    ///    }
-    ///    ```
-    /// 
-    /// 2. **Recargando - 7 minutos transcurridos de 15:**
-    ///    ```json
-    ///    {
-    ///      "currentAmount": 2,
-    ///      "maxAmount": 3,
-    ///      "secondsUntilNextRecharge": 480
-    ///    }
-    ///    ```
-    /// 
-    /// 3. **Múltiples recargas - pasaron 35 minutos, tenía 1:**
-    ///    ```json
-    ///    {
-    ///      "currentAmount": 3,
-    ///      "maxAmount": 3,
-    ///      "secondsUntilNextRecharge": null
-    ///    }
-    ///    ```
-    /// 
-    /// 4. **Recarga parcial - 5 minutos de progreso:**
-    ///    ```json
-    ///    {
-    ///      "currentAmount": 1,
-    ///      "maxAmount": 3,
-    ///      "secondsUntilNextRecharge": 600
-    ///    }
-    ///    ```
-    /// 
-    /// **Flujo recomendado:**
-    /// 
-    /// 1. Usuario inicia sesión (POST /api/player/login)
-    /// 2. Frontend consulta energía periódicamente (GET /api/energy)
-    /// 3. Frontend muestra UI de energía con timer countdown
-    /// 4. Si energía > 0, permite jugar niveles (esto se valida en el back)
-    /// 5. Al perder un nivel, backend consume energía automáticamente
-    /// 6. Frontend actualiza energía y muestra nuevo timer
-    /// 
-    /// **Notas técnicas:**
-    /// 
-    /// - La recarga es **automática y pasiva** (no requiere acción del usuario)
-    /// - El cálculo se hace **en tiempo real** al consultar (no con timers)
-    /// - Los cambios se **persisten en BD** solo cuando hay recarga
-    /// - El tiempo es preciso hasta el **segundo**
-    /// - Compatible con **zonas horarias** (usa UTC internamente)
-    /// </remarks>
+    [SwaggerOperation(
+        Summary = "Obtiene el estado actual de energía del jugador autenticado",
+        Description = "Calcula la energía actual basándose en el tiempo transcurrido desde el último consumo. Recarga automáticamente 1 punto cada 15 minutos (máximo 3). Preserva el progreso de recarga al consumir energía. Requiere token de Firebase en header Authorization.",
+        OperationId = "GetEnergyStatus",
+        Tags = new[] { "Energy - Estado del jugador" }
+    )]
+    [SwaggerResponse(200, "Estado de energía obtenido exitosamente.", typeof(EnergyStatusDto))]
+    [SwaggerResponse(401, "No autorizado. Token de Firebase inválido o faltante.")]
+    [SwaggerResponse(404, "Jugador no encontrado.")]
+    [SwaggerResponse(500, "Error interno del servidor.")]
     [HttpGet]
-    [ProducesResponseType(typeof(EnergyStatusDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<EnergyStatusDto>> GetEnergyStatus()
     {
         var uid = HttpContext.Items["FirebaseUid"] as string;
@@ -136,15 +47,71 @@ public class EnergyController : ControllerBase
         }
 
         var energyStatus = await _getPlayerEnergyStatusUseCase.ExecuteByUidAsync(uid);
-
-        var dto = new EnergyStatusDto
-        {
-            CurrentAmount = energyStatus.CurrentAmount,
-            MaxAmount = energyStatus.MaxAmount,
-            SecondsUntilNextRecharge = energyStatus.SecondsUntilNextRecharge
-        };
-
+        var dto = energyStatus.ToDto();
         return Ok(dto);
+    }
+
+    [SwaggerOperation(
+        Summary = "Obtiene información de energía disponible en la tienda",
+        Description = "Retorna el precio por unidad, cantidad máxima permitida, cantidad actual del jugador y cuánta puede comprar.",
+        OperationId = "GetEnergyStoreInfo",
+        Tags = new[] { "Energy - Tienda de energía" }
+    )]
+    [SwaggerResponse(200, "Información de energía obtenida exitosamente.", typeof(EnergyStoreInfoDto))]
+    [SwaggerResponse(404, "Jugador no encontrado.")]
+    [SwaggerResponse(500, "Error interno del servidor.")]
+    [HttpGet("store/{playerId}")]
+    public async Task<ActionResult<EnergyStoreInfoDto>> GetEnergyStoreInfo(int playerId)
+    {
+        var authenticatedPlayerId = await GetAuthenticatedPlayerId();
+
+        if (playerId != authenticatedPlayerId)
+            return Unauthorized("No puedes acceder a la información de tienda de otro jugador.");
+
+        var storeInfo = await _getEnergyStoreInfoUseCase.ExecuteAsync(playerId);
+        var response = storeInfo.ToDto();
+        return Ok(response);
+    }
+
+    [SwaggerOperation(
+        Summary = "Compra energía para el juego individual",
+        Description = "Permite al jugador comprar energía usando monedas. Verifica que no exceda el máximo permitido y que tenga suficientes monedas.",
+        OperationId = "PurchaseEnergy",
+        Tags = new[] { "Energy - Tienda de energía" }
+    )]
+    [SwaggerResponse(200, "Energía comprada exitosamente.", typeof(PurchaseEnergyResponseDto))]
+    [SwaggerResponse(400, "Cantidad inválida - debe ser mayor a cero.")]
+    [SwaggerResponse(402, "Monedas insuficientes para completar la compra.")]
+    [SwaggerResponse(404, "Jugador no encontrado.")]
+    [SwaggerResponse(409, "Energía máxima alcanzada - no se puede comprar más.")]
+    [SwaggerResponse(500, "Error interno del servidor.")]
+    [HttpPost("purchase/{playerId}")]
+    public async Task<ActionResult<PurchaseEnergyResponseDto>> PurchaseEnergy(
+        int playerId, 
+        [FromBody] PurchaseEnergyRequestDto request)
+    {
+        var authenticatedPlayerId = await GetAuthenticatedPlayerId();
+
+        if (playerId != authenticatedPlayerId)
+            return Unauthorized("No puedes comprar energía para otro jugador.");
+
+        // Procesar la compra
+        var purchaseResult = await _purchaseEnergyUseCase.ExecuteAsync(playerId, request.Quantity);
+        var response = purchaseResult.ToDto();
+        return Ok(response);
+    }
+
+    private async Task<int> GetAuthenticatedPlayerId()
+    {
+        if (!HttpContext.Items.TryGetValue("FirebaseUid", out var uidObj) || uidObj == null)
+            throw new UnauthorizedAccessException("Usuario no autenticado");
+
+        var uid = uidObj.ToString();
+        if (string.IsNullOrEmpty(uid))
+            throw new UnauthorizedAccessException("UID de usuario inválido");
+            
+        var player = await _getPlayerByIdUseCase.ExecuteByUidAsync(uid);
+        return player.Id;
     }
 
 }

@@ -31,4 +31,14 @@ public interface IEnergyRepository
     /// Actualiza la cantidad de energía y la fecha de última recarga sin consumir
     /// </summary>
     Task UpdateEnergyAsync(int playerId, int newAmount, DateTime lastRechargeDate);
+
+    /// <summary>
+    /// Obtiene la configuración de energía (precio y máximo permitido)
+    /// </summary>
+    Task<(int Price, int MaxAmount)?> GetEnergyConfigurationAsync();
+
+    /// <summary>
+    /// Procesa la compra de energía (actualiza energía y descuenta monedas del jugador)
+    /// </summary>
+    Task<bool> PurchaseEnergyAsync(int playerId, int quantity, int totalPrice);
 }

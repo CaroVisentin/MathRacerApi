@@ -55,6 +55,8 @@ public static class ServiceExtensions
 
         // Registrar casos de uso de Wildcards
         services.AddScoped<GetPlayerWildcardsUseCase>();
+        services.AddScoped<GetStoreWildcardsUseCase>();
+        services.AddScoped<PurchaseWildcardUseCase>();
 
         // Registrar casos de uso de modo individual
         services.AddScoped<StartSoloGameUseCase>();
@@ -92,6 +94,10 @@ public static class ServiceExtensions
         services.AddScoped<GetFriendsUseCase>();
         services.AddScoped<DeleteFriendUseCase>();
         services.AddScoped<GetPendingFriendRequestsUseCase>();
+
+        // Registrar casos de uso de tienda/energía
+        services.AddScoped<PurchaseEnergyUseCase>();
+        services.AddScoped<GetEnergyStoreInfoUseCase>();
 
 
         // Registrar repositorios

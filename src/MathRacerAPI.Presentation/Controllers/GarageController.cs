@@ -41,38 +41,8 @@ namespace MathRacerAPI.Presentation.Controllers
         [HttpGet("cars/{playerId}")]
         public async Task<ActionResult<GarageItemsResponseDto>> GetPlayerCars(int playerId)
         {
-            try
-            {
-                var result = await _getPlayerGarageItemsUseCase.ExecuteAsync(playerId, "Auto");
-                return Ok(MapToDto(result));
-            }
-            catch (ArgumentException ex) when (ex.Message.Contains("does not exist"))
-            {
-                return NotFound(new ApiErrorResponse
-                {
-                    Error = "Player Not Found",
-                    Message = "The requested player could not be found",
-                    StatusCode = 404
-                });
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest(new ApiErrorResponse
-                {
-                    Error = "Invalid Request",
-                    Message = "The request contains invalid parameters",
-                    StatusCode = 400
-                });
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, new ApiErrorResponse
-                {
-                    Error = "Internal Server Error",
-                    Message = "An unexpected error occurred while processing your request",
-                    StatusCode = 500
-                });
-            }
+            var result = await _getPlayerGarageItemsUseCase.ExecuteAsync(playerId, "Auto");
+            return Ok(MapToDto(result));
         }
 
         [SwaggerOperation(
@@ -87,38 +57,8 @@ namespace MathRacerAPI.Presentation.Controllers
         [HttpGet("characters/{playerId}")]
         public async Task<ActionResult<GarageItemsResponseDto>> GetPlayerCharacters(int playerId)
         {
-            try
-            {
-                var result = await _getPlayerGarageItemsUseCase.ExecuteAsync(playerId, "Personaje");
-                return Ok(MapToDto(result));
-            }
-            catch (ArgumentException ex) when (ex.Message.Contains("does not exist"))
-            {
-                return NotFound(new ApiErrorResponse
-                {
-                    Error = "Player Not Found",
-                    Message = "The requested player could not be found",
-                    StatusCode = 404
-                });
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest(new ApiErrorResponse
-                {
-                    Error = "Invalid Request",
-                    Message = "The request contains invalid parameters",
-                    StatusCode = 400
-                });
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, new ApiErrorResponse
-                {
-                    Error = "Internal Server Error",
-                    Message = "An unexpected error occurred while processing your request",
-                    StatusCode = 500
-                });
-            }
+            var result = await _getPlayerGarageItemsUseCase.ExecuteAsync(playerId, "Personaje");
+            return Ok(MapToDto(result));
         }
 
         [SwaggerOperation(
@@ -133,38 +73,8 @@ namespace MathRacerAPI.Presentation.Controllers
         [HttpGet("backgrounds/{playerId}")]
         public async Task<ActionResult<GarageItemsResponseDto>> GetPlayerBackgrounds(int playerId)
         {
-            try
-            {
-                var result = await _getPlayerGarageItemsUseCase.ExecuteAsync(playerId, "Fondo");
-                return Ok(MapToDto(result));
-            }
-            catch (ArgumentException ex) when (ex.Message.Contains("does not exist"))
-            {
-                return NotFound(new ApiErrorResponse
-                {
-                    Error = "Player Not Found",
-                    Message = "The requested player could not be found",
-                    StatusCode = 404
-                });
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest(new ApiErrorResponse
-                {
-                    Error = "Invalid Request",
-                    Message = "The request contains invalid parameters",
-                    StatusCode = 400
-                });
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, new ApiErrorResponse
-                {
-                    Error = "Internal Server Error",
-                    Message = "An unexpected error occurred while processing your request",
-                    StatusCode = 500
-                });
-            }
+            var result = await _getPlayerGarageItemsUseCase.ExecuteAsync(playerId, "Fondo");
+            return Ok(MapToDto(result));
         }
 
         [SwaggerOperation(
@@ -183,60 +93,30 @@ namespace MathRacerAPI.Presentation.Controllers
             int productId, 
             [FromQuery] string productType)
         {
-            try
+            var domainRequest = new ActivateItemRequest
             {
-                var domainRequest = new ActivateItemRequest
-                {
-                    PlayerId = playerId,
-                    ProductId = productId,
-                    ProductType = productType
-                };
+                PlayerId = playerId,
+                ProductId = productId,
+                ProductType = productType
+            };
 
-                var result = await _activatePlayerItemUseCase.ExecuteAsync(domainRequest);
-                
-                if (result)
+            var result = await _activatePlayerItemUseCase.ExecuteAsync(domainRequest);
+            
+            if (result)
+            {
+                return Ok(new ActivateItemResponseDto
                 {
-                    return Ok(new ActivateItemResponseDto
-                    {
-                        Success = true,
-                        Message = "Item activated successfully"
-                    });
-                }
-                else
-                {
-                    return NotFound(new ApiErrorResponse
-                    {
-                        Error = "Item Not Found",
-                        Message = "The requested item could not be found or is not owned by the player",
-                        StatusCode = 404
-                    });
-                }
+                    Success = true,
+                    Message = "Item activated successfully"
+                });
             }
-            catch (ArgumentException ex) when (ex.Message.Contains("does not exist"))
+            else
             {
                 return NotFound(new ApiErrorResponse
                 {
-                    Error = "Player Not Found",
-                    Message = "The requested player could not be found",
+                    Error = "Item Not Found",
+                    Message = "The requested item could not be found or is not owned by the player",
                     StatusCode = 404
-                });
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest(new ApiErrorResponse
-                {
-                    Error = "Invalid Request",
-                    Message = "The request contains invalid parameters",
-                    StatusCode = 400
-                });
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, new ApiErrorResponse
-                {
-                    Error = "Internal Server Error",
-                    Message = "An unexpected error occurred while processing your request",
-                    StatusCode = 500
                 });
             }
         }
