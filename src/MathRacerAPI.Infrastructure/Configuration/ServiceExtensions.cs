@@ -63,6 +63,7 @@ public static class ServiceExtensions
 
         // Registrar casos de uso de modo online 
         services.AddScoped<FindMatchUseCase>();
+        services.AddScoped<FindMatchWithMatchmakingUseCase>();
         services.AddScoped<ProcessOnlineAnswerUseCase>();
         services.AddScoped<GetNextOnlineQuestionUseCase>();
         services.AddScoped<GrantLevelRewardUseCase>();
