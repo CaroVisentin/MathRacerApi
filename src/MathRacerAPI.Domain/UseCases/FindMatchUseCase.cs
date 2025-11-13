@@ -1,15 +1,19 @@
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Domain.Services;
+using MathRacerAPI.Domain.Exceptions;
 
 namespace MathRacerAPI.Domain.UseCases;
 
 /// <summary>
-/// Caso de uso para encontrar o crear una partida multijugador online
+/// Caso de uso para encontrar o crear una partida multijugador online usando matchmaking FIFO.
+/// FIFO (First In, First Out): El primer jugador que busque partida será emparejado con el siguiente jugador que busque,
+/// sin considerar habilidades o puntos de ranking. Es un sistema simple y rápido de emparejamiento.
 /// </summary>
 public class FindMatchUseCase
 {
     private readonly IGameRepository _gameRepository;
+    private readonly IPlayerRepository _playerRepository;
     private readonly GetQuestionsUseCase _getQuestionsUseCase;
     private readonly IGameLogicService _gameLogicService;
     private readonly IPowerUpService _powerUpService;
@@ -17,24 +21,34 @@ public class FindMatchUseCase
     private static int _nextGameId = 1000;
 
     public FindMatchUseCase(
-        IGameRepository gameRepository, 
+        IGameRepository gameRepository,
+        IPlayerRepository playerRepository,
         GetQuestionsUseCase getQuestionsUseCase, 
         IGameLogicService gameLogicService,
         IPowerUpService powerUpService)
     {
         _gameRepository = gameRepository;
+        _playerRepository = playerRepository;
         _getQuestionsUseCase = getQuestionsUseCase;
         _gameLogicService = gameLogicService;
         _powerUpService = powerUpService;
     }
 
-    public async Task<Game> ExecuteAsync(string playerName, string connectionId)
+    public async Task<Game> ExecuteAsync(string connectionId, string playerUid)
     {
-        // Crear jugador con ID único
+        // Obtener el perfil del jugador para usar su nombre real
+        var playerProfile = await _playerRepository.GetByUidAsync(playerUid);
+        if (playerProfile == null)
+        {
+            throw new NotFoundException("Perfil de jugador no encontrado");
+        }
+
+        // Crear jugador con ID único usando nombre real de BD
         var player = new Player 
         { 
             Id = Interlocked.Increment(ref _nextPlayerId),
-            Name = playerName,
+            Name = playerProfile.Name,
+            Uid = playerUid,
             ConnectionId = connectionId
         };
 
