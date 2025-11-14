@@ -30,19 +30,44 @@ namespace MathRacerAPI.Domain.UseCases
         {
             ValidateParams(p);
 
-            List<string> terms = GenerateTerms(p.TermCount, p.VariableCount, p.Operations, p.NumberRangeMin, p.NumberRangeMax);
+            string equationRight;
+            List<int> opts;
+            int correctX;
+            int attempts = 0;
+            const int maxAttempts = 100;
 
-            string equationRight = JoinTermsWithOperations(terms, p.Operations);
+            // Intentar generar una ecuación válida
+            do
+            {
+                List<string> terms = GenerateTerms(p.TermCount, p.VariableCount, p.Operations, p.NumberRangeMin, p.NumberRangeMax);
+                equationRight = JoinTermsWithOperations(terms, p.Operations);
+                opts = GenerateOptions(p.OptionsCount, p.OptionRangeMin, p.OptionRangeMax);
+
+                int xMin = opts.First();
+                int xMax = opts.Last();
+
+                correctX = FindCorrectOption(equationRight, xMin, xMax, p.ExpectedResult);
+
+                attempts++;
+
+                // Validar que la ecuación no sea constante (que los términos con x no se cancelen)
+                if (IsValidEquation(equationRight, opts))
+                {
+                    break;
+                }
+
+                if (attempts >= maxAttempts)
+                {
+                    // Si después de muchos intentos no se logra, forzar una ecuación válida
+                    equationRight = ForceValidEquation(p);
+                    opts = GenerateOptions(p.OptionsCount, p.OptionRangeMin, p.OptionRangeMax);
+                    correctX = FindCorrectOption(equationRight, opts.First(), opts.Last(), p.ExpectedResult);
+                    break;
+                }
+
+            } while (true);
 
             string equation = $"y = {equationRight}";
-
-            List<int> opts = GenerateOptions(p.OptionsCount, p.OptionRangeMin, p.OptionRangeMax);
-
-            int xMin = opts.First();
-            int xMax = opts.Last();
-
-            int correctX = FindCorrectOption(equationRight, xMin, xMax, p.ExpectedResult);
-
             opts = opts.OrderBy(_ => _rand.Next()).ToList();
 
             var equationReturn = new Question
@@ -54,6 +79,44 @@ namespace MathRacerAPI.Domain.UseCases
             };
 
             return equationReturn;
+        }
+
+        /// <summary>
+        /// Valida que la ecuación no sea constante (que dependa realmente de x)
+        /// </summary>
+        private bool IsValidEquation(string equationRight, List<int> options)
+        {
+            if (options.Count < 2) return true;
+
+            // Evaluar la ecuación con al menos 2 opciones diferentes
+            var results = new HashSet<double>();
+            
+            foreach (var option in options.Take(Math.Min(3, options.Count)))
+            {
+                double result = EvaluateExpression(equationRight, option);
+                if (!double.IsNaN(result))
+                {
+                    results.Add(Math.Round(result, 6)); // Redondear para evitar problemas de precisión
+                }
+            }
+
+            // Si todos los resultados son iguales, la ecuación es constante (términos cancelados)
+            return results.Count > 1;
+        }
+
+        /// <summary>
+        /// Fuerza la generación de una ecuación válida simple cuando falla la generación aleatoria
+        /// </summary>
+        private string ForceValidEquation(EquationParams p)
+        {
+            // Generar una ecuación simple que sabemos que funciona
+            int coef = _rand.Next(1, 6);
+            int constant = _rand.Next(-5, 6);
+            
+            if (_rand.Next(0, 2) == 0)
+                return $"{coef}*x + {constant}";
+            else
+                return $"{coef}*x - {Math.Abs(constant)}";
         }
 
         private void ValidateParams(EquationParams p)
