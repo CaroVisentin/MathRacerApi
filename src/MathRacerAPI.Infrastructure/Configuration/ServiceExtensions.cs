@@ -100,6 +100,13 @@ public static class ServiceExtensions
         services.AddScoped<PurchaseEnergyUseCase>();
         services.AddScoped<GetEnergyStoreInfoUseCase>();
 
+        // Registrar casos de uso de modo infinito
+        services.AddScoped<StartInfiniteGameUseCase>();
+        services.AddScoped<SubmitInfiniteAnswerUseCase>();
+        services.AddScoped<LoadNextBatchUseCase>();
+        services.AddScoped<GetInfiniteGameStatusUseCase>();
+        services.AddScoped<AbandonInfiniteGameUseCase>(); 
+
 
         // Registrar repositorios
         services.AddScoped<ILevelRepository, LevelRepository>();
@@ -112,6 +119,8 @@ public static class ServiceExtensions
         services.AddScoped<IStoreRepository, StoreRepository>();
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
         services.AddSingleton<ISoloGameRepository, InMemorySoloGameRepository>();
+        services.AddSingleton<IInfiniteGameRepository, InMemoryInfiniteGameRepository>();
+
 
         // Registrar repositorios de amistad
         services.AddScoped<IFriendshipRepository, FriendshipRepository>();

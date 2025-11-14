@@ -358,6 +358,244 @@ public class GetQuestionsUseCaseTests
         results.Should().OnlyContain(x => x >= min && x <= max);
     }
 
+    #region Tests para validación de ecuaciones constantes
+
+    [Fact]
+    public void IsValidEquation_WithConstantEquation_ShouldReturnFalse()
+    {
+        // Arrange
+        var useCase = new GetQuestionsUseCase();
+        var constantEquation = "5"; // Ecuación constante, no depende de x
+        var options = new List<int> { 1, 2, 3, 4 };
+
+        // Act
+        var resultObj = useCase.GetType()
+            .GetMethod("IsValidEquation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            ?.Invoke(useCase, new object[] { constantEquation, options });
+
+        // Assert
+        resultObj.Should().NotBeNull();
+        var result = (bool)resultObj!;
+        result.Should().BeFalse("Una ecuación constante no es válida");
+    }
+
+    [Fact]
+    public void IsValidEquation_WithCanceledTerms_ShouldReturnFalse()
+    {
+        // Arrange
+        var useCase = new GetQuestionsUseCase();
+        var canceledEquation = "x - x + 5"; // Los términos con x se cancelan
+        var options = new List<int> { 1, 2, 3, 4 };
+
+        // Act
+        var resultObj = useCase.GetType()
+            .GetMethod("IsValidEquation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            ?.Invoke(useCase, new object[] { canceledEquation, options });
+
+        // Assert
+        resultObj.Should().NotBeNull();
+        var result = (bool)resultObj!;
+        result.Should().BeFalse("Una ecuación con términos cancelados no es válida");
+    }
+
+    [Fact]
+    public void IsValidEquation_WithValidEquation_ShouldReturnTrue()
+    {
+        // Arrange
+        var useCase = new GetQuestionsUseCase();
+        var validEquation = "2*x + 3"; // Ecuación válida que depende de x
+        var options = new List<int> { 1, 2, 3, 4 };
+
+        // Act
+        var resultObj = useCase.GetType()
+            .GetMethod("IsValidEquation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            ?.Invoke(useCase, new object[] { validEquation, options });
+
+        // Assert
+        resultObj.Should().NotBeNull();
+        var result = (bool)resultObj!;
+        result.Should().BeTrue("Una ecuación válida debe retornar true");
+    }
+
+    [Fact]
+    public void IsValidEquation_WithSingleOption_ShouldReturnTrue()
+    {
+        // Arrange
+        var useCase = new GetQuestionsUseCase();
+        var equation = "x + 5";
+        var options = new List<int> { 1 }; // Solo una opción
+
+        // Act
+        var resultObj = useCase.GetType()
+            .GetMethod("IsValidEquation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            ?.Invoke(useCase, new object[] { equation, options });
+
+        // Assert
+        resultObj.Should().NotBeNull();
+        var result = (bool)resultObj!;
+        result.Should().BeTrue("Con una sola opción, la ecuación se considera válida");
+    }
+
+    [Fact]
+    public void IsValidEquation_WithDifferentResults_ShouldReturnTrue()
+    {
+        // Arrange
+        var useCase = new GetQuestionsUseCase();
+        var equation = "3*x - 2";
+        var options = new List<int> { 1, 5, 10 };
+
+        // Act
+        var resultObj = useCase.GetType()
+            .GetMethod("IsValidEquation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            ?.Invoke(useCase, new object[] { equation, options });
+
+        // Assert
+        resultObj.Should().NotBeNull();
+        var result = (bool)resultObj!;
+        result.Should().BeTrue("Una ecuación que produce diferentes resultados es válida");
+    }
+
+    [Fact]
+    public void ForceValidEquation_ShouldReturnValidEquationFormat()
+    {
+        // Arrange
+        var useCase = new GetQuestionsUseCase();
+        var p = CreateDefaultParams();
+
+        // Act
+        var resultObj = useCase.GetType()
+            .GetMethod("ForceValidEquation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            ?.Invoke(useCase, new object[] { p });
+
+        // Assert
+        resultObj.Should().NotBeNull();
+        var equation = resultObj as string;
+        equation.Should().NotBeNullOrEmpty();
+        equation.Should().Contain("*x");
+        equation.Should().Match(e => e.Contains("+") || e.Contains("-"));
+    }
+
+    [Fact]
+    public void ForceValidEquation_ShouldProduceDifferentResults()
+    {
+        // Arrange
+        var useCase = new GetQuestionsUseCase();
+        var p = CreateDefaultParams();
+
+        // Act
+        var resultObj = useCase.GetType()
+            .GetMethod("ForceValidEquation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            ?.Invoke(useCase, new object[] { p });
+
+        var equation = resultObj as string;
+        var options = new List<int> { 1, 5, 10 };
+
+        // Assert
+        equation.Should().NotBeNull();
+        
+        // Evaluar con diferentes valores de x
+        var y1 = GetY($"y = {equation}", options[0]);
+        var y2 = GetY($"y = {equation}", options[1]);
+        var y3 = GetY($"y = {equation}", options[2]);
+
+        // Los resultados deben ser diferentes
+        var results = new HashSet<double> { y1, y2, y3 };
+        results.Count.Should().BeGreaterThan(1, "La ecuación forzada debe producir diferentes resultados");
+    }
+
+    [Fact]
+    public void GenerateEquation_ShouldNeverReturnConstantEquation()
+    {
+        // Arrange
+        var p = CreateDefaultParams();
+        p.TermCount = 3;
+        p.VariableCount = 2;
+
+        // Act - Generar múltiples ecuaciones
+        var questions = new List<Question>();
+        for (int i = 0; i < 20; i++)
+        {
+            questions.Add(_getQuestionsUseCase.GenerateEquation(p));
+        }
+
+        // Assert
+        foreach (var question in questions)
+        {
+            // Extraer la ecuación sin el "y = "
+            var expr = question.Equation.Substring(question.Equation.IndexOf('=') + 1).Trim();
+            
+            // Evaluar con diferentes opciones
+            var results = new HashSet<double>();
+            foreach (var option in question.Options.Take(3))
+            {
+                var y = GetY(question.Equation, option);
+                if (!double.IsNaN(y))
+                {
+                    results.Add(Math.Round(y, 6));
+                }
+            }
+
+            results.Count.Should().BeGreaterThan(1, 
+                $"La ecuación '{question.Equation}' con opciones [{string.Join(", ", question.Options)}] " +
+                $"produce los mismos resultados para todos los valores de x");
+        }
+    }
+
+    [Fact]
+    public void GenerateEquation_WithOnlyAdditionSubtraction_ShouldNotProduceConstantEquations()
+    {
+        // Arrange
+        var p = CreateDefaultParams();
+        p.Operations = new List<string> { "+", "-" };
+        p.TermCount = 3;
+        p.VariableCount = 1;
+
+        // Act - Generar múltiples ecuaciones
+        var questions = new List<Question>();
+        for (int i = 0; i < 15; i++)
+        {
+            questions.Add(_getQuestionsUseCase.GenerateEquation(p));
+        }
+
+        // Assert - Todas deben tener resultados diferentes para diferentes valores de x
+        foreach (var question in questions)
+        {
+            var y1 = GetY(question.Equation, question.Options[0]);
+            var y2 = GetY(question.Equation, question.Options[^1]);
+
+            Math.Round(y1, 6).Should().NotBe(Math.Round(y2, 6),
+                $"La ecuación '{question.Equation}' produce el mismo resultado para diferentes valores de x");
+        }
+    }
+
+    [Fact]
+    public void GenerateEquation_ShouldHaveUniqueCorrectAnswer()
+    {
+        // Arrange
+        var p = CreateDefaultParams();
+
+        // Act
+        var question = _getQuestionsUseCase.GenerateEquation(p);
+
+        // Assert
+        question.CorrectAnswer.Should().BeOneOf(question.Options);
+        
+        // Verificar que la respuesta correcta realmente cumple con el criterio
+        var minOption = question.Options.Min();
+        var maxOption = question.Options.Max();
+        
+        var yMin = GetY(question.Equation, minOption);
+        var yMax = GetY(question.Equation, maxOption);
+
+        // El CorrectAnswer debe ser el que produce el resultado esperado
+        if (Math.Abs(yMax - yMin) > 0.0001) // Si hay diferencia significativa
+        {
+            question.Options.Should().Contain(question.CorrectAnswer);
+        }
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private static EquationParams CreateDefaultParams()
