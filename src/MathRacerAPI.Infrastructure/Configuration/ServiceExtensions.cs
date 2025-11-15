@@ -55,6 +55,8 @@ public static class ServiceExtensions
 
         // Registrar casos de uso de Wildcards
         services.AddScoped<GetPlayerWildcardsUseCase>();
+        services.AddScoped<GetStoreWildcardsUseCase>();
+        services.AddScoped<PurchaseWildcardUseCase>();
 
         // Registrar casos de uso de modo individual
         services.AddScoped<StartSoloGameUseCase>();
@@ -63,6 +65,7 @@ public static class ServiceExtensions
 
         // Registrar casos de uso de modo online 
         services.AddScoped<FindMatchUseCase>();
+        services.AddScoped<FindMatchWithMatchmakingUseCase>();
         services.AddScoped<ProcessOnlineAnswerUseCase>();
         services.AddScoped<GetNextOnlineQuestionUseCase>();
         services.AddScoped<GrantLevelRewardUseCase>();
@@ -97,6 +100,17 @@ public static class ServiceExtensions
         services.AddScoped<DeleteFriendUseCase>();
         services.AddScoped<GetPendingFriendRequestsUseCase>();
 
+        // Registrar casos de uso de tienda/energía
+        services.AddScoped<PurchaseEnergyUseCase>();
+        services.AddScoped<GetEnergyStoreInfoUseCase>();
+
+        // Registrar casos de uso de modo infinito
+        services.AddScoped<StartInfiniteGameUseCase>();
+        services.AddScoped<SubmitInfiniteAnswerUseCase>();
+        services.AddScoped<LoadNextBatchUseCase>();
+        services.AddScoped<GetInfiniteGameStatusUseCase>();
+        services.AddScoped<AbandonInfiniteGameUseCase>(); 
+
 
         // Registrar repositorios
         services.AddScoped<ILevelRepository, LevelRepository>();
@@ -109,6 +123,8 @@ public static class ServiceExtensions
         services.AddScoped<IStoreRepository, StoreRepository>();
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
         services.AddSingleton<ISoloGameRepository, InMemorySoloGameRepository>();
+        services.AddSingleton<IInfiniteGameRepository, InMemoryInfiniteGameRepository>();
+
 
         // Registrar repositorios de amistad
         services.AddScoped<IFriendshipRepository, FriendshipRepository>();

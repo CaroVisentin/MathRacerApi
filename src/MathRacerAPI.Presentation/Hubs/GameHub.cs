@@ -14,6 +14,7 @@ public class GameHub : Hub
 {
     private readonly FindMatchUseCase _findMatchUseCase;
     private readonly JoinCreatedGameUseCase _joinCreatedGameUseCase;
+    private readonly FindMatchWithMatchmakingUseCase _findMatchWithMatchmakingUseCase;
     private readonly ProcessOnlineAnswerUseCase _processAnswerUseCase;
     private readonly GetNextOnlineQuestionUseCase _getNextQuestionUseCase;
     private readonly IGameRepository _gameRepository;
@@ -23,6 +24,7 @@ public class GameHub : Hub
     public GameHub(
         FindMatchUseCase findMatchUseCase,
         JoinCreatedGameUseCase joinCreatedGameUseCase,
+        FindMatchWithMatchmakingUseCase findMatchWithMatchmakingUseCase,
         ProcessOnlineAnswerUseCase processAnswerUseCase,
         GetNextOnlineQuestionUseCase getNextQuestionUseCase,
         IGameRepository gameRepository,
@@ -31,6 +33,7 @@ public class GameHub : Hub
     {
         _findMatchUseCase = findMatchUseCase;
         _joinCreatedGameUseCase = joinCreatedGameUseCase;
+        _findMatchWithMatchmakingUseCase = findMatchWithMatchmakingUseCase;
         _processAnswerUseCase = processAnswerUseCase;
         _getNextQuestionUseCase = getNextQuestionUseCase;
         _gameRepository = gameRepository;
@@ -39,23 +42,24 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Busca una partida disponible o crea una nueva (matchmaking automático)
+    /// Busca una partida disponible o crea una nueva usando matchmaking FIFO (First In, First Out).
+    /// El sistema FIFO empareja al primer jugador disponible sin considerar habilidades.
     /// </summary>
-    /// <param name="playerName">Nombre del jugador</param>
-    public async Task FindMatch(string playerName)
+    /// <param name="playerUid">UID del jugador para obtener su nombre real</param>
+    public async Task FindMatch(string playerUid)
     {
         try
         {
-            _logger.LogInformation($"FindMatch iniciado para {playerName} ({Context.ConnectionId})");
+            _logger.LogInformation($"FindMatch iniciado para UID: {playerUid} ({Context.ConnectionId})");
             
-            var game = await _findMatchUseCase.ExecuteAsync(playerName, Context.ConnectionId);
+            var game = await _findMatchUseCase.ExecuteAsync(Context.ConnectionId, playerUid);
             
             _logger.LogInformation($"FindMatchUseCase completado. Partida {game.Id} con {game.Players.Count} jugadores");
             
             var player = game.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
             if (player == null)
             {
-                _logger.LogError($"No se pudo encontrar el jugador {playerName} en la partida {game.Id}");
+                _logger.LogError($"No se pudo encontrar el jugador con UID {playerUid} en la partida {game.Id}");
                 await Clients.Caller.SendAsync("Error", "Error al crear jugador");
                 return;
             }
@@ -63,16 +67,60 @@ public class GameHub : Hub
             _logger.LogInformation($"Jugador encontrado: {player.Name} (ID: {player.Id}, ConnectionId: {player.ConnectionId})");
             
             await Groups.AddToGroupAsync(Context.ConnectionId, $"Game_{game.Id}");
-            _logger.LogInformation($"Jugador {playerName} agregado al grupo Game_{game.Id}");
+            _logger.LogInformation($"Jugador {player.Name} agregado al grupo Game_{game.Id}");
 
             await NotifyAllPlayersInGame(game.Id);
 
-            _logger.LogInformation($"Jugador {playerName} ({Context.ConnectionId}) procesado completamente para partida {game.Id}");
+            _logger.LogInformation($"Jugador {player.Name} ({Context.ConnectionId}) procesado completamente para partida {game.Id}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error al buscar partida para el jugador {playerName}");
+            _logger.LogError(ex, $"Error al buscar partida para el jugador con UID {playerUid}");
             await Clients.Caller.SendAsync("Error", "Error al buscar partida");
+        }
+    }
+
+    /// <summary>
+    /// Busca una partida usando matchmaking basado en puntos de ranking.
+    /// El sistema de ranking empareja jugadores con habilidades similares usando tolerancias adaptativas
+    /// para crear partidas equilibradas y competitivas.
+    /// </summary>
+    /// <param name="playerUid">UID del jugador para obtener sus puntos y nombre real</param>
+    public async Task FindMatchWithMatchmaking(string playerUid)
+    {
+        try
+        {
+            _logger.LogInformation($"FindMatchWithMatchmaking iniciado para UID: {playerUid} ({Context.ConnectionId})");
+            
+            var game = await _findMatchWithMatchmakingUseCase.ExecuteAsync(Context.ConnectionId, playerUid);
+            
+            _logger.LogInformation($"FindMatchWithMatchmakingUseCase completado. Partida {game.Id} con {game.Players.Count} jugadores");
+            
+            // Encontrar el jugador recién creado
+            var player = game.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
+            if (player == null)
+            {
+                _logger.LogError($"No se pudo encontrar el jugador con UID {playerUid} en la partida {game.Id}");
+                await Clients.Caller.SendAsync("Error", "Error al crear jugador");
+                return;
+            }
+            
+            _logger.LogInformation($"Jugador encontrado: {player.Name} (ID: {player.Id}, ConnectionId: {player.ConnectionId})");
+            
+            // Unir al jugador al grupo de la partida
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"Game_{game.Id}");
+            _logger.LogInformation($"Jugador {player.Name} agregado al grupo Game_{game.Id}");
+
+            // Notificar a CADA jugador individualmente con su pregunta específica
+            _logger.LogInformation($"Iniciando notificación a todos los jugadores de la partida {game.Id}");
+            await NotifyAllPlayersInGame(game.Id);
+
+            _logger.LogInformation($"Jugador {player.Name} ({Context.ConnectionId}) procesado completamente para partida {game.Id} con matchmaking");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error al buscar partida con matchmaking para el jugador con UID {playerUid}");
+            await Clients.Caller.SendAsync("Error", "Error al buscar partida con matchmaking");
         }
     }
 

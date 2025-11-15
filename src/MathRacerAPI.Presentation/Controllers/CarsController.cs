@@ -26,7 +26,8 @@ public class CarsController : ControllerBase
     [SwaggerOperation(
         Summary = "Obtiene el catálogo de autos disponibles",
         Description = "Retorna el catálogo completo de autos en la tienda con precios, rareza e información de propiedad del jugador específico",
-        OperationId = "GetAllCars")]
+        OperationId = "GetAllCars",
+        Tags = new[] { "Cars - Tienda de autos" })]
     [SwaggerResponse(200, "Catálogo de autos obtenido exitosamente", typeof(StoreResponseDto))]
     [SwaggerResponse(400, "ID de jugador inválido")]
     [SwaggerResponse(404, "Jugador no encontrado")]
@@ -47,7 +48,8 @@ public class CarsController : ControllerBase
     [SwaggerOperation(
         Summary = "Compra un auto específico",
         Description = "Realiza la compra de un auto específico para el jugador. Valida fondos suficientes y que el jugador no posea el auto previamente.",
-        OperationId = "PurchaseCar")]
+        OperationId = "PurchaseCar",
+        Tags = new[] { "Cars - Tienda de autos" })]
     [SwaggerResponse(200, "Auto comprado exitosamente", typeof(PurchaseSuccessResponseDto))]
     [SwaggerResponse(400, "Fondos insuficientes")]
     [SwaggerResponse(404, "Jugador o auto no encontrado")]
