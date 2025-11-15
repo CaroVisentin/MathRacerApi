@@ -13,6 +13,7 @@ namespace MathRacerAPI.Presentation.Hubs;
 public class GameHub : Hub
 {
     private readonly FindMatchUseCase _findMatchUseCase;
+    private readonly JoinCreatedGameUseCase _joinCreatedGameUseCase;
     private readonly FindMatchWithMatchmakingUseCase _findMatchWithMatchmakingUseCase;
     private readonly ProcessOnlineAnswerUseCase _processAnswerUseCase;
     private readonly GetNextOnlineQuestionUseCase _getNextQuestionUseCase;
@@ -22,6 +23,7 @@ public class GameHub : Hub
 
     public GameHub(
         FindMatchUseCase findMatchUseCase,
+        JoinCreatedGameUseCase joinCreatedGameUseCase,
         FindMatchWithMatchmakingUseCase findMatchWithMatchmakingUseCase,
         ProcessOnlineAnswerUseCase processAnswerUseCase,
         GetNextOnlineQuestionUseCase getNextQuestionUseCase,
@@ -30,6 +32,7 @@ public class GameHub : Hub
         ILogger<GameHub> logger)
     {
         _findMatchUseCase = findMatchUseCase;
+        _joinCreatedGameUseCase = joinCreatedGameUseCase;
         _findMatchWithMatchmakingUseCase = findMatchWithMatchmakingUseCase;
         _processAnswerUseCase = processAnswerUseCase;
         _getNextQuestionUseCase = getNextQuestionUseCase;
@@ -53,7 +56,6 @@ public class GameHub : Hub
             
             _logger.LogInformation($"FindMatchUseCase completado. Partida {game.Id} con {game.Players.Count} jugadores");
             
-            // Encontrar el jugador recién creado
             var player = game.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
             if (player == null)
             {
@@ -64,12 +66,9 @@ public class GameHub : Hub
             
             _logger.LogInformation($"Jugador encontrado: {player.Name} (ID: {player.Id}, ConnectionId: {player.ConnectionId})");
             
-            // Unir al jugador al grupo de la partida
             await Groups.AddToGroupAsync(Context.ConnectionId, $"Game_{game.Id}");
             _logger.LogInformation($"Jugador {player.Name} agregado al grupo Game_{game.Id}");
 
-            // Notificar a CADA jugador individualmente con su pregunta específica
-            _logger.LogInformation($"Iniciando notificación a todos los jugadores de la partida {game.Id}");
             await NotifyAllPlayersInGame(game.Id);
 
             _logger.LogInformation($"Jugador {player.Name} ({Context.ConnectionId}) procesado completamente para partida {game.Id}");
@@ -126,11 +125,47 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Procesa la respuesta de un jugador
+    /// Une al jugador autenticado a una partida ya creada
     /// </summary>
     /// <param name="gameId">ID de la partida</param>
-    /// <param name="playerId">ID del jugador</param>
-    /// <param name="answer">Respuesta del jugador</param>
+    /// <param name="password">Contraseña (opcional, solo para partidas privadas)</param>
+    public async Task JoinGame(int gameId, string? password = null)
+    {
+        try
+        {
+            // Obtener el UID de Firebase del contexto (inyectado por middleware)
+            var firebaseUid = Context.Items["FirebaseUid"] as string;
+            if (string.IsNullOrEmpty(firebaseUid))
+            {
+                await Clients.Caller.SendAsync("Error", "Autenticación requerida para unirse a la partida");
+                return;
+            }
+
+            _logger.LogInformation($"JoinGame iniciado para gameId: {gameId}, uid: {firebaseUid}, connectionId: {Context.ConnectionId}");
+
+            // Ejecutar caso de uso
+            var game = await _joinCreatedGameUseCase.ExecuteAsync(gameId, firebaseUid, Context.ConnectionId, password);
+
+            _logger.LogInformation($"Jugador unido exitosamente a partida {gameId}. Total jugadores: {game.Players.Count}");
+
+            // Agregar al grupo de SignalR
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"Game_{game.Id}");
+
+            // Notificar a todos los jugadores de la partida
+            await NotifyAllPlayersInGame(game.Id);
+
+            _logger.LogInformation($"Jugador con uid {firebaseUid} procesado completamente para partida {gameId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error al unirse a la partida {gameId}");
+            await Clients.Caller.SendAsync("Error", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Procesa la respuesta de un jugador
+    /// </summary>
     public async Task SendAnswer(int gameId, int playerId, int answer)
     {
         try
@@ -143,7 +178,6 @@ public class GameHub : Hub
                 return;
             }
 
-            // Notificar a CADA jugador individualmente con su pregunta específica
             await NotifyAllPlayersInGame(gameId);
 
             _logger.LogInformation($"Respuesta procesada para jugador {playerId} en partida {gameId}");
@@ -158,9 +192,6 @@ public class GameHub : Hub
     /// <summary>
     /// Activa un power-up de un jugador
     /// </summary>
-    /// <param name="gameId">ID de la partida</param>
-    /// <param name="playerId">ID del jugador</param>
-    /// <param name="powerUpType">Tipo de power-up a activar</param>
     public async Task UsePowerUp(int gameId, int playerId, PowerUpType powerUpType)
     {
         try
@@ -191,7 +222,6 @@ public class GameHub : Hub
                 return;
             }
 
-            // Verificar si el jugador puede usar el power-up
             if (!_powerUpService.CanUsePowerUp(player, powerUpType))
             {
                 await Clients.Caller.SendAsync("Error", "Power-up no disponible");
@@ -205,10 +235,8 @@ public class GameHub : Hub
                 return;
             }
 
-            // Actualizar la partida en el repositorio
             await _gameRepository.UpdateAsync(game);
 
-            // Notificar el uso del power-up a todos los jugadores
             var powerUpDto = new PowerUpUsedDto
             {
                 GameId = gameId,
@@ -218,8 +246,6 @@ public class GameHub : Hub
             };
 
             await Clients.Group($"Game_{gameId}").SendAsync("PowerUpUsed", powerUpDto);
-
-            // Notificar actualización completa del juego
             await NotifyAllPlayersInGame(gameId);
 
             _logger.LogInformation($"Power-up {powerUpType} usado por jugador {playerId} en partida {gameId}");
@@ -231,27 +257,18 @@ public class GameHub : Hub
         }
     }
 
-    /// <summary>
-    /// Maneja la desconexión de un jugador
-    /// </summary>
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         _logger.LogInformation($"Jugador desconectado: {Context.ConnectionId}");
         await base.OnDisconnectedAsync(exception);
     }
 
-    /// <summary>
-    /// Maneja la conexión de un jugador
-    /// </summary>
     public override async Task OnConnectedAsync()
     {
         _logger.LogInformation($"Jugador conectado: {Context.ConnectionId}");
         await base.OnConnectedAsync();
     }
 
-    /// <summary>
-    /// Notifica a todos los jugadores de una partida con sus preguntas específicas
-    /// </summary>
     private async Task NotifyAllPlayersInGame(int gameId)
     {
         try
@@ -265,14 +282,12 @@ public class GameHub : Hub
 
             _logger.LogInformation($"Notificando a {game.Players.Count} jugadores de la partida {gameId}");
 
-            // Notificar a cada jugador individualmente
             foreach (var player in game.Players.Where(p => !string.IsNullOrEmpty(p.ConnectionId)))
             {
                 try
                 {
                     Question? currentQuestion = null;
                     
-                    // Solo enviar pregunta si el juego ya comenzó (2 jugadores)
                     if (game.Status == GameStatus.InProgress)
                     {
                         currentQuestion = await _getNextQuestionUseCase.ExecuteAsync(gameId, player.Id);

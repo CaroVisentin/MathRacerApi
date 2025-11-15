@@ -28,7 +28,7 @@ public class EnergyController : ControllerBase
     }
 
     [SwaggerOperation(
-        Summary = "Obtiene el estado actual de energía del jugador autenticado",
+    Summary = "Obtiene el estado actual de energía del jugador autenticado",
         Description = "Calcula la energía actual basándose en el tiempo transcurrido desde el último consumo. Recarga automáticamente 1 punto cada 15 minutos (máximo 3). Preserva el progreso de recarga al consumir energía. Requiere token de Firebase en header Authorization.",
         OperationId = "GetEnergyStatus",
         Tags = new[] { "Energy - Estado del jugador" }
@@ -113,5 +113,4 @@ public class EnergyController : ControllerBase
         var player = await _getPlayerByIdUseCase.ExecuteByUidAsync(uid);
         return player.Id;
     }
-
 }
