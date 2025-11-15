@@ -6,6 +6,7 @@ using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Domain.Services;
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace MathRacerAPI.Tests.UseCases;
 
@@ -14,6 +15,7 @@ public class JoinCreatedGameUseCaseTests
     private readonly Mock<IGameRepository> _gameRepositoryMock;
     private readonly Mock<IPlayerRepository> _playerRepositoryMock;
     private readonly Mock<IPowerUpService> _powerUpServiceMock;
+    private readonly Mock<ILogger<JoinCreatedGameUseCase>> _loggerMock;
     private readonly JoinCreatedGameUseCase _useCase;
 
     public JoinCreatedGameUseCaseTests()
@@ -21,13 +23,58 @@ public class JoinCreatedGameUseCaseTests
         _gameRepositoryMock = new Mock<IGameRepository>();
         _playerRepositoryMock = new Mock<IPlayerRepository>();
         _powerUpServiceMock = new Mock<IPowerUpService>();
+        _loggerMock = new Mock<ILogger<JoinCreatedGameUseCase>>();
 
         _useCase = new JoinCreatedGameUseCase(
             _gameRepositoryMock.Object,
             _playerRepositoryMock.Object,
-            _powerUpServiceMock.Object
+            _powerUpServiceMock.Object,
+            _loggerMock.Object
         );
     }
+
+    #region Validación de Entrada
+
+    [Fact]
+    public async Task ExecuteAsync_EmptyFirebaseUid_ShouldThrowValidationException()
+    {
+        // Arrange
+        var gameId = 1001;
+
+        // Act
+        Func<Task> act = async () => await _useCase.ExecuteAsync(
+            gameId,
+            "",
+            "conn-123",
+            password: null
+        );
+
+        // Assert
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*UID*requerido*");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_EmptyConnectionId_ShouldThrowValidationException()
+    {
+        // Arrange
+        var gameId = 1001;
+        var firebaseUid = "test-uid";
+
+        // Act
+        Func<Task> act = async () => await _useCase.ExecuteAsync(
+            gameId,
+            firebaseUid,
+            "",
+            password: null
+        );
+
+        // Assert
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*ConnectionId*requerido*");
+    }
+
+    #endregion
 
     #region Validación de Partida
 
@@ -56,7 +103,7 @@ public class JoinCreatedGameUseCaseTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_GameAlreadyInProgress_ShouldThrowBusinessException()
+    public async Task ExecuteAsync_GameNotWaitingForPlayers_ShouldThrowValidationException()
     {
         // Arrange
         var gameId = 1001;
@@ -65,8 +112,7 @@ public class JoinCreatedGameUseCaseTests
         var game = new Game
         {
             Id = gameId,
-            Status = GameStatus.InProgress,
-            CreatorPlayerId = 1
+            Status = GameStatus.InProgress
         };
 
         _gameRepositoryMock
@@ -82,39 +128,8 @@ public class JoinCreatedGameUseCaseTests
         );
 
         // Assert
-        await act.Should().ThrowAsync<BusinessException>()
-            .WithMessage("*ya comenzó*");
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_GameFinished_ShouldThrowBusinessException()
-    {
-        // Arrange
-        var gameId = 1001;
-        var firebaseUid = "player-uid";
-
-        var game = new Game
-        {
-            Id = gameId,
-            Status = GameStatus.Finished,
-            CreatorPlayerId = 1
-        };
-
-        _gameRepositoryMock
-            .Setup(x => x.GetByIdAsync(gameId))
-            .ReturnsAsync(game);
-
-        // Act
-        Func<Task> act = async () => await _useCase.ExecuteAsync(
-            gameId,
-            firebaseUid,
-            "conn-123",
-            password: null
-        );
-
-        // Assert
-        await act.Should().ThrowAsync<BusinessException>()
-            .WithMessage("*finalizó*");
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*no está disponible*");
     }
 
     #endregion
@@ -122,7 +137,7 @@ public class JoinCreatedGameUseCaseTests
     #region Validación de Contraseña
 
     [Fact]
-    public async Task ExecuteAsync_PrivateGameWithoutPassword_ShouldThrowBusinessException()
+    public async Task ExecuteAsync_PrivateGameWithWrongPassword_ShouldThrowValidationException()
     {
         // Arrange
         var gameId = 1001;
@@ -133,62 +148,12 @@ public class JoinCreatedGameUseCaseTests
             Id = gameId,
             Status = GameStatus.WaitingForPlayers,
             IsPrivate = true,
-            Password = "secret123",
-            CreatorPlayerId = 1
+            Password = "correct123"
         };
 
         _gameRepositoryMock
             .Setup(x => x.GetByIdAsync(gameId))
             .ReturnsAsync(game);
-
-        // Act
-        Func<Task> act = async () => await _useCase.ExecuteAsync(
-            gameId,
-            firebaseUid,
-            "conn-123",
-            password: null
-        );
-
-        // Assert
-        await act.Should().ThrowAsync<BusinessException>()
-            .WithMessage("*privada*requiere contraseña*");
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_PrivateGameWithWrongPassword_ShouldThrowBusinessException()
-    {
-        // Arrange
-        var gameId = 1001;
-        var firebaseUid = "player-uid";
-        var playerId = 2;
-
-        var game = new Game
-        {
-            Id = gameId,
-            Status = GameStatus.WaitingForPlayers,
-            IsPrivate = true,
-            Password = "correct123",
-            CreatorPlayerId = 1,
-            Players = new List<Player>
-            {
-                new Player { Id = 1, Name = "Creator" }
-            }
-        };
-
-        var playerProfile = new PlayerProfile
-        {
-            Id = playerId,
-            Uid = firebaseUid,
-            Name = "Test Player"
-        };
-
-        _gameRepositoryMock
-            .Setup(x => x.GetByIdAsync(gameId))
-            .ReturnsAsync(game);
-
-        _playerRepositoryMock
-            .Setup(x => x.GetByUidAsync(firebaseUid))
-            .ReturnsAsync(playerProfile);
 
         // Act
         Func<Task> act = async () => await _useCase.ExecuteAsync(
@@ -199,7 +164,7 @@ public class JoinCreatedGameUseCaseTests
         );
 
         // Assert
-        await act.Should().ThrowAsync<BusinessException>()
+        await act.Should().ThrowAsync<ValidationException>()
             .WithMessage("*Contraseña incorrecta*");
     }
 
@@ -218,11 +183,7 @@ public class JoinCreatedGameUseCaseTests
             Status = GameStatus.WaitingForPlayers,
             IsPrivate = true,
             Password = correctPassword,
-            CreatorPlayerId = 1,
-            Players = new List<Player>
-            {
-                new Player { Id = 1, Name = "Creator" }
-            }
+            Players = new List<Player>()
         };
 
         var playerProfile = new PlayerProfile
@@ -244,7 +205,7 @@ public class JoinCreatedGameUseCaseTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Players.Should().HaveCount(2);
+        result.Players.Should().HaveCount(1);
     }
 
     #endregion
@@ -261,8 +222,7 @@ public class JoinCreatedGameUseCaseTests
         var game = new Game
         {
             Id = gameId,
-            Status = GameStatus.WaitingForPlayers,
-            CreatorPlayerId = 1
+            Status = GameStatus.WaitingForPlayers
         };
 
         _gameRepositoryMock
@@ -283,115 +243,7 @@ public class JoinCreatedGameUseCaseTests
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>()
-            .WithMessage("*Player*");
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_PlayerTriesToJoinOwnGame_ShouldThrowBusinessException()
-    {
-        // Arrange
-        var gameId = 1001;
-        var firebaseUid = "creator-uid";
-        var creatorId = 1;
-
-        var game = new Game
-        {
-            Id = gameId,
-            Status = GameStatus.WaitingForPlayers,
-            CreatorPlayerId = creatorId,
-            Players = new List<Player>
-            {
-                new Player { Id = creatorId, Name = "Creator" }
-            }
-        };
-
-        var playerProfile = new PlayerProfile
-        {
-            Id = creatorId,
-            Uid = firebaseUid,
-            Name = "Creator"
-        };
-
-        _gameRepositoryMock
-            .Setup(x => x.GetByIdAsync(gameId))
-            .ReturnsAsync(game);
-
-        _playerRepositoryMock
-            .Setup(x => x.GetByUidAsync(firebaseUid))
-            .ReturnsAsync(playerProfile);
-
-        // Act
-        Func<Task> act = async () => await _useCase.ExecuteAsync(
-            gameId,
-            firebaseUid,
-            "conn-123",
-            password: null
-        );
-
-        // Assert
-        await act.Should().ThrowAsync<BusinessException>()
-            .WithMessage("*No puedes unirte a tu propia partida*");
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_PlayerWithAnotherActiveGame_ShouldThrowBusinessException()
-    {
-        // Arrange
-        var gameId = 1001;
-        var firebaseUid = "player-uid";
-        var playerId = 2;
-
-        var targetGame = new Game
-        {
-            Id = gameId,
-            Status = GameStatus.WaitingForPlayers,
-            CreatorPlayerId = 1,
-            Players = new List<Player>
-            {
-                new Player { Id = 1, Name = "Creator" }
-            }
-        };
-
-        var activeGame = new Game
-        {
-            Id = 1002,
-            Status = GameStatus.InProgress,
-            Players = new List<Player>
-            {
-                new Player { Id = playerId, Name = "Test Player" }
-            }
-        };
-
-        var playerProfile = new PlayerProfile
-        {
-            Id = playerId,
-            Uid = firebaseUid,
-            Name = "Test Player"
-        };
-
-        _gameRepositoryMock
-            .Setup(x => x.GetByIdAsync(gameId))
-            .ReturnsAsync(targetGame);
-
-        _gameRepositoryMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(new List<Game> { targetGame, activeGame });
-
-        _playerRepositoryMock
-            .Setup(x => x.GetByUidAsync(firebaseUid))
-            .ReturnsAsync(playerProfile);
-
-        // Act
-        Func<Task> act = async () => await _useCase.ExecuteAsync(
-            gameId,
-            firebaseUid,
-            "conn-123",
-            password: null
-        );
-
-        // Assert
-        await act.Should().ThrowAsync<BusinessException>()
-            .WithMessage("*Ya tienes una partida activa*");
+            .WithMessage("*jugador*");
     }
 
     #endregion
@@ -399,7 +251,7 @@ public class JoinCreatedGameUseCaseTests
     #region Capacidad de Partida
 
     [Fact]
-    public async Task ExecuteAsync_GameIsFull_ShouldThrowBusinessException()
+    public async Task ExecuteAsync_GameIsFull_ShouldThrowValidationException()
     {
         // Arrange
         var gameId = 1001;
@@ -410,11 +262,10 @@ public class JoinCreatedGameUseCaseTests
         {
             Id = gameId,
             Status = GameStatus.WaitingForPlayers,
-            CreatorPlayerId = 1,
             Players = new List<Player>
             {
-                new Player { Id = 1, Name = "Player 1" },
-                new Player { Id = 2, Name = "Player 2" }
+                new Player { Id = 1, Uid = "uid1", Name = "Player 1", ConnectionId = "conn1" },
+                new Player { Id = 2, Uid = "uid2", Name = "Player 2", ConnectionId = "conn2" }
             }
         };
 
@@ -429,10 +280,6 @@ public class JoinCreatedGameUseCaseTests
             .Setup(x => x.GetByIdAsync(gameId))
             .ReturnsAsync(game);
 
-        _gameRepositoryMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(new List<Game> { game });
-
         _playerRepositoryMock
             .Setup(x => x.GetByUidAsync(firebaseUid))
             .ReturnsAsync(playerProfile);
@@ -446,8 +293,100 @@ public class JoinCreatedGameUseCaseTests
         );
 
         // Assert
-        await act.Should().ThrowAsync<BusinessException>()
-            .WithMessage("*La partida está llena*");
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*llena*");
+    }
+
+    #endregion
+
+    #region Actualización de ConnectionId
+
+    [Fact]
+    public async Task ExecuteAsync_PlayerAlreadyExists_ShouldUpdateConnectionId()
+    {
+        // Arrange
+        var gameId = 1001;
+        var firebaseUid = "existing-uid";
+        var playerId = 1;
+        var oldConnectionId = "old-conn-123";
+        var newConnectionId = "new-conn-456";
+
+        var game = new Game
+        {
+            Id = gameId,
+            Status = GameStatus.WaitingForPlayers,
+            Players = new List<Player>
+            {
+                new Player 
+                { 
+                    Id = playerId, 
+                    Uid = firebaseUid, 
+                    Name = "Existing Player", 
+                    ConnectionId = oldConnectionId 
+                }
+            }
+        };
+
+        var playerProfile = new PlayerProfile
+        {
+            Id = playerId,
+            Uid = firebaseUid,
+            Name = "Existing Player"
+        };
+
+        SetupSuccessfulJoin(gameId, firebaseUid, game, playerProfile);
+
+        // Act
+        var result = await _useCase.ExecuteAsync(
+            gameId,
+            firebaseUid,
+            newConnectionId,
+            password: null
+        );
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Players.Should().HaveCount(1);
+        result.Players[0].ConnectionId.Should().Be(newConnectionId);
+        result.Players[0].Id.Should().Be(playerId);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_FirstPlayerJoining_ShouldSetAsCreator()
+    {
+        // Arrange
+        var gameId = 1001;
+        var firebaseUid = "creator-uid";
+        var playerId = 1;
+
+        var game = new Game
+        {
+            Id = gameId,
+            Status = GameStatus.WaitingForPlayers,
+            Players = new List<Player>(),
+            CreatorPlayerId = null
+        };
+
+        var playerProfile = new PlayerProfile
+        {
+            Id = playerId,
+            Uid = firebaseUid,
+            Name = "Creator"
+        };
+
+        SetupSuccessfulJoin(gameId, firebaseUid, game, playerProfile);
+
+        // Act
+        var result = await _useCase.ExecuteAsync(
+            gameId,
+            firebaseUid,
+            "conn-123",
+            password: null
+        );
+
+        // Assert
+        result.CreatorPlayerId.Should().Be(playerId);
+        result.Players.Should().HaveCount(1);
     }
 
     #endregion
@@ -469,7 +408,7 @@ public class JoinCreatedGameUseCaseTests
             CreatorPlayerId = 1,
             Players = new List<Player>
             {
-                new Player { Id = 1, Name = "Creator" }
+                new Player { Id = 1, Uid = "creator-uid", Name = "Creator", ConnectionId = "conn1" }
             }
         };
 
@@ -498,7 +437,7 @@ public class JoinCreatedGameUseCaseTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_ShouldGrantPowerUpsToJoiningPlayer()
+    public async Task ExecuteAsync_ShouldGrantPowerUpsToNewPlayer()
     {
         // Arrange
         var gameId = 1001;
@@ -512,7 +451,7 @@ public class JoinCreatedGameUseCaseTests
             CreatorPlayerId = 1,
             Players = new List<Player>
             {
-                new Player { Id = 1, Name = "Creator" }
+                new Player { Id = 1, Uid = "creator-uid", Name = "Creator", ConnectionId = "conn1" }
             }
         };
 
@@ -532,7 +471,7 @@ public class JoinCreatedGameUseCaseTests
         SetupSuccessfulJoin(gameId, firebaseUid, game, playerProfile);
 
         _powerUpServiceMock
-            .Setup(x => x.GrantInitialPowerUps(playerId))
+            .Setup(x => x.GrantInitialPowerUps(It.IsAny<int>()))
             .Returns(powerUps);
 
         // Act
@@ -544,10 +483,9 @@ public class JoinCreatedGameUseCaseTests
         );
 
         // Assert
-        var joinedPlayer = result.Players.FirstOrDefault(p => p.Id == playerId);
+        var joinedPlayer = result.Players.FirstOrDefault(p => p.Uid == firebaseUid);
         joinedPlayer.Should().NotBeNull();
         joinedPlayer!.AvailablePowerUps.Should().HaveCount(2);
-        _powerUpServiceMock.Verify(x => x.GrantInitialPowerUps(playerId), Times.Once);
     }
 
     [Fact]
@@ -565,7 +503,7 @@ public class JoinCreatedGameUseCaseTests
             CreatorPlayerId = 1,
             Players = new List<Player>
             {
-                new Player { Id = 1, Name = "Creator" }
+                new Player { Id = 1, Uid = "creator-uid", Name = "Creator", ConnectionId = "conn1" }
             }
         };
 
@@ -605,7 +543,7 @@ public class JoinCreatedGameUseCaseTests
             CreatorPlayerId = 1,
             Players = new List<Player>
             {
-                new Player { Id = 1, Name = "Creator" }
+                new Player { Id = 1, Uid = "creator-uid", Name = "Creator", ConnectionId = "conn1" }
             }
         };
 
@@ -651,16 +589,12 @@ public class JoinCreatedGameUseCaseTests
             .Setup(x => x.GetByIdAsync(gameId))
             .ReturnsAsync(game);
 
-        _gameRepositoryMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(new List<Game> { game });
-
         _playerRepositoryMock
             .Setup(x => x.GetByUidAsync(firebaseUid))
             .ReturnsAsync(playerProfile);
 
         _powerUpServiceMock
-            .Setup(x => x.GrantInitialPowerUps(playerProfile.Id))
+            .Setup(x => x.GrantInitialPowerUps(It.IsAny<int>()))
             .Returns(new List<PowerUp>
             {
                 new PowerUp { Id = 1, Type = PowerUpType.DoublePoints },

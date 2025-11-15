@@ -17,8 +17,7 @@ public class FindMatchUseCase
     private readonly GetQuestionsUseCase _getQuestionsUseCase;
     private readonly IGameLogicService _gameLogicService;
     private readonly IPowerUpService _powerUpService;
-    private static int _nextPlayerId = 1000; // Empezar desde 1000 para diferenciar del modo offline
-    private static int _nextGameId = 1000;
+    private static int _nextGameId = 1000; // Solo para IDs de partidas
 
     public FindMatchUseCase(
         IGameRepository gameRepository,
@@ -43,16 +42,15 @@ public class FindMatchUseCase
             throw new NotFoundException("Perfil de jugador no encontrado");
         }
 
-        // Crear jugador con ID único usando nombre real de BD
+        // Crear jugador usando el ID de la base de datos
         var player = new Player 
         { 
-            Id = Interlocked.Increment(ref _nextPlayerId),
+            Id = playerProfile.Id, 
             Name = playerProfile.Name,
             Uid = playerUid,
             ConnectionId = connectionId
         };
 
-    
         player.AvailablePowerUps = _powerUpService.GrantInitialPowerUps(player.Id);
 
         // Buscar una partida esperando jugadores
@@ -64,9 +62,6 @@ public class FindMatchUseCase
 
         if (waitingGame != null)
         {
-            // Otorgar power-ups iniciales al segundo jugador
-            player.AvailablePowerUps = _powerUpService.GrantInitialPowerUps(player.Id);
-            
             // Unirse a partida existente
             waitingGame.Players.Add(player);
             
@@ -92,8 +87,9 @@ public class FindMatchUseCase
             Id = Interlocked.Increment(ref _nextGameId),
             Status = GameStatus.WaitingForPlayers,
             CreatedAt = DateTime.UtcNow,
-            PowerUpsEnabled = true, // Habilitar power-ups para partidas online
-            MaxPowerUpsPerPlayer = 3
+            PowerUpsEnabled = true,
+            MaxPowerUpsPerPlayer = 3,
+            CreatorPlayerId = player.Id 
         };
 
         game.Players.Add(player);
