@@ -18,30 +18,63 @@ namespace MathRacerAPI.Presentation.Middleware
 
         public async Task InvokeAsync(HttpContext context, IFirebaseService firebaseService)
         {
+            string? idToken = null;
+
             // Solo validar si hay header Authorization
             if (context.Request.Headers.ContainsKey("Authorization"))
             {
                 var authHeader = context.Request.Headers["Authorization"].ToString();
-                
+
                 if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                
                 {
-                    var idToken = authHeader.Substring("Bearer ".Length).Trim();
-                    
-                    // Validar token con Firebase (puede lanzar UnauthorizedAccessException)
+                     idToken = authHeader.Substring("Bearer ".Length).Trim();
+               
+                }
+            }
+
+            //  Buscar token en query string (para SignalR)
+            if (string.IsNullOrEmpty(idToken) && context.Request.Query.ContainsKey("access_token"))
+            {
+                idToken = context.Request.Query["access_token"].ToString();
+            }
+            if (context.Request.Path.StartsWithSegments("/gameHub"))
+            {
+                Console.WriteLine($"[Middleware] Hub request: {context.Request.Method} {context.Request.Path}{context.Request.QueryString}");
+                foreach (var q in context.Request.Query)
+                    Console.WriteLine($"[Middleware] Query {q.Key}={q.Value}");
+            }
+
+            //Validar token si existe
+            if (!string.IsNullOrEmpty(idToken))
+            {
+                try
+                {
                     var uid = await firebaseService.ValidateIdTokenAsync(idToken);
-                    
+
                     if (!string.IsNullOrEmpty(uid))
                     {
-                        // Agregar el UID validado al contexto HTTP
                         context.Items["FirebaseUid"] = uid;
+                       
                     }
-                    else
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error token: {ex.Message}");
+                    // Para SignalR no fallar, para REST sí
+                    if (!context.Request.Path.StartsWithSegments("/gameHub"))
                     {
-                        throw new UnauthorizedAccessException("El token de autenticación es inválido.");
+                        throw new UnauthorizedAccessException("Token inválido.");
                     }
                 }
             }
-            
+            else if (context.Request.Path.StartsWithSegments("/gameHub"))
+            {
+                Console.WriteLine("[Middleware] Hub connection without token");
+            }
+
+
+
             await _next(context);
         }
     }

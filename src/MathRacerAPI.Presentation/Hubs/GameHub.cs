@@ -133,8 +133,12 @@ public class GameHub : Hub
     {
         try
         {
-            // Obtener el UID de Firebase del contexto (inyectado por middleware)
-            var firebaseUid = Context.Items["FirebaseUid"] as string;
+             // Obtener el UID de Firebase del contexto (inyectado por middleware)
+            // var firebaseUid = Context.Items["FirebaseUid"] as string;
+            var http = Context.GetHttpContext();
+            var firebaseUid = http?.Items["FirebaseUid"] as string;
+
+
             if (string.IsNullOrEmpty(firebaseUid))
             {
                 await Clients.Caller.SendAsync("Error", "Autenticación requerida para unirse a la partida");
@@ -261,11 +265,16 @@ public class GameHub : Hub
     {
         _logger.LogInformation($"Jugador desconectado: {Context.ConnectionId}");
         await base.OnDisconnectedAsync(exception);
+       
+
     }
 
     public override async Task OnConnectedAsync()
     {
         _logger.LogInformation($"Jugador conectado: {Context.ConnectionId}");
+        // var uid = Context.Items["FirebaseUid"] as string;
+        var http = Context.GetHttpContext();
+        var uid = http?.Items["FirebaseUid"] as string;
         await base.OnConnectedAsync();
     }
 
@@ -345,4 +354,5 @@ public class GameHub : Hub
             _logger.LogError(ex, $"❌ Error general al notificar jugadores de la partida {gameId}");
         }
     }
+
 }

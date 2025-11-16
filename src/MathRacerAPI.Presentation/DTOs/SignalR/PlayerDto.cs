@@ -6,6 +6,7 @@ namespace MathRacerAPI.Presentation.DTOs.SignalR;
 public class PlayerDto
 {
     public int Id { get; set; }
+    public string? Uid { get; set; }
     public string Name { get; set; } = string.Empty;
     public int CorrectAnswers { get; set; }
     public int Position { get; set; }
