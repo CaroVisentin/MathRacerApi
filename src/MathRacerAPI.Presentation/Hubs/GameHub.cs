@@ -133,8 +133,12 @@ public class GameHub : Hub
     {
         try
         {
-            // Obtener el UID de Firebase del contexto (inyectado por middleware)
-            var firebaseUid = Context.Items["FirebaseUid"] as string;
+             // Obtener el UID de Firebase del contexto (inyectado por middleware)
+            // var firebaseUid = Context.Items["FirebaseUid"] as string;
+            var http = Context.GetHttpContext();
+            var firebaseUid = http?.Items["FirebaseUid"] as string;
+
+
             if (string.IsNullOrEmpty(firebaseUid))
             {
                 await Clients.Caller.SendAsync("Error", "Autenticación requerida para unirse a la partida");
@@ -261,11 +265,16 @@ public class GameHub : Hub
     {
         _logger.LogInformation($"Jugador desconectado: {Context.ConnectionId}");
         await base.OnDisconnectedAsync(exception);
+       
+
     }
 
     public override async Task OnConnectedAsync()
     {
         _logger.LogInformation($"Jugador conectado: {Context.ConnectionId}");
+        // var uid = Context.Items["FirebaseUid"] as string;
+        var http = Context.GetHttpContext();
+        var uid = http?.Items["FirebaseUid"] as string;
         await base.OnConnectedAsync();
     }
 
@@ -282,7 +291,30 @@ public class GameHub : Hub
 
             _logger.LogInformation($"Notificando a {game.Players.Count} jugadores de la partida {gameId}");
 
-            foreach (var player in game.Players.Where(p => !string.IsNullOrEmpty(p.ConnectionId)))
+            // ✅ FILTRAR jugadores con ConnectionId válido
+            var validPlayers = game.Players
+                .Where(p => !string.IsNullOrWhiteSpace(p.ConnectionId))
+                .ToList();
+
+            // ⚠️ LOG de jugadores sin conexión
+            var invalidPlayers = game.Players
+                .Where(p => string.IsNullOrWhiteSpace(p.ConnectionId))
+                .ToList();
+
+            foreach (var player in invalidPlayers)
+            {
+                _logger.LogWarning(
+                    $"⚠️ Jugador {player.Name} (ID: {player.Id}, Uid: {player.Uid}) " +
+                    $"sin ConnectionId válido en partida {gameId}");
+            }
+
+            if (validPlayers.Count == 0)
+            {
+                _logger.LogWarning($"⚠️ No hay jugadores con ConnectionId válido en partida {gameId}");
+                return;
+            }
+
+            foreach (var player in validPlayers)
             {
                 try
                 {
@@ -301,20 +333,26 @@ public class GameHub : Hub
                     var gameSession = GameSession.FromGame(game, currentQuestion);
                     var gameUpdateDto = GameUpdateDto.FromGameSession(gameSession);
 
-                    _logger.LogInformation($"Enviando GameUpdate a jugador {player.Name} ({player.ConnectionId}) - Status: {game.Status}");
+                    _logger.LogInformation(
+                        $"Enviando GameUpdate a jugador {player.Name} " +
+                        $"(ConnectionId: {player.ConnectionId}) - Status: {game.Status}");
+                    
                     await Clients.Client(player.ConnectionId).SendAsync("GameUpdate", gameUpdateDto);
                     
-                    _logger.LogInformation($"GameUpdate enviado exitosamente a {player.Name}");
+                    _logger.LogInformation($"✅ GameUpdate enviado exitosamente a {player.Name}");
                 }
                 catch (Exception playerEx)
                 {
-                    _logger.LogError(playerEx, $"Error al notificar al jugador {player.Name} ({player.ConnectionId})");
+                    _logger.LogError(playerEx, 
+                        $"❌ Error al notificar al jugador {player.Name} " +
+                        $"(ConnectionId: {player.ConnectionId})");
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error al notificar jugadores de la partida {gameId}");
+            _logger.LogError(ex, $"❌ Error general al notificar jugadores de la partida {gameId}");
         }
     }
+
 }
