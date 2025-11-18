@@ -3,8 +3,17 @@ using MathRacerAPI.Presentation.Configuration;
 using MathRacerAPI.Presentation.Hubs;
 using MathRacerAPI.Presentation.Middleware;
 using MathRacerAPI.Infrastructure.Services;
+using MercadoPago.Config;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (builder.Environment.IsDevelopment())
+{
+    Env.Load(".env.development");  // solo en local
+}
+
+var exposedFrontend = Environment.GetEnvironmentVariable("FRONTEND_URL");
 
 // Configurar URLs
 builder.WebHost.UseUrls("http://localhost:5153");
@@ -42,7 +51,10 @@ builder.Services.AddCors(options =>
                 "http://localhost:5502",
                 "http://127.0.0.1:3000",
                 "http://localhost:3000",
-                "http://localhost:5173"
+                "http://localhost:5173",
+                exposedFrontend!
+
+
             )
                   .AllowAnyHeader()
                   .AllowAnyMethod()
@@ -93,5 +105,9 @@ app.MapControllers();
 
 // Map SignalR hub
 app.MapHub<GameHub>("/gameHub");
+
+
+var mpToken = Environment.GetEnvironmentVariable("MERCADOPAGO_ACCESS_TOKEN");
+MercadoPagoConfig.AccessToken = mpToken;
 
 app.Run();

@@ -17,6 +17,8 @@ namespace MathRacerAPI.Infrastructure.Entities
         public PlayerEntity Player { get; set; } = null!;
         public PaymentMethodEntity PaymentMethod { get; set; } = null!;
         public CoinPackageEntity CoinPackage { get; set; } = null!;
+        public string PaymentId { get; set; } = "";
+
     }
 
 }
