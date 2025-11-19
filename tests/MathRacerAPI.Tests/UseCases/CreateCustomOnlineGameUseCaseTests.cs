@@ -185,7 +185,7 @@ public class CreateCustomOnlineGameUseCaseTests
         result.ExpectedResult.Should().Be("MAYOR");
         result.Players.Should().BeEmpty();
         result.CreatorPlayerId.Should().BeNull();
-        result.Questions.Should().HaveCount(10);
+        result.Questions.Should().HaveCount(15);
     }
 
     [Fact]
@@ -202,7 +202,7 @@ public class CreateCustomOnlineGameUseCaseTests
         );
 
         // Assert
-        result.Questions.Should().HaveCount(10);
+        result.Questions.Should().HaveCount(15);
         result.Questions.Should().OnlyContain(q => !string.IsNullOrEmpty(q.Equation));
         result.ExpectedResult.Should().Be("MENOR");
     }
