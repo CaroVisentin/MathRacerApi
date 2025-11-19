@@ -109,6 +109,7 @@ public static class ServiceExtensions
         services.AddScoped<GetAllCoinPackagesUseCase>();
         services.AddScoped<PurchaseExistsByPaymentIdUseCase>();
         services.AddScoped<PersistPurchaseUseCase>();
+        services.AddScoped<AddCoinsToPlayerUseCase>();
 
         // Registrar casos de uso de modo infinito
         services.AddScoped<StartInfiniteGameUseCase>();
