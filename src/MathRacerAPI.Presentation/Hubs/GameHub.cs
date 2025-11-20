@@ -98,10 +98,14 @@ public class GameHub : Hub
             var game = await _findMatchWithMatchmakingUseCase.ExecuteAsync(Context.ConnectionId, playerUid);
             
             _logger.LogInformation($"FindMatchWithMatchmakingUseCase completado. Partida {game.Id} con {game.Players.Count} jugadores");
-            
+            _logger.LogInformation($"🔍 Verificando ConnectionIds después del UseCase:");
+            foreach (var p in game.Players)
+            {
+                _logger.LogInformation($"   - {p.Name}: ConnectionId = {p.ConnectionId}, Context = {Context.ConnectionId}, Match = {p.ConnectionId == Context.ConnectionId}");
+            }
             // Encontrar el jugador recién creado
             var player = game.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
-            if (player == null)
+            if (player  == null)
             {
                 _logger.LogError($"No se pudo encontrar el jugador con UID {playerUid} en la partida {game.Id}");
                 await Clients.Caller.SendAsync("Error", "Error al crear jugador");
@@ -182,6 +186,14 @@ public class GameHub : Hub
     {
         try
         {
+            // Actualizar ConnectionId del jugador actual antes de procesar respuesta
+            var gameBeforeAnswer = await _gameRepository.GetByIdAsync(gameId);
+            var playerInGame = gameBeforeAnswer.Players.FirstOrDefault(p => p.Id == playerId);
+            if (playerInGame != null && playerInGame.ConnectionId != Context.ConnectionId)
+            {
+                playerInGame.ConnectionId = Context.ConnectionId;
+                await _gameRepository.UpdateAsync(gameBeforeAnswer);
+            }
             var game = await _processAnswerUseCase.ExecuteAsync(gameId, playerId, answer);
             
             if (game == null)
@@ -323,6 +335,12 @@ public class GameHub : Hub
         try
         {
             var game = await _gameRepository.GetByIdAsync(gameId);
+            
+            _logger.LogInformation($"🔍 ConnectionIds al notificar:");
+            foreach (var p in game.Players)
+            {
+                _logger.LogInformation($"   - {p.Name}: ConnectionId = {p.ConnectionId}");
+            }
             if (game == null) 
             {
                 _logger.LogWarning($"Partida {gameId} no encontrada al notificar jugadores");

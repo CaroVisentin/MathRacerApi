@@ -14,7 +14,6 @@ namespace MathRacerAPI.Domain.UseCases;
 /// </summary>
 public class FindMatchWithMatchmakingUseCase
 {
-    
     private readonly ILogger<FindMatchWithMatchmakingUseCase> _logger;
     private readonly IGameRepository _gameRepository;
     private readonly IPlayerRepository _playerRepository;
@@ -22,9 +21,10 @@ public class FindMatchWithMatchmakingUseCase
     private readonly IGameLogicService _gameLogicService;
     private readonly IPowerUpService _powerUpService;
 
+    // IMPORTANTE: Lock estático para evitar race conditions
     private static readonly SemaphoreSlim _matchmakingLock = new SemaphoreSlim(1, 1);
-    
-    private static int _nextPlayerId = 1000; // Empezar desde 1000 para diferenciar del modo offline
+
+    private static int _nextPlayerId = 1000;
     private static int _nextGameId = 1000;
 
     public FindMatchWithMatchmakingUseCase(
@@ -43,29 +43,22 @@ public class FindMatchWithMatchmakingUseCase
         _logger = logger;
     }
 
-    /// <summary>
-    /// Encuentra una partida usando matchmaking basado en puntos
-    /// </summary>
-    /// <param name="connectionId">ID de conexión de SignalR</param>
-    /// <param name="playerUid">UID del jugador para obtener sus puntos y nombre</param>
-    /// <returns>Partida encontrada o creada</returns>
-   
     public async Task<Game> ExecuteAsync(string connectionId, string playerUid)
     {
-        _logger.LogInformation($"🔒 Esperando lock de matchmaking para UID: {playerUid}");
+        
 
         // LOCK: Solo un jugador puede buscar/crear partida a la vez
         await _matchmakingLock.WaitAsync();
 
         try
         {
-            _logger.LogInformation($"🔓 Lock obtenido para UID: {playerUid}");
+            
             return await ExecuteMatchmakingAsync(connectionId, playerUid);
         }
         finally
         {
             _matchmakingLock.Release();
-            _logger.LogInformation($"🔓 Lock liberado para UID: {playerUid}");
+            
         }
     }
 
@@ -77,54 +70,57 @@ public class FindMatchWithMatchmakingUseCase
             throw new NotFoundException("Perfil de jugador no encontrado");
         }
 
-        _logger.LogInformation($"🔍 Matchmaking para {playerProfile.Name} (UID: {playerUid}, Puntos: {playerProfile.Points})");
+        
 
         // Buscar partidas esperando jugadores
-        var waitingGames = await _gameRepository.GetWaitingGames();
+        var allGames = await _gameRepository.GetAllAsync();
+        var waitingGames = allGames
+            .Where(g =>
+                g.Status == GameStatus.WaitingForPlayers &&
+                g.Players.Count == 1 &&
+                g.Id >= 1000 &&
+                g.Players.First().Uid != playerUid) // NO unirse a su propia partida
+            .OrderBy(g => g.CreatedAt) // Más antiguas primero
+            .ToList();
 
         _logger.LogInformation($"📋 Encontradas {waitingGames.Count} partidas esperando jugadores");
 
-        // Log de todas las partidas encontradas
-        foreach (var g in waitingGames)
+        if (waitingGames.Count > 0)
         {
-            var p = g.Players.FirstOrDefault();
-            _logger.LogInformation($"   - Partida {g.Id}: {p?.Name ?? "?"} (UID: {p?.Uid ?? "?"})");
+            _logger.LogInformation($"📋 Partidas disponibles:");
+            foreach (var g in waitingGames)
+            {
+                var p = g.Players.FirstOrDefault();
+                
+            }
         }
 
-
-        // Verificar si el jugador ya está en alguna partida
-        var existingGame = waitingGames.FirstOrDefault(g =>
-            g.Players.Any(p => p.Uid == playerUid));
-
-        if (existingGame != null)
+        var player = new Player
         {
-            _logger.LogInformation($"✅ Jugador ya está en la partida {existingGame.Id}. Actualizando ConnectionId...");
+            Id = Interlocked.Increment(ref _nextPlayerId),
+            Name = playerProfile.Name,
+            Uid = playerUid,
+            ConnectionId = connectionId
+        };
 
-            var existingPlayer = existingGame.Players.First(p => p.Uid == playerUid);
-            existingPlayer.ConnectionId = connectionId;
-            await _gameRepository.UpdateAsync(existingGame);
-            return existingGame;
-        }
+        player.AvailablePowerUps = _powerUpService.GrantInitialPowerUps(player.Id);
 
-        // Calcular tolerancia
+        // OPCIÓN 1: Intentar encontrar partida compatible por puntos
         var toleranceRange = CalculateToleranceRange(playerProfile.Points);
         _logger.LogInformation($"📊 Tolerancia: ±{toleranceRange} puntos");
 
-        // Buscar partida compatible
         Game? compatibleGame = null;
 
         foreach (var game in waitingGames)
         {
             var existingPlayer = game.Players.First();
-
-            _logger.LogInformation($"🔎 Evaluando partida {game.Id} - Jugador: {existingPlayer.Name} (UID: {existingPlayer.Uid})");
+            _logger.LogInformation($"🔎 Evaluando partida {game.Id} - Jugador: {existingPlayer.Name}");
 
             var existingPlayerProfile = await GetPlayerProfileByUid(existingPlayer.Uid);
 
             if (existingPlayerProfile != null)
             {
                 var pointsDifference = Math.Abs(playerProfile.Points - existingPlayerProfile.Points);
-
                 _logger.LogInformation($"📊 Diferencia: {pointsDifference} puntos (Tolerancia: {toleranceRange})");
 
                 if (pointsDifference <= toleranceRange)
@@ -138,107 +134,61 @@ public class FindMatchWithMatchmakingUseCase
                     _logger.LogInformation($"❌ Partida {game.Id} fuera de tolerancia");
                 }
             }
-            else
-            {
-                _logger.LogWarning($"⚠️ No se encontró perfil para jugador {existingPlayer.Name} (UID: {existingPlayer.Uid})");
-            }
         }
 
-
-        //si no encontro partidas compatibles 
+        // OPCIÓN 2: Si no hay compatible, tomar CUALQUIER partida esperando (FALLBACK)
         if (compatibleGame == null && waitingGames.Count > 0)
         {
-            _logger.LogInformation($"⚠️ No se encontró partida compatible. Buscando cualquier partida disponible...");
-
-            // Tomar la primera partida disponible sin importar puntos
-            compatibleGame = waitingGames.FirstOrDefault();
-
-            if (compatibleGame != null)
-            {
-                _logger.LogInformation($"📢 Uniendo a partida {compatibleGame.Id} sin filtro de ranking");
-            }
+            _logger.LogInformation($"⚠️ No se encontró partida compatible. Uniendo a primera partida disponible...");
+            compatibleGame = waitingGames.First();
+            
         }
 
-        // Crear Player
-        var player = new Player
+        if (compatibleGame != null)
         {
-            Id = Interlocked.Increment(ref _nextPlayerId),
-            Name = playerProfile.Name,
-            Uid = playerUid,
-            ConnectionId = connectionId
-        };
-
-        player.AvailablePowerUps = _powerUpService.GrantInitialPowerUps(player.Id);
-
-
-       if (compatibleGame != null)
-        {
-            _logger.LogInformation($"🤝 Uniendo a {player.Name} a la partida {compatibleGame.Id}");
-
-            // Verificar nuevamente que no esté llena (seguridad extra)
-            if (compatibleGame.Players.Count >= 2)
-            {
-                _logger.LogWarning($"⚠️ Partida {compatibleGame.Id} ya está llena, creando nueva");
-                return await CreateNewMatchmakingGameAsync(player, playerProfile.Points);
-            }
+            
 
             compatibleGame.Players.Add(player);
 
             if (compatibleGame.Players.Count == 2)
             {
                 compatibleGame.Status = GameStatus.InProgress;
-                _logger.LogInformation($"🎮 Partida {compatibleGame.Id} iniciada con 2 jugadores: {compatibleGame.Players[0].Name} vs {compatibleGame.Players[1].Name}");
-            }
+               }
 
             await _gameRepository.UpdateAsync(compatibleGame);
             return compatibleGame;
         }
-
         else
         {
-            _logger.LogInformation($"🆕 No se encontró partida compatible. Creando nueva partida para {player.Name}...");
+            _logger.LogInformation($"🆕 No hay partidas disponibles. Creando nueva partida para {player.Name}...");
             return await CreateNewMatchmakingGameAsync(player, playerProfile.Points);
         }
     }
-    
 
-
-    /// <summary>
-    /// Calcula el rango de tolerancia basado en los puntos del jugador
-    /// </summary>
     private static int CalculateToleranceRange(int playerPoints)
     {
-        // Rangos adaptativos basados en el análisis previo
         return playerPoints switch
         {
-            <= 50 => 25,     // Principiante: ±25 puntos
-            <= 150 => 30,    // Intermedio: ±30 puntos  
-            <= 250 => 40,    // Avanzado: ±40 puntos
-            _ => 50          // Experto: ±50 puntos
+            <= 50 => 25,
+            <= 150 => 30,
+            <= 250 => 40,
+            _ => 50
         };
     }
-        
 
-    /// <summary>
-    /// Obtiene el perfil de un jugador por su UID almacenado en el objeto Player
-    /// </summary>
     private async Task<PlayerProfile?> GetPlayerProfileByUid(string uid)
     {
         try
         {
             return await _playerRepository.GetByUidAsync(uid);
         }
-        catch (Exception ex) 
+        catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error al obtener perfil de jugador con UID: {uid}");
-           
+            _logger.LogError(ex, $"Error al obtener perfil para UID: {uid}");
             return null;
         }
     }
 
-    /// <summary>
-    /// Crea una nueva partida con información de matchmaking
-    /// </summary>
     private async Task<Game> CreateNewMatchmakingGameAsync(Player player, int creatorPoints)
     {
         var game = new Game
@@ -272,6 +222,9 @@ public class FindMatchWithMatchmakingUseCase
         game.ExpectedResult = equationParams.ExpectedResult;
 
         await _gameRepository.AddAsync(game);
+
+        _logger.LogInformation($"🆕 Partida {game.Id} creada para {player.Name}");
+
         return game;
     }
 }
