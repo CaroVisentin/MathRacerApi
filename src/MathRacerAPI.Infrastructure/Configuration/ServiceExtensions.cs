@@ -72,7 +72,7 @@ public static class ServiceExtensions
         services.AddScoped<UseWildcardUseCase>();
         services.AddScoped<JoinCreatedGameUseCase>();
 
-        services.AddScoped<CreateCustomOnlineGameUseCase>();
+        services.AddScoped<ICreateCustomOnlineGameUseCase, CreateCustomOnlineGameUseCase>();
         services.AddScoped<GetAvailableGamesUseCase>();
 
         // Registrar casos de uso de Chests
@@ -109,8 +109,12 @@ public static class ServiceExtensions
         services.AddScoped<SubmitInfiniteAnswerUseCase>();
         services.AddScoped<LoadNextBatchUseCase>();
         services.AddScoped<GetInfiniteGameStatusUseCase>();
-        services.AddScoped<AbandonInfiniteGameUseCase>(); 
+        services.AddScoped<AbandonInfiniteGameUseCase>();
 
+        // Registrar casos de uso de invitaciones de juego
+        services.AddScoped<SendGameInvitationUseCase>();
+        services.AddScoped<GetGameInvitationsUseCase>();
+        services.AddScoped<RespondGameInvitationUseCase>();
 
         // Registrar repositorios
         services.AddScoped<ILevelRepository, LevelRepository>();
@@ -124,6 +128,12 @@ public static class ServiceExtensions
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
         services.AddSingleton<ISoloGameRepository, InMemorySoloGameRepository>();
         services.AddSingleton<IInfiniteGameRepository, InMemoryInfiniteGameRepository>();
+        services.AddScoped<IGameInvitationRepository>(provider =>
+        {
+            var context = provider.GetRequiredService<MathiRacerDbContext>();
+            var gameRepository = provider.GetRequiredService<IGameRepository>();
+            return new GameInvitationRepository(context, gameRepository);
+        });
 
 
         // Registrar repositorios de amistad

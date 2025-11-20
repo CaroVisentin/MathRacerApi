@@ -56,6 +56,8 @@ namespace MathRacerAPI.Infrastructure.Configuration
         public DbSet<WildcardEntity> Wildcards { get; set; } = null!;
         public DbSet<WorldEntity> Worlds { get; set; } = null!;
         public DbSet<WorldOperationEntity> WorldOperations { get; set; } = null!;
+        public DbSet<GameInvitationEntity> GameInvitations { get; set; } = null!;
+        public DbSet<InvitationStatusEntity> InvitationStatuses { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -505,6 +507,64 @@ namespace MathRacerAPI.Infrastructure.Configuration
                     .OnDelete(DeleteBehavior.Restrict);
    
 
+            });
+
+            // --- GAME INVITATION ---
+            modelBuilder.Entity<GameInvitationEntity>(entity =>
+            {
+                entity.ToTable("GameInvitation");
+                
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.GameId).IsRequired();
+                entity.Property(e => e.InviterPlayerId).IsRequired();
+                entity.Property(e => e.InvitedPlayerId).IsRequired();
+                entity.Property(e => e.InvitationStatusId).IsRequired();
+                
+                entity.Property(e => e.CreatedAt)
+                    .IsRequired()
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("GETDATE()");
+                
+                entity.Property(e => e.RespondedAt)
+                    .HasColumnType("datetime");
+
+                entity.HasOne(e => e.InviterPlayer)
+                    .WithMany()
+                    .HasForeignKey(e => e.InviterPlayerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.InvitedPlayer)
+                    .WithMany()
+                    .HasForeignKey(e => e.InvitedPlayerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.InvitationStatus)
+                    .WithMany(s => s.GameInvitations)
+                    .HasForeignKey(e => e.InvitationStatusId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // --- INVITATION STATUS ---
+            modelBuilder.Entity<InvitationStatusEntity>(entity =>
+            {
+                entity.ToTable("InvitationStatus");
+
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(50);
+                
+                entity.Property(e => e.Description)
+                    .HasMaxLength(255);
+
+                entity.HasMany(e => e.GameInvitations)
+                    .WithOne(gi => gi.InvitationStatus)
+                    .HasForeignKey(gi => gi.InvitationStatusId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

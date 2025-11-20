@@ -1,14 +1,18 @@
+using MathRacerAPI.Domain.Exceptions;
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Domain.Services;
-using MathRacerAPI.Domain.Exceptions;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MathRacerAPI.Domain.UseCases;
 
 /// <summary>
 /// Caso de uso para crear una partida multijugador personalizada
 /// </summary>
-public class CreateCustomOnlineGameUseCase
+public class CreateCustomOnlineGameUseCase : ICreateCustomOnlineGameUseCase
 {
     private readonly IGameRepository _gameRepository;
     private readonly IWorldRepository _worldRepository;
@@ -59,7 +63,7 @@ public class CreateCustomOnlineGameUseCase
             throw new NotFoundException("Perfil de jugador no encontrado");
 
         // Determinar parámetros según dificultad
-        var (termCount, variableCount, operations, numMin, numMax, optMin, optMax, timePerEq) =
+        var (termCount, variableCount, operations, numMin, numMax, optMin, optMax, timePerEq, optCount) =
             GetDifficultyParameters(difficulty);
 
         // Crear partida SIN jugadores
@@ -69,15 +73,15 @@ public class CreateCustomOnlineGameUseCase
             Name = gameName,
             IsPrivate = isPrivate,
             Password = isPrivate ? password : null,
-            Status = GameStatus.WaitingForPlayers, // ✅ Esperando jugadores
+            Status = GameStatus.WaitingForPlayers,
             CreatedAt = DateTime.UtcNow,
             PowerUpsEnabled = true,
             MaxPowerUpsPerPlayer = 3,
-            MaxQuestions = 10,
-            ConditionToWin = 5,
+            MaxQuestions = 15,
+            ConditionToWin = 10,
             ExpectedResult = expectedResult,
-            CreatorPlayerId = null, // ⚠️ Se asignará cuando el creador se una con JoinGame
-            Players = new List<Player>() // ✅ Lista vacía inicialmente
+            CreatorPlayerId = null,
+            Players = new List<Player>()
         };
 
         // Generar preguntas
@@ -87,7 +91,7 @@ public class CreateCustomOnlineGameUseCase
             VariableCount = variableCount,
             Operations = operations,
             ExpectedResult = expectedResult,
-            OptionsCount = 4,
+            OptionsCount = optCount,
             OptionRangeMin = optMin,
             OptionRangeMax = optMax,
             NumberRangeMin = numMin,
@@ -103,15 +107,15 @@ public class CreateCustomOnlineGameUseCase
     }
 
     private static (int termCount, int variableCount, List<string> operations,
-                    int numMin, int numMax, int optMin, int optMax, int timePerEq)
+                    int numMin, int numMax, int optMin, int optMax, int timePerEq, int optCount)
         GetDifficultyParameters(string difficulty)
     {
         return difficulty.ToLower() switch
         {
-            "facil" => (2, 1, new List<string> { "+", "-" }, -10, 10, -10, 10, 15),
-            "medio" => (3, 1, new List<string> { "+", "-", "*" }, -20, 20, -20, 20, 12),
-            "dificil" => (4, 1, new List<string> { "+", "-", "*", "/" }, -50, 50, -50, 50, 10),
-            _ => (2, 1, new List<string> { "+", "-" }, -10, 10, -10, 10, 15)
+            "facil" => (2, 1, new List<string> { "+", "-" }, -10, 10, -10, 10, 10, 2),
+            "medio" => (2, 1, new List<string> { "+", "-", "*" }, -20, 20, -20, 20, 12, 3),
+            "dificil" => (3, 2, new List<string> { "+", "-", "*", "/" }, -50, 50, -50, 50, 15, 4),
+            _ => (2, 1, new List<string> { "+", "-" }, -10, 10, -10, 10, 15, 2)
         };
     }
 }

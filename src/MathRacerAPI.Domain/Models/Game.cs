@@ -21,4 +21,5 @@ public class Game
     public List<ActiveEffect> ActiveEffects { get; set; } = new();
     public int MaxPowerUpsPerPlayer { get; set; } = 3;
     public int? CreatorPlayerId { get; set; }
+    public bool IsFromInvitation { get; set; } = false; 
 }

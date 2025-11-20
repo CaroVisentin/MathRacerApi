@@ -14,13 +14,13 @@ namespace MathRacerAPI.Presentation.Controllers;
 public class OnlineController : ControllerBase
 {
     private readonly IGameRepository _gameRepository;
-    private readonly CreateCustomOnlineGameUseCase _createCustomGameUseCase;
+    private readonly ICreateCustomOnlineGameUseCase _createCustomGameUseCase;
     private readonly GetAvailableGamesUseCase _getAvailableGamesUseCase;
     private readonly JoinCreatedGameUseCase _joinCreatedGameUseCase;
 
     public OnlineController(
         IGameRepository gameRepository,
-        CreateCustomOnlineGameUseCase createCustomGameUseCase,
+        ICreateCustomOnlineGameUseCase createCustomGameUseCase,
         GetAvailableGamesUseCase getAvailableGamesUseCase,
         JoinCreatedGameUseCase joinCreatedGameUseCase)
     {

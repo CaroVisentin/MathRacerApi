@@ -1,5 +1,9 @@
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MathRacerAPI.Domain.UseCases;
 
@@ -10,13 +14,15 @@ public class GetAvailableGamesUseCase
 {
     private readonly IGameRepository _gameRepository;
 
-    public GetAvailableGamesUseCase(IGameRepository gameRepository)
+    public GetAvailableGamesUseCase(
+        IGameRepository gameRepository)
     {
         _gameRepository = gameRepository;
     }
 
     /// <summary>
     /// Obtiene todas las partidas disponibles (públicas y privadas en estado WaitingForPlayers)
+    /// Excluye partidas creadas por invitación entre amigos
     /// </summary>
     /// <param name="includePrivate">Si se deben incluir partidas privadas en la lista</param>
     /// <returns>Lista de partidas disponibles</returns>
@@ -32,7 +38,8 @@ public class GetAvailableGamesUseCase
             .Where(g => 
                 g.Status == GameStatus.WaitingForPlayers && // Solo partidas esperando jugadores
                 g.Players.Count < 2 && // No llenas
-                g.Id >= 1000) // Solo partidas online (filtro por ID)
+                g.Id >= 1000 && // Solo partidas online (filtro por ID)
+                !g.IsFromInvitation) // Excluir partidas por invitación
             .Where(g => includePrivate || !g.IsPrivate) // Filtrar privadas si se requiere
             .OrderByDescending(g => g.CreatedAt) // Más recientes primero
             .Select(AvailableGameInfo.FromGame)
