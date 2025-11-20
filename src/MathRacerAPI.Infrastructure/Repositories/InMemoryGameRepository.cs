@@ -8,7 +8,7 @@ namespace MathRacerAPI.Infrastructure.Repositories;
 public class InMemoryGameRepository : IGameRepository
 {
     private static readonly Dictionary<int, Game> _games = new();
-    private static readonly SemaphoreSlim _matchmakingLock = new SemaphoreSlim(1, 1);
+   
 
 
     public Task<Game> AddAsync(Game game)
@@ -37,7 +37,9 @@ public class InMemoryGameRepository : IGameRepository
     public Task<List<Game>> GetWaitingGames()
     {
         var waitingGames = _games.Values
-            .Where(g => g.Status == GameStatus.WaitingForPlayers && g.Players.Count == 1)
+            .Where(g => g.Status == GameStatus.WaitingForPlayers && 
+            g.Players.Count == 1 &&
+            g.Id >= 1000)
             .OrderBy(g => g.CreatedAt)
             .ToList();
 
