@@ -32,6 +32,7 @@ public class GameUpdateDto
             {
                 Id = p.Id,
                 Name = p.Name,
+                Uid = p.Uid,
                 CorrectAnswers = p.CorrectAnswers,
                 Position = p.Position,
                 IsReady = p.IsReady,

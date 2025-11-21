@@ -9,6 +9,12 @@ namespace MathRacerAPI.Domain.Repositories
 {
     public interface IPlayerRepository
     {
-        Task<Player?> GetByIdAsync(int id);
+        Task UpdateAsync(PlayerProfile playerProfile);
+        Task<PlayerProfile?> GetByIdAsync(int id);
+        Task<PlayerProfile?> GetByEmailAsync(string email);
+        Task<PlayerProfile?> GetByUidAsync(string uid);
+        Task<PlayerProfile> AddAsync(PlayerProfile playerProfile);
+        Task AddCoinsAsync(int playerId, int coins);
+        Task UpdateLastLevelAsync(int playerId, int levelId);
     }
 }

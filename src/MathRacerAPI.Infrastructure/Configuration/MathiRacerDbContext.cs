@@ -8,12 +8,32 @@ using System.Threading.Tasks;
 
 namespace MathRacerAPI.Infrastructure.Configuration
 {
-    public class MathiRacerDbContext : DbContext
-    {
+        public class MathiRacerDbContext : DbContext
+        {
+            // Constructor para migraciones CLI (diseño)
+            public MathiRacerDbContext() : base(GetOptionsFromEnv()) {}
+
+            private static DbContextOptions<MathiRacerDbContext> GetOptionsFromEnv()
+            {
+                var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    // Intentar cargar el .env si no está definida la variable
+                    try
+                    {
+                        DotNetEnv.Env.Load(); // Carga .env por defecto
+                        connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");
+                    }
+                    catch { /* Ignorar si no existe DotNetEnv o el archivo */ }
+                }
+                var optionsBuilder = new DbContextOptionsBuilder<MathiRacerDbContext>();
+                optionsBuilder.UseSqlServer(connectionString);
+                return optionsBuilder.Options;
+            }
         public MathiRacerDbContext(DbContextOptions<MathiRacerDbContext> options)
             : base(options)
-        {
-        }
+            {
+            }
 
         // DbSets
         public DbSet<CoinPackageEntity> CoinPackages { get; set; } = null!;
@@ -36,6 +56,8 @@ namespace MathRacerAPI.Infrastructure.Configuration
         public DbSet<WildcardEntity> Wildcards { get; set; } = null!;
         public DbSet<WorldEntity> Worlds { get; set; } = null!;
         public DbSet<WorldOperationEntity> WorldOperations { get; set; } = null!;
+        public DbSet<GameInvitationEntity> GameInvitations { get; set; } = null!;
+        public DbSet<InvitationStatusEntity> InvitationStatuses { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -116,6 +138,10 @@ namespace MathRacerAPI.Infrastructure.Configuration
 
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.Deleted) 
+                    .IsRequired()
+                    .HasDefaultValue(false);
 
                 entity.HasOne(e => e.Player1)
                     .WithMany(p => p.Friendships1)
@@ -209,13 +235,12 @@ namespace MathRacerAPI.Infrastructure.Configuration
 
                 entity.HasIndex(e => e.Email).IsUnique();
 
-                entity.Property(e => e.Password)
+                entity.Property(e => e.Uid)
                     .IsRequired()
                     .HasMaxLength(255);
 
                 entity.Property(e => e.Coins)
                     .IsRequired()
-                    .HasColumnType("decimal(18,2)")
                     .HasDefaultValue(0);
 
                 entity.Property(e => e.Points)
@@ -226,12 +251,10 @@ namespace MathRacerAPI.Infrastructure.Configuration
                     .IsRequired()
                     .HasDefaultValue(false);
 
-                entity.HasOne(e => e.LastLevel)
-                    .WithMany(l => l.Players)
-                    .HasForeignKey(e => e.LastLevelId)
-                    .OnDelete(DeleteBehavior.Restrict);
-   
-
+                entity.Property(e => e.LastLevelId)
+                    .IsRequired(false)
+                    .HasDefaultValue(0);
+  
             });
 
             // --- PLAYER PRODUCT ---
@@ -360,6 +383,11 @@ namespace MathRacerAPI.Infrastructure.Configuration
                     .IsRequired()
                     .HasMaxLength(30);
 
+                entity.Property(e => e.Probability)
+                    .IsRequired()
+                    .HasColumnType("float") 
+                    .HasDefaultValue(0.0);
+
                 entity.HasMany(e => e.Products)
                   .WithOne(r => r.Rarity)
                   .HasForeignKey(r => r.RarityId)
@@ -479,6 +507,64 @@ namespace MathRacerAPI.Infrastructure.Configuration
                     .OnDelete(DeleteBehavior.Restrict);
    
 
+            });
+
+            // --- GAME INVITATION ---
+            modelBuilder.Entity<GameInvitationEntity>(entity =>
+            {
+                entity.ToTable("GameInvitation");
+                
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.GameId).IsRequired();
+                entity.Property(e => e.InviterPlayerId).IsRequired();
+                entity.Property(e => e.InvitedPlayerId).IsRequired();
+                entity.Property(e => e.InvitationStatusId).IsRequired();
+                
+                entity.Property(e => e.CreatedAt)
+                    .IsRequired()
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("GETDATE()");
+                
+                entity.Property(e => e.RespondedAt)
+                    .HasColumnType("datetime");
+
+                entity.HasOne(e => e.InviterPlayer)
+                    .WithMany()
+                    .HasForeignKey(e => e.InviterPlayerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.InvitedPlayer)
+                    .WithMany()
+                    .HasForeignKey(e => e.InvitedPlayerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.InvitationStatus)
+                    .WithMany(s => s.GameInvitations)
+                    .HasForeignKey(e => e.InvitationStatusId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // --- INVITATION STATUS ---
+            modelBuilder.Entity<InvitationStatusEntity>(entity =>
+            {
+                entity.ToTable("InvitationStatus");
+
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(50);
+                
+                entity.Property(e => e.Description)
+                    .HasMaxLength(255);
+
+                entity.HasMany(e => e.GameInvitations)
+                    .WithOne(gi => gi.InvitationStatus)
+                    .HasForeignKey(gi => gi.InvitationStatusId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

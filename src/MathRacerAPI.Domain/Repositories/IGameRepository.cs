@@ -8,4 +8,6 @@ public interface IGameRepository
     Task<Game?> GetByIdAsync(int id);
     Task<List<Game>> GetAllAsync();
     Task UpdateAsync(Game game);
+
+    Task<List<Game>> GetWaitingGames();
 }

@@ -50,6 +50,17 @@ public class ExceptionHandlingMiddleware
         var message = "Ocurrió un error interno en el servidor.";
         object? details = null;
 
+        // Manejo especial para errores de token Firebase
+        if (exception.Message.Contains("Incorrect number of segments in ID token") ||
+            exception.Message.Contains("FirebaseAuthException") ||
+            exception.Message.Contains("ID token") ||
+            exception.Message.Contains("token is invalid"))
+        {
+            statusCode = HttpStatusCode.Unauthorized;
+            message = "El token de autenticación es inválido o no fue enviado.";
+            _logger.LogWarning(exception, "Token inválido: {Message}", exception.Message);
+        }
+
         // Determinar el código de estado HTTP según el tipo de excepción
         switch (exception)
         {
@@ -57,6 +68,18 @@ public class ExceptionHandlingMiddleware
                 statusCode = HttpStatusCode.NotFound;
                 message = notFoundEx.Message;
                 _logger.LogWarning(notFoundEx, "Recurso no encontrado: {Message}", notFoundEx.Message);
+                break;
+
+            case ConflictException conflictEx:
+                statusCode = HttpStatusCode.Conflict;
+                message = conflictEx.Message;
+                _logger.LogWarning(conflictEx, "Conflicto de estado: {Message}", conflictEx.Message);
+                break;
+
+            case InsufficientFundsException insufficientFundsEx:
+                statusCode = HttpStatusCode.PaymentRequired;
+                message = insufficientFundsEx.Message;
+                _logger.LogWarning(insufficientFundsEx, "Fondos insuficientes: {Message}", insufficientFundsEx.Message);
                 break;
 
             case ValidationException validationEx:
@@ -92,15 +115,28 @@ public class ExceptionHandlingMiddleware
         context.Response.StatusCode = (int)statusCode;
 
         // Construir el objeto de respuesta
-        var response = new
+
+        object response;
+        if (_environment.IsDevelopment())
         {
-            StatusCode = (int)statusCode,
-            Message = message,
-            Details = details,
-            // Solo incluir información técnica en desarrollo
-            StackTrace = _environment.IsDevelopment() ? exception.StackTrace : null,
-            InnerException = _environment.IsDevelopment() ? exception.InnerException?.Message : null
-        };
+            response = new
+            {
+                StatusCode = (int)statusCode,
+                Message = message,
+                Details = details,
+                StackTrace = exception.StackTrace,
+                InnerException = exception.InnerException != null ? exception.InnerException.ToString() : null
+            };
+        }
+        else
+        {
+            response = new
+            {
+                StatusCode = (int)statusCode,
+                Message = message,
+                Details = details
+            };
+        }
 
         // Serializar y enviar la respuesta
         var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions

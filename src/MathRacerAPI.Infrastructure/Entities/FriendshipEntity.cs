@@ -12,9 +12,9 @@ namespace MathRacerAPI.Infrastructure.Entities
         public int PlayerId1 { get; set; }
         public int PlayerId2 { get; set; }
         public int RequestStatusId { get; set; }
+        public bool Deleted { get; set; } 
         public PlayerEntity Player1 { get; set; } = null!;
         public PlayerEntity Player2 { get; set; } = null!;
         public RequestStatusEntity RequestStatus { get; set; } = null!;
     }
-
 }

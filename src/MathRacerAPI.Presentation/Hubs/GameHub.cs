@@ -13,47 +13,101 @@ namespace MathRacerAPI.Presentation.Hubs;
 public class GameHub : Hub
 {
     private readonly FindMatchUseCase _findMatchUseCase;
+    private readonly JoinCreatedGameUseCase _joinCreatedGameUseCase;
+    private readonly FindMatchWithMatchmakingUseCase _findMatchWithMatchmakingUseCase;
     private readonly ProcessOnlineAnswerUseCase _processAnswerUseCase;
     private readonly GetNextOnlineQuestionUseCase _getNextQuestionUseCase;
     private readonly IGameRepository _gameRepository;
+    private readonly IGameInvitationRepository _invitationRepository;
     private readonly IPowerUpService _powerUpService;
     private readonly ILogger<GameHub> _logger;
 
     public GameHub(
         FindMatchUseCase findMatchUseCase,
+        JoinCreatedGameUseCase joinCreatedGameUseCase,
+        FindMatchWithMatchmakingUseCase findMatchWithMatchmakingUseCase,
         ProcessOnlineAnswerUseCase processAnswerUseCase,
         GetNextOnlineQuestionUseCase getNextQuestionUseCase,
         IGameRepository gameRepository,
+        IGameInvitationRepository invitationRepository,
         IPowerUpService powerUpService,
         ILogger<GameHub> logger)
     {
         _findMatchUseCase = findMatchUseCase;
+        _joinCreatedGameUseCase = joinCreatedGameUseCase;
+        _findMatchWithMatchmakingUseCase = findMatchWithMatchmakingUseCase;
         _processAnswerUseCase = processAnswerUseCase;
         _getNextQuestionUseCase = getNextQuestionUseCase;
         _gameRepository = gameRepository;
+        _invitationRepository = invitationRepository;
         _powerUpService = powerUpService;
         _logger = logger;
     }
 
     /// <summary>
-    /// Busca una partida disponible o crea una nueva
+    /// Busca una partida disponible o crea una nueva usando matchmaking FIFO (First In, First Out).
+    /// El sistema FIFO empareja al primer jugador disponible sin considerar habilidades.
     /// </summary>
-    /// <param name="playerName">Nombre del jugador</param>
-    public async Task FindMatch(string playerName)
+    /// <param name="playerUid">UID del jugador para obtener su nombre real</param>
+    public async Task FindMatch(string playerUid)
     {
         try
         {
-            _logger.LogInformation($"FindMatch iniciado para {playerName} ({Context.ConnectionId})");
+            _logger.LogInformation($"FindMatch iniciado para UID: {playerUid} ({Context.ConnectionId})");
             
-            var game = await _findMatchUseCase.ExecuteAsync(playerName, Context.ConnectionId);
+            var game = await _findMatchUseCase.ExecuteAsync(Context.ConnectionId, playerUid);
             
             _logger.LogInformation($"FindMatchUseCase completado. Partida {game.Id} con {game.Players.Count} jugadores");
             
-            // Encontrar el jugador recién creado
             var player = game.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
             if (player == null)
             {
-                _logger.LogError($"No se pudo encontrar el jugador {playerName} en la partida {game.Id}");
+                _logger.LogError($"No se pudo encontrar el jugador con UID {playerUid} en la partida {game.Id}");
+                await Clients.Caller.SendAsync("Error", "Error al crear jugador");
+                return;
+            }
+            
+            _logger.LogInformation($"Jugador encontrado: {player.Name} (ID: {player.Id}, ConnectionId: {player.ConnectionId})");
+            
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"Game_{game.Id}");
+            _logger.LogInformation($"Jugador {player.Name} agregado al grupo Game_{game.Id}");
+
+            await NotifyAllPlayersInGame(game.Id);
+
+            _logger.LogInformation($"Jugador {player.Name} ({Context.ConnectionId}) procesado completamente para partida {game.Id}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error al buscar partida para el jugador con UID {playerUid}");
+            await Clients.Caller.SendAsync("Error", "Error al buscar partida");
+        }
+    }
+
+    /// <summary>
+    /// Busca una partida usando matchmaking basado en puntos de ranking.
+    /// El sistema de ranking empareja jugadores con habilidades similares usando tolerancias adaptativas
+    /// para crear partidas equilibradas y competitivas.
+    /// </summary>
+    /// <param name="playerUid">UID del jugador para obtener sus puntos y nombre real</param>
+    public async Task FindMatchWithMatchmaking(string playerUid)
+    {
+        try
+        {
+            _logger.LogInformation($"FindMatchWithMatchmaking iniciado para UID: {playerUid} ({Context.ConnectionId})");
+            
+            var game = await _findMatchWithMatchmakingUseCase.ExecuteAsync(Context.ConnectionId, playerUid);
+            
+            _logger.LogInformation($"FindMatchWithMatchmakingUseCase completado. Partida {game.Id} con {game.Players.Count} jugadores");
+            _logger.LogInformation($"🔍 Verificando ConnectionIds después del UseCase:");
+            foreach (var p in game.Players)
+            {
+                _logger.LogInformation($"   - {p.Name}: ConnectionId = {p.ConnectionId}, Context = {Context.ConnectionId}, Match = {p.ConnectionId == Context.ConnectionId}");
+            }
+            // Encontrar el jugador recién creado
+            var player = game.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
+            if (player  == null)
+            {
+                _logger.LogError($"No se pudo encontrar el jugador con UID {playerUid} en la partida {game.Id}");
                 await Clients.Caller.SendAsync("Error", "Error al crear jugador");
                 return;
             }
@@ -62,31 +116,84 @@ public class GameHub : Hub
             
             // Unir al jugador al grupo de la partida
             await Groups.AddToGroupAsync(Context.ConnectionId, $"Game_{game.Id}");
-            _logger.LogInformation($"Jugador {playerName} agregado al grupo Game_{game.Id}");
+            _logger.LogInformation($"Jugador {player.Name} agregado al grupo Game_{game.Id}");
 
             // Notificar a CADA jugador individualmente con su pregunta específica
             _logger.LogInformation($"Iniciando notificación a todos los jugadores de la partida {game.Id}");
             await NotifyAllPlayersInGame(game.Id);
 
-            _logger.LogInformation($"Jugador {playerName} ({Context.ConnectionId}) procesado completamente para partida {game.Id}");
+            _logger.LogInformation($"Jugador {player.Name} ({Context.ConnectionId}) procesado completamente para partida {game.Id} con matchmaking");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error al buscar partida para el jugador {playerName}");
-            await Clients.Caller.SendAsync("Error", "Error al buscar partida");
+            _logger.LogError(ex, $"Error al buscar partida con matchmaking para el jugador con UID {playerUid}");
+            await Clients.Caller.SendAsync("Error", "Error al buscar partida con matchmaking");
+        }
+    }
+
+    /// <summary>
+    /// Une al jugador autenticado a una partida ya creada.
+    /// Si la partida es por invitación y ambos jugadores están conectados, limpia la invitación.
+    /// </summary>
+    /// <param name="gameId">ID de la partida</param>
+    /// <param name="password">Contraseña (opcional, solo para partidas privadas)</param>
+    public async Task JoinGame(int gameId, string? password = null)
+    {
+        try
+        {
+             // Obtener el UID de Firebase del contexto (inyectado por middleware)
+            var http = Context.GetHttpContext();
+            var firebaseUid = http?.Items["FirebaseUid"] as string;
+
+            if (string.IsNullOrEmpty(firebaseUid))
+            {
+                await Clients.Caller.SendAsync("Error", "Autenticación requerida para unirse a la partida");
+                return;
+            }
+
+            _logger.LogInformation($"JoinGame iniciado para gameId: {gameId}, uid: {firebaseUid}, connectionId: {Context.ConnectionId}");
+
+            // Ejecutar caso de uso
+            var game = await _joinCreatedGameUseCase.ExecuteAsync(gameId, firebaseUid, Context.ConnectionId, password);
+
+            _logger.LogInformation($"Jugador unido exitosamente a partida {gameId}. Total jugadores: {game.Players.Count}");
+
+            // Agregar al grupo de SignalR
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"Game_{game.Id}");
+
+            // LIMPIEZA DE INVITACIONES: Si la partida es por invitación y ya están ambos jugadores
+            if (game.IsFromInvitation && game.Players.Count == 2 && game.Status == GameStatus.InProgress)
+            {
+                await CleanupGameInvitation(gameId);
+            }
+
+            // Notificar a todos los jugadores de la partida
+            await NotifyAllPlayersInGame(game.Id);
+
+            _logger.LogInformation($"Jugador con uid {firebaseUid} procesado completamente para partida {gameId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error al unirse a la partida {gameId}");
+            await Clients.Caller.SendAsync("Error", ex.Message);
         }
     }
 
     /// <summary>
     /// Procesa la respuesta de un jugador
     /// </summary>
-    /// <param name="gameId">ID de la partida</param>
-    /// <param name="playerId">ID del jugador</param>
-    /// <param name="answer">Respuesta del jugador</param>
     public async Task SendAnswer(int gameId, int playerId, int answer)
     {
         try
         {
+            // Actualizar ConnectionId del jugador actual antes de procesar respuesta
+            var gameBeforeAnswer = await _gameRepository.GetByIdAsync(gameId);
+            var playerInGame = gameBeforeAnswer.Players.FirstOrDefault(p => p.Id == playerId);
+            if (playerInGame != null && playerInGame.ConnectionId != Context.ConnectionId)
+            {
+                playerInGame.ConnectionId = Context.ConnectionId;
+                await _gameRepository.UpdateAsync(gameBeforeAnswer);
+            }
             var game = await _processAnswerUseCase.ExecuteAsync(gameId, playerId, answer);
             
             if (game == null)
@@ -95,7 +202,6 @@ public class GameHub : Hub
                 return;
             }
 
-            // Notificar a CADA jugador individualmente con su pregunta específica
             await NotifyAllPlayersInGame(gameId);
 
             _logger.LogInformation($"Respuesta procesada para jugador {playerId} en partida {gameId}");
@@ -110,9 +216,6 @@ public class GameHub : Hub
     /// <summary>
     /// Activa un power-up de un jugador
     /// </summary>
-    /// <param name="gameId">ID de la partida</param>
-    /// <param name="playerId">ID del jugador</param>
-    /// <param name="powerUpType">Tipo de power-up a activar</param>
     public async Task UsePowerUp(int gameId, int playerId, PowerUpType powerUpType)
     {
         try
@@ -143,7 +246,6 @@ public class GameHub : Hub
                 return;
             }
 
-            // Verificar si el jugador puede usar el power-up
             if (!_powerUpService.CanUsePowerUp(player, powerUpType))
             {
                 await Clients.Caller.SendAsync("Error", "Power-up no disponible");
@@ -157,10 +259,8 @@ public class GameHub : Hub
                 return;
             }
 
-            // Actualizar la partida en el repositorio
             await _gameRepository.UpdateAsync(game);
 
-            // Notificar el uso del power-up a todos los jugadores
             var powerUpDto = new PowerUpUsedDto
             {
                 GameId = gameId,
@@ -170,8 +270,6 @@ public class GameHub : Hub
             };
 
             await Clients.Group($"Game_{gameId}").SendAsync("PowerUpUsed", powerUpDto);
-
-            // Notificar actualización completa del juego
             await NotifyAllPlayersInGame(gameId);
 
             _logger.LogInformation($"Power-up {powerUpType} usado por jugador {playerId} en partida {gameId}");
@@ -183,32 +281,66 @@ public class GameHub : Hub
         }
     }
 
-    /// <summary>
-    /// Maneja la desconexión de un jugador
-    /// </summary>
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         _logger.LogInformation($"Jugador desconectado: {Context.ConnectionId}");
         await base.OnDisconnectedAsync(exception);
     }
 
-    /// <summary>
-    /// Maneja la conexión de un jugador
-    /// </summary>
     public override async Task OnConnectedAsync()
     {
         _logger.LogInformation($"Jugador conectado: {Context.ConnectionId}");
+        var http = Context.GetHttpContext();
+        var uid = http?.Items["FirebaseUid"] as string;
         await base.OnConnectedAsync();
     }
 
     /// <summary>
-    /// Notifica a todos los jugadores de una partida con sus preguntas específicas
+    /// Limpia la invitación de una partida eliminándola de la base de datos
     /// </summary>
+    private async Task CleanupGameInvitation(int gameId)
+    {
+        try
+        {
+            _logger.LogInformation($"🧹 Iniciando limpieza de invitación para partida {gameId}");
+
+            var invitation = await _invitationRepository.GetByGameIdAsync(gameId);
+            
+            if (invitation == null)
+            {
+                _logger.LogWarning($"⚠️ No se encontró invitación para la partida {gameId}");
+                return;
+            }
+
+            // Solo eliminar si ambos jugadores están conectados (partida en progreso)
+            if (invitation.Status == InvitationStatus.Accepted || invitation.Status == InvitationStatus.Pending)
+            {
+                await _invitationRepository.DeleteAsync(invitation.Id);
+                _logger.LogInformation($"✅ Invitación {invitation.Id} eliminada exitosamente para partida {gameId}");
+            }
+            else
+            {
+                _logger.LogInformation($"ℹ️ Invitación {invitation.Id} con estado {invitation.Status}, no se eliminó");
+            }
+        }
+        catch (Exception ex)
+        {
+            // No lanzar excepción, solo registrar el error para no interrumpir el flujo del juego
+            _logger.LogError(ex, $"❌ Error al limpiar invitación de partida {gameId}. El juego continuará normalmente.");
+        }
+    }
+
     private async Task NotifyAllPlayersInGame(int gameId)
     {
         try
         {
             var game = await _gameRepository.GetByIdAsync(gameId);
+            
+            _logger.LogInformation($"🔍 ConnectionIds al notificar:");
+            foreach (var p in game.Players)
+            {
+                _logger.LogInformation($"   - {p.Name}: ConnectionId = {p.ConnectionId}");
+            }
             if (game == null) 
             {
                 _logger.LogWarning($"Partida {gameId} no encontrada al notificar jugadores");
@@ -217,14 +349,35 @@ public class GameHub : Hub
 
             _logger.LogInformation($"Notificando a {game.Players.Count} jugadores de la partida {gameId}");
 
-            // Notificar a cada jugador individualmente
-            foreach (var player in game.Players.Where(p => !string.IsNullOrEmpty(p.ConnectionId)))
+            // FILTRAR jugadores con ConnectionId válido
+            var validPlayers = game.Players
+                .Where(p => !string.IsNullOrWhiteSpace(p.ConnectionId))
+                .ToList();
+
+            // LOG de jugadores sin conexión
+            var invalidPlayers = game.Players
+                .Where(p => string.IsNullOrWhiteSpace(p.ConnectionId))
+                .ToList();
+
+            foreach (var player in invalidPlayers)
+            {
+                _logger.LogWarning(
+                    $"⚠️ Jugador {player.Name} (ID: {player.Id}, Uid: {player.Uid}) " +
+                    $"sin ConnectionId válido en partida {gameId}");
+            }
+
+            if (validPlayers.Count == 0)
+            {
+                _logger.LogWarning($"⚠️ No hay jugadores con ConnectionId válido en partida {gameId}");
+                return;
+            }
+
+            foreach (var player in validPlayers)
             {
                 try
                 {
                     Question? currentQuestion = null;
                     
-                    // Solo enviar pregunta si el juego ya comenzó (2 jugadores)
                     if (game.Status == GameStatus.InProgress)
                     {
                         currentQuestion = await _getNextQuestionUseCase.ExecuteAsync(gameId, player.Id);
@@ -238,20 +391,25 @@ public class GameHub : Hub
                     var gameSession = GameSession.FromGame(game, currentQuestion);
                     var gameUpdateDto = GameUpdateDto.FromGameSession(gameSession);
 
-                    _logger.LogInformation($"Enviando GameUpdate a jugador {player.Name} ({player.ConnectionId}) - Status: {game.Status}");
+                    _logger.LogInformation(
+                        $"Enviando GameUpdate a jugador {player.Name} " +
+                        $"(ConnectionId: {player.ConnectionId}) - Status: {game.Status}");
+                    
                     await Clients.Client(player.ConnectionId).SendAsync("GameUpdate", gameUpdateDto);
                     
-                    _logger.LogInformation($"GameUpdate enviado exitosamente a {player.Name}");
+                    _logger.LogInformation($"✅ GameUpdate enviado exitosamente a {player.Name}");
                 }
                 catch (Exception playerEx)
                 {
-                    _logger.LogError(playerEx, $"Error al notificar al jugador {player.Name} ({player.ConnectionId})");
+                    _logger.LogError(playerEx, 
+                        $"❌ Error al notificar al jugador {player.Name} " +
+                        $"(ConnectionId: {player.ConnectionId})");
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error al notificar jugadores de la partida {gameId}");
+            _logger.LogError(ex, $"❌ Error general al notificar jugadores de la partida {gameId}");
         }
     }
 }
