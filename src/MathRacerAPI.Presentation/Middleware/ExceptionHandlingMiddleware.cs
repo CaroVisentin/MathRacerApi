@@ -76,6 +76,12 @@ public class ExceptionHandlingMiddleware
                 _logger.LogWarning(conflictEx, "Conflicto de estado: {Message}", conflictEx.Message);
                 break;
 
+            case InsufficientFundsException insufficientFundsEx:
+                statusCode = HttpStatusCode.PaymentRequired;
+                message = insufficientFundsEx.Message;
+                _logger.LogWarning(insufficientFundsEx, "Fondos insuficientes: {Message}", insufficientFundsEx.Message);
+                break;
+
             case ValidationException validationEx:
                 statusCode = HttpStatusCode.BadRequest;
                 message = validationEx.Message;

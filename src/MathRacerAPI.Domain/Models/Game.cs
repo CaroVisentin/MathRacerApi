@@ -6,6 +6,9 @@ namespace MathRacerAPI.Domain.Models;
 public class Game
 {
     public int Id { get; set; }
+    public string? Name { get; set; } = string.Empty;
+    public bool IsPrivate { get; set; } = false;
+    public string? Password { get; set; }
     public List<Player> Players { get; set; } = new();
     public GameStatus Status { get; set; } = GameStatus.WaitingForPlayers;
     public List<Question> Questions { get; set; } = new();
@@ -17,4 +20,6 @@ public class Game
     public bool PowerUpsEnabled { get; set; } = true;
     public List<ActiveEffect> ActiveEffects { get; set; } = new();
     public int MaxPowerUpsPerPlayer { get; set; } = 3;
+    public int? CreatorPlayerId { get; set; }
+    public bool IsFromInvitation { get; set; } = false; 
 }

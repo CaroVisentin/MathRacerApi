@@ -1,11 +1,15 @@
+using Google;
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
+using MathRacerAPI.Infrastructure.Configuration;
 
 namespace MathRacerAPI.Infrastructure.Repositories;
 
 public class InMemoryGameRepository : IGameRepository
 {
     private static readonly Dictionary<int, Game> _games = new();
+   
+
 
     public Task<Game> AddAsync(Game game)
     {
@@ -29,4 +33,22 @@ public class InMemoryGameRepository : IGameRepository
         _games[game.Id] = game;
         return Task.CompletedTask;
     }
+
+    public Task<List<Game>> GetWaitingGames()
+    {
+        var waitingGames = _games.Values
+            .Where(g => g.Status == GameStatus.WaitingForPlayers && 
+            g.Players.Count == 1 &&
+            g.Id >= 1000)
+            .OrderBy(g => g.CreatedAt)
+            .ToList();
+
+        return Task.FromResult(waitingGames); 
+    }
+     public Task<Game?> GetByIdWithPlayersAsync(int gameId)
+    {
+        _games.TryGetValue(gameId, out var game);
+        return Task.FromResult(game);
+    }
+
 }
