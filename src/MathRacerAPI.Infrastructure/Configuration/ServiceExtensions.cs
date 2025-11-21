@@ -116,7 +116,9 @@ public static class ServiceExtensions
         services.AddScoped<SubmitInfiniteAnswerUseCase>();
         services.AddScoped<LoadNextBatchUseCase>();
         services.AddScoped<GetInfiniteGameStatusUseCase>();
-        services.AddScoped<AbandonInfiniteGameUseCase>(); 
+        services.AddScoped<AbandonInfiniteGameUseCase>();
+
+        services.AddScoped<CreatePaymentUseCase>();
 
 
         // Registrar repositorios
@@ -143,6 +145,7 @@ public static class ServiceExtensions
 
         // Registrar servicio de Firebase
         services.AddSingleton<IFirebaseService, FirebaseService>();
+        services.AddSingleton<IPaymentService, PaymentService> ();
 
     // Cargar el archivo .env fijo para todos los entornos
     DotNetEnv.Env.Load($".env.{environment.EnvironmentName.ToLower()}");

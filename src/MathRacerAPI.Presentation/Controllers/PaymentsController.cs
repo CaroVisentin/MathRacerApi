@@ -13,13 +13,16 @@ namespace MathRacerAPI.Presentation.Controllers
     public class PaymentsController : ControllerBase
     {
         private readonly GetCoinPackageUseCase _getCoinPackageUseCase;
+        private readonly CreatePaymentUseCase _createPaymentUseCase;
         private readonly ILogger<PaymentsController> _logger;
 
         public PaymentsController(
             GetCoinPackageUseCase getCoinPackageUseCase,
-            ILogger<PaymentsController> logger)
+            CreatePaymentUseCase createPaymentUseCase,
+        ILogger<PaymentsController> logger)
         {
             _getCoinPackageUseCase = getCoinPackageUseCase;
+            _createPaymentUseCase = createPaymentUseCase;
             _logger = logger;
         }
 
@@ -61,46 +64,16 @@ namespace MathRacerAPI.Presentation.Controllers
                     return NotFound(new { message = "Coin package not found." });
                 }
 
-                var backendUrl = Environment.GetEnvironmentVariable("BACKEND_URL");
-                if (string.IsNullOrWhiteSpace(backendUrl))
-                {
-                    _logger.LogError("[PAYMENTS] BACKEND_URL environment variable not configured");
-                    return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Could not generate preference: invalid configuration." });
-                }
+                var preferenceId = await _createPaymentUseCase.ExecuteAsync(
+                    coinPackage,
+                     req.PlayerId,
+                    req.SuccessUrl,
+                    req.PendingUrl,
+                    req.FailureUrl
+                   
+                  );
+                return Ok(new { PreferenceId = preferenceId });
 
-                var preferenceRequest = new PreferenceRequest
-                {
-                    Items = new List<PreferenceItemRequest>
-                    {
-                        new PreferenceItemRequest
-                        {
-                            Title = coinPackage.Description,
-                            Quantity = 1,
-                            UnitPrice = (decimal)coinPackage.Price
-                        }
-                    },
-                    AutoReturn = "approved",
-                    BackUrls = new PreferenceBackUrlsRequest
-                    {
-                        Success = req.SuccessUrl,
-                        Failure = req.FailureUrl,
-                        Pending = req.PendingUrl
-                    },
-                    ExternalReference = $"{req.PlayerId}_{req.CoinPackageId}",
-                    NotificationUrl = $"{backendUrl.TrimEnd('/')}/api/webhook"
-                };
-
-                var client = new PreferenceClient();
-                try
-                {
-                    var preference = await client.CreateAsync(preferenceRequest);
-                    return Ok(new { preferenceId = preference.Id });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "[PAYMENTS] Error while creating preference in MercadoPago");
-                    return StatusCode(StatusCodes.Status502BadGateway, new { message = "Mercado Pago no respondió correctamente. Intenta de nuevo en unos minutos." });
-                }
             }
             catch (Exception ex)
             {

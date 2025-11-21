@@ -13,13 +13,12 @@ if (builder.Environment.IsDevelopment())
     Env.Load(".env.development");  // solo en local
 }
 
-var exposedFrontend = Environment.GetEnvironmentVariable("FRONTEND_URL");
-
 // Configurar URLs
 builder.WebHost.UseUrls("http://localhost:5153");
 
 // Leer orígenes permitidos desde la configuración
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+
 // Add services to the container
 builder.Services.AddControllers()
                 .AddApplicationPart(typeof(MathRacerAPI.Presentation.Controllers.HealthController).Assembly);
@@ -52,7 +51,11 @@ builder.Services.AddCors(options =>
                 "http://127.0.0.1:3000",
                 "http://localhost:3000",
                 "http://localhost:5173",
-                exposedFrontend!
+                "https://n3h9h888-5173.brs.devtunnels.ms",
+                "https://n3h9h888-5173.brs.devtunnels.ms/",
+                "https://n3h9h888-5173.brs.devtunnels.ms/"
+
+
 
 
             )
@@ -66,7 +69,9 @@ builder.Services.AddCors(options =>
             policy.WithOrigins(allowedOrigins ?? new[] { 
                 "http://localhost:3000", 
                 "http://127.0.0.1:5500",
-                "http://localhost:5500"
+                "http://localhost:5500",
+                "https://n3h9h888-5173.brs.devtunnels.ms/",
+                "https://n3h9h888-5173.brs.devtunnels.ms"
             })
                   .AllowAnyHeader()
                   .AllowAnyMethod()
@@ -107,7 +112,8 @@ app.MapControllers();
 app.MapHub<GameHub>("/gameHub");
 
 
-var mpToken = Environment.GetEnvironmentVariable("MERCADOPAGO_ACCESS_TOKEN");
+var mpToken = builder.Configuration.GetSection("Payment:AccessToken").Get<string>() ;
+
 MercadoPagoConfig.AccessToken = mpToken;
 
 app.Run();

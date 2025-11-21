@@ -79,6 +79,7 @@ namespace MathRacerAPI.Presentation.Controllers
                 }
 
                 _logger.LogInformation($"[WEBHOOK] Payment ID={paymentId}");
+              
                 var paymentClient = new PaymentClient();
                 var payment = await paymentClient.GetAsync(paymentId);
 
