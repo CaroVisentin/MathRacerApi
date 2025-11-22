@@ -46,6 +46,7 @@ public static class ServiceExtensions
         services.AddScoped<RegisterPlayerUseCase>();
         services.AddScoped<LoginPlayerUseCase>();
         services.AddScoped<GoogleAuthUseCase>();
+        services.AddScoped<DeletePlayerUseCase>();
 
         // Registrar casos de uso de Levels
         services.AddScoped<GetWorldLevelsUseCase>();
@@ -78,6 +79,7 @@ public static class ServiceExtensions
         // Registrar casos de uso de Chests
         services.AddScoped<OpenTutorialChestUseCase>();
         services.AddScoped<OpenRandomChestUseCase>();
+        services.AddScoped<PurchaseRandomChestUseCase>();
 
         // Registrar casos de uso de Store
         services.AddScoped<GetStoreCarsUseCase>();

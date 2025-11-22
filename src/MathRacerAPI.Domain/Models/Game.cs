@@ -9,6 +9,7 @@ public class Game
     public string? Name { get; set; } = string.Empty;
     public bool IsPrivate { get; set; } = false;
     public string? Password { get; set; }
+    public string Difficulty { get; set; } = "facil"; 
     public List<Player> Players { get; set; } = new();
     public GameStatus Status { get; set; } = GameStatus.WaitingForPlayers;
     public List<Question> Questions { get; set; } = new();

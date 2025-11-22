@@ -135,6 +135,14 @@ namespace MathRacerAPI.Infrastructure.Repositories
                     .SetProperty(p => p.LastLevelId, levelId));
         }
 
+        public async Task DeleteAsync(string uid)
+        {
+            await _context.Players
+                .Where(p => p.Uid == uid && !p.Deleted)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(p => p.Deleted, true));
+        }
+
         private PlayerProfile MapToPlayerProfile(PlayerEntity entity)
         {
             var activeProducts = entity.PlayerProducts
