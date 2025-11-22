@@ -8,4 +8,5 @@ public interface IStoreRepository
     Task<StoreItem?> GetProductByIdAsync(int productId, int playerId);
     Task<bool> PlayerOwnsProductAsync(int playerId, int productId);
     Task<bool> PurchaseProductAsync(int playerId, int productId, decimal price);
+    Task<bool> PurchaseRandomChestAsync(int playerId, int price);
 }

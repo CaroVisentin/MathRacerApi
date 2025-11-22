@@ -48,7 +48,10 @@ public class FindMatchUseCase
             Id = playerProfile.Id, 
             Name = playerProfile.Name,
             Uid = playerUid,
-            ConnectionId = connectionId
+            ConnectionId = connectionId,
+            EquippedCar = playerProfile.Car,
+            EquippedCharacter = playerProfile.Character,
+            EquippedBackground = playerProfile.Background
         };
 
         player.AvailablePowerUps = _powerUpService.GrantInitialPowerUps(player.Id);

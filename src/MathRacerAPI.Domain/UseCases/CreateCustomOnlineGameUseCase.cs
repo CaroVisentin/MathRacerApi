@@ -73,6 +73,7 @@ public class CreateCustomOnlineGameUseCase : ICreateCustomOnlineGameUseCase
             Name = gameName,
             IsPrivate = isPrivate,
             Password = isPrivate ? password : null,
+            Difficulty = difficulty, 
             Status = GameStatus.WaitingForPlayers,
             CreatedAt = DateTime.UtcNow,
             PowerUpsEnabled = true,

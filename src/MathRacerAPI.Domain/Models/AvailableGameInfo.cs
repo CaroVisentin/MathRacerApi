@@ -6,7 +6,7 @@ namespace MathRacerAPI.Domain.Models;
 public class AvailableGameInfo
 {
     public int GameId { get; private set; }
-    public string GameName { get; private set; }
+    public string GameName { get; private set; } 
     public bool IsPrivate { get; private set; }
     public bool RequiresPassword { get; private set; }
     public int CurrentPlayers { get; private set; }
@@ -51,7 +51,7 @@ public class AvailableGameInfo
             isPrivate: game.IsPrivate,
             currentPlayers: game.Players.Count,
             maxPlayers: 2,
-            difficulty: "Unknown", 
+            difficulty: game.Difficulty, 
             expectedResult: game.ExpectedResult,
             createdAt: game.CreatedAt,
             creatorName: creator?.Name ?? "Desconocido"
