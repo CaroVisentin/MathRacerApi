@@ -136,7 +136,7 @@ namespace MathRacerAPI.Presentation.Controllers
         [SwaggerResponse(400, "Solicitud inv�lida")]
         [SwaggerResponse(401, "No autorizado")]
         [SwaggerResponse(500, "Error interno del servidor")]
-        [HttpPost("delete")]
+        [HttpDelete("delete")]
         public async Task<ActionResult> DeleteFriend([FromBody] FriendRequestDto request)
         {
             var authenticatedPlayerId = await GetAuthenticatedPlayerId();

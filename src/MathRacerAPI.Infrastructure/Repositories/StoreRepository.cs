@@ -113,4 +113,36 @@ public class StoreRepository : IStoreRepository
             return false;
         }
     }
+
+    public async Task<bool> PurchaseRandomChestAsync(int playerId, int price)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        
+        try
+        {
+            // Obtener el jugador y verificar monedas
+            var player = await _context.Players
+                .Where(p => p.Id == playerId && !p.Deleted)
+                .FirstOrDefaultAsync();
+
+            if (player == null || player.Coins < price)
+            {
+                return false;
+            }
+
+            // Descontar monedas del jugador
+            player.Coins -= price;
+
+            // Guardar cambios
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return true;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            return false;
+        }
+    }
 }
