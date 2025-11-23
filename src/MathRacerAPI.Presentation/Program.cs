@@ -3,14 +3,22 @@ using MathRacerAPI.Presentation.Configuration;
 using MathRacerAPI.Presentation.Hubs;
 using MathRacerAPI.Presentation.Middleware;
 using MathRacerAPI.Infrastructure.Services;
+using MercadoPago.Config;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (builder.Environment.IsDevelopment())
+{
+    Env.Load(".env.development");  // solo en local
+}
 
 // Configurar URLs
 builder.WebHost.UseUrls("http://localhost:5153");
 
 // Leer orígenes permitidos desde la configuración
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+
 // Add services to the container
 builder.Services.AddControllers()
                 .AddApplicationPart(typeof(MathRacerAPI.Presentation.Controllers.HealthController).Assembly);
@@ -42,7 +50,14 @@ builder.Services.AddCors(options =>
                 "http://localhost:5502",
                 "http://127.0.0.1:3000",
                 "http://localhost:3000",
-                "http://localhost:5173"
+                "http://localhost:5173",
+                "https://n3h9h888-5173.brs.devtunnels.ms",
+                "https://n3h9h888-5173.brs.devtunnels.ms/",
+                "https://n3h9h888-5173.brs.devtunnels.ms/"
+
+
+
+
             )
                   .AllowAnyHeader()
                   .AllowAnyMethod()
@@ -55,7 +70,9 @@ builder.Services.AddCors(options =>
                 "https://mathi-racer-web.vercel.app",
                 "http://localhost:3000", 
                 "http://127.0.0.1:5500",
-                "http://localhost:5500"
+                "http://localhost:5500",
+                "https://n3h9h888-5173.brs.devtunnels.ms/",
+                "https://n3h9h888-5173.brs.devtunnels.ms"
             })
                   .AllowAnyHeader()
                   .AllowAnyMethod()
@@ -94,5 +111,10 @@ app.MapControllers();
 
 // Map SignalR hub
 app.MapHub<GameHub>("/gameHub");
+
+
+var mpToken = builder.Configuration.GetSection("Payment:AccessToken").Get<string>() ;
+
+MercadoPagoConfig.AccessToken = mpToken;
 
 app.Run();

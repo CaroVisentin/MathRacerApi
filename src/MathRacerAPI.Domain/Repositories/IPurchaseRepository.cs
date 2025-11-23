@@ -9,5 +9,9 @@ namespace MathRacerAPI.Domain.Repositories
 {
     public interface IPurchaseRepository
     {
+        Task AddAsync(Purchase purchase);
+        Task SaveChangesAsync();
+        public Task<bool> ExistsByPaymentIdAsync(string paymentId);
+
     }
 }
