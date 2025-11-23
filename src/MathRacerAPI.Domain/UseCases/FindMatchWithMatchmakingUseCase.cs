@@ -1,7 +1,9 @@
+using MathRacerAPI.Domain.Exceptions;
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Domain.Services;
-using MathRacerAPI.Domain.Exceptions;
+using Microsoft.Extensions.Logging;
+using System.Numerics;
 
 namespace MathRacerAPI.Domain.UseCases;
 
@@ -12,12 +14,17 @@ namespace MathRacerAPI.Domain.UseCases;
 /// </summary>
 public class FindMatchWithMatchmakingUseCase
 {
+    private readonly ILogger<FindMatchWithMatchmakingUseCase> _logger;
     private readonly IGameRepository _gameRepository;
     private readonly IPlayerRepository _playerRepository;
     private readonly GetQuestionsUseCase _getQuestionsUseCase;
     private readonly IGameLogicService _gameLogicService;
     private readonly IPowerUpService _powerUpService;
-    private static int _nextPlayerId = 1000; // Empezar desde 1000 para diferenciar del modo offline
+
+    // IMPORTANTE: Lock estático para evitar race conditions
+    private static readonly SemaphoreSlim _matchmakingLock = new SemaphoreSlim(1, 1);
+
+    private static int _nextPlayerId = 1000;
     private static int _nextGameId = 1000;
 
     public FindMatchWithMatchmakingUseCase(
@@ -25,134 +32,166 @@ public class FindMatchWithMatchmakingUseCase
         IPlayerRepository playerRepository,
         GetQuestionsUseCase getQuestionsUseCase,
         IGameLogicService gameLogicService,
-        IPowerUpService powerUpService)
+        IPowerUpService powerUpService,
+        ILogger<FindMatchWithMatchmakingUseCase> logger)
     {
         _gameRepository = gameRepository;
         _playerRepository = playerRepository;
         _getQuestionsUseCase = getQuestionsUseCase;
         _gameLogicService = gameLogicService;
         _powerUpService = powerUpService;
+        _logger = logger;
     }
 
-    /// <summary>
-    /// Encuentra una partida usando matchmaking basado en puntos
-    /// </summary>
-    /// <param name="connectionId">ID de conexión de SignalR</param>
-    /// <param name="playerUid">UID del jugador para obtener sus puntos y nombre</param>
-    /// <returns>Partida encontrada o creada</returns>
     public async Task<Game> ExecuteAsync(string connectionId, string playerUid)
     {
-        // Obtener el perfil del jugador para sus puntos
+        
+
+        // LOCK: Solo un jugador puede buscar/crear partida a la vez
+        await _matchmakingLock.WaitAsync();
+
+        try
+        {
+            
+            return await ExecuteMatchmakingAsync(connectionId, playerUid);
+        }
+        finally
+        {
+            _matchmakingLock.Release();
+            
+        }
+    }
+
+    private async Task<Game> ExecuteMatchmakingAsync(string connectionId, string playerUid)
+    {
         var playerProfile = await _playerRepository.GetByUidAsync(playerUid);
         if (playerProfile == null)
         {
             throw new NotFoundException("Perfil de jugador no encontrado");
         }
 
-        var player = new Player 
-        { 
+        
+
+        // Buscar partidas esperando jugadores
+        var allGames = await _gameRepository.GetAllAsync();
+        var waitingGames = allGames
+            .Where(g =>
+                g.Status == GameStatus.WaitingForPlayers &&
+                g.Players.Count == 1 &&
+                g.Id >= 1000 &&
+                g.Players.First().Uid != playerUid) // NO unirse a su propia partida
+            .OrderBy(g => g.CreatedAt) // Más antiguas primero
+            .ToList();
+
+        _logger.LogInformation($"📋 Encontradas {waitingGames.Count} partidas esperando jugadores");
+
+        if (waitingGames.Count > 0)
+        {
+            _logger.LogInformation($"📋 Partidas disponibles:");
+            foreach (var g in waitingGames)
+            {
+                var p = g.Players.FirstOrDefault();
+                
+            }
+        }
+
+        var player = new Player
+        {
             Id = Interlocked.Increment(ref _nextPlayerId),
             Name = playerProfile.Name,
             Uid = playerUid,
-            ConnectionId = connectionId
+            ConnectionId = connectionId,
+            EquippedCar = playerProfile.Car,
+            EquippedCharacter = playerProfile.Character,
+            EquippedBackground = playerProfile.Background
         };
 
         player.AvailablePowerUps = _powerUpService.GrantInitialPowerUps(player.Id);
 
-        // Calcular rango de tolerancia basado en puntos del jugador
+        // OPCIÓN 1: Intentar encontrar partida compatible por puntos
         var toleranceRange = CalculateToleranceRange(playerProfile.Points);
+        _logger.LogInformation($"📊 Tolerancia: ±{toleranceRange} puntos");
 
-        // Buscar partidas esperando jugadores con matchmaking
-        var availableGames = await _gameRepository.GetAllAsync();
-        var compatibleGame = await FindCompatibleGame(availableGames, playerProfile.Points, toleranceRange);
+        Game? compatibleGame = null;
+
+        foreach (var game in waitingGames)
+        {
+            var existingPlayer = game.Players.First();
+            _logger.LogInformation($"🔎 Evaluando partida {game.Id} - Jugador: {existingPlayer.Name}");
+
+            var existingPlayerProfile = await GetPlayerProfileByUid(existingPlayer.Uid);
+
+            if (existingPlayerProfile != null)
+            {
+                var pointsDifference = Math.Abs(playerProfile.Points - existingPlayerProfile.Points);
+                _logger.LogInformation($"📊 Diferencia: {pointsDifference} puntos (Tolerancia: {toleranceRange})");
+
+                if (pointsDifference <= toleranceRange)
+                {
+                    compatibleGame = game;
+                    _logger.LogInformation($"✅ Partida {game.Id} es compatible!");
+                    break;
+                }
+                else
+                {
+                    _logger.LogInformation($"❌ Partida {game.Id} fuera de tolerancia");
+                }
+            }
+        }
+
+        // OPCIÓN 2: Si no hay compatible, tomar CUALQUIER partida esperando (FALLBACK)
+        if (compatibleGame == null && waitingGames.Count > 0)
+        {
+            _logger.LogInformation($"⚠️ No se encontró partida compatible. Uniendo a primera partida disponible...");
+            compatibleGame = waitingGames.First();
+            
+        }
 
         if (compatibleGame != null)
         {
-            // Unirse a partida compatible
-            compatibleGame.Players.Add(player);
             
+
+            compatibleGame.Players.Add(player);
+
             if (compatibleGame.Players.Count == 2)
             {
                 compatibleGame.Status = GameStatus.InProgress;
-            }
+               }
 
             await _gameRepository.UpdateAsync(compatibleGame);
             return compatibleGame;
         }
         else
         {
-            // Crear nueva partida y almacenar información de matchmaking
+            _logger.LogInformation($"🆕 No hay partidas disponibles. Creando nueva partida para {player.Name}...");
             return await CreateNewMatchmakingGameAsync(player, playerProfile.Points);
         }
     }
 
-    /// <summary>
-    /// Calcula el rango de tolerancia basado en los puntos del jugador
-    /// </summary>
     private static int CalculateToleranceRange(int playerPoints)
     {
-        // Rangos adaptativos basados en el análisis previo
         return playerPoints switch
         {
-            <= 50 => 25,     // Principiante: ±25 puntos
-            <= 150 => 30,    // Intermedio: ±30 puntos  
-            <= 250 => 40,    // Avanzado: ±40 puntos
-            _ => 50          // Experto: ±50 puntos
+            <= 50 => 25,
+            <= 150 => 30,
+            <= 250 => 40,
+            _ => 50
         };
     }
 
-    /// <summary>
-    /// Busca una partida compatible basada en puntos
-    /// </summary>
-    private async Task<Game?> FindCompatibleGame(List<Game> availableGames, int playerPoints, int tolerance)
-    {
-        var waitingGames = availableGames.Where(g => 
-            g.Status == GameStatus.WaitingForPlayers && 
-            g.Players.Count == 1 &&  // Solo juegos con 1 jugador esperando
-            g.Id >= 1000)           // Solo partidas online
-            .ToList();
-
-        foreach (var game in waitingGames)
-        {
-            // Obtener los puntos del jugador que ya está en la partida
-            var existingPlayer = game.Players.First();
-            
-            // Buscar el perfil del jugador existente usando su UID
-            var existingPlayerProfile = await GetPlayerProfileByUid(existingPlayer.Uid);
-            
-            if (existingPlayerProfile != null)
-            {
-                var pointsDifference = Math.Abs(playerPoints - existingPlayerProfile.Points);
-                
-                // Si la diferencia está dentro de la tolerancia, es compatible
-                if (pointsDifference <= tolerance)
-                {
-                    return game;
-                }
-            }
-        }
-
-        return null; // No se encontró partida compatible
-    }
-
-    /// <summary>
-    /// Obtiene el perfil de un jugador por su UID almacenado en el objeto Player
-    /// </summary>
     private async Task<PlayerProfile?> GetPlayerProfileByUid(string uid)
     {
         try
         {
             return await _playerRepository.GetByUidAsync(uid);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, $"Error al obtener perfil para UID: {uid}");
             return null;
         }
     }
 
-    /// <summary>
-    /// Crea una nueva partida con información de matchmaking
-    /// </summary>
     private async Task<Game> CreateNewMatchmakingGameAsync(Player player, int creatorPoints)
     {
         var game = new Game
@@ -186,6 +225,9 @@ public class FindMatchWithMatchmakingUseCase
         game.ExpectedResult = equationParams.ExpectedResult;
 
         await _gameRepository.AddAsync(game);
+
+        _logger.LogInformation($"🆕 Partida {game.Id} creada para {player.Name}");
+
         return game;
     }
 }

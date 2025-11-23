@@ -6,6 +6,8 @@ using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Domain.Exceptions;
 using MathRacerAPI.Domain.Services;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace MathRacerAPI.Tests.UseCases;
 
@@ -26,13 +28,16 @@ public class FindMatchWithMatchmakingUseCaseBasicTests
         var getQuestionsUseCaseMock = new Mock<GetQuestionsUseCase>();
         var gameLogicServiceMock = new Mock<IGameLogicService>();
         _powerUpServiceMock = new Mock<IPowerUpService>();
+
         
         _findMatchWithMatchmakingUseCase = new FindMatchWithMatchmakingUseCase(
             _gameRepositoryMock.Object,
             _playerRepositoryMock.Object,
             getQuestionsUseCaseMock.Object,
             gameLogicServiceMock.Object,
-            _powerUpServiceMock.Object
+            _powerUpServiceMock.Object,
+            NullLogger<FindMatchWithMatchmakingUseCase>.Instance
+
         );
     }
 

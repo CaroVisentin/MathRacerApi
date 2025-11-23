@@ -1,3 +1,4 @@
+using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.UseCases;
 using MathRacerAPI.Infrastructure.Services;
 using MathRacerAPI.Presentation.DTOs;
@@ -16,13 +17,15 @@ public class PlayerController : ControllerBase
     private readonly GoogleAuthUseCase _googleAuthUseCase;
     private readonly GetPlayerByIdUseCase _getPlayerByIdUseCase;
     private readonly GetPlayerByEmailUseCase _getPlayerByEmailUseCase;
+    private readonly DeletePlayerUseCase _deletePlayerUseCase;
 
     public PlayerController(
         RegisterPlayerUseCase registerPlayerUseCase,
         LoginPlayerUseCase loginPlayerUseCase,
         GoogleAuthUseCase googleAuthUseCase,
         GetPlayerByIdUseCase getPlayerByIdUseCase,
-        GetPlayerByEmailUseCase getPlayerByEmailUseCase
+        GetPlayerByEmailUseCase getPlayerByEmailUseCase,
+        DeletePlayerUseCase deletePlayerUseCase
         )
     {
         _registerPlayerUseCase = registerPlayerUseCase;
@@ -30,6 +33,7 @@ public class PlayerController : ControllerBase
         _googleAuthUseCase = googleAuthUseCase;
         _getPlayerByIdUseCase = getPlayerByIdUseCase;
         _getPlayerByEmailUseCase = getPlayerByEmailUseCase;
+        _deletePlayerUseCase = deletePlayerUseCase;
     }
 
     [HttpPost("register")]
@@ -182,6 +186,7 @@ public class PlayerController : ControllerBase
             Name = user.Name,
             Email = user.Email,
             Points = user.Points,
+            Coins = user.Coins,
             Character = user.Character == null ? null : new ActiveProductDto
             {
                 Id = user.Character.Id
@@ -220,6 +225,7 @@ public class PlayerController : ControllerBase
             Name = player.Name,
             Email = player.Email,
             Points = player.Points,
+            Coins = player.Coins,
             Character = player.Character == null ? null : new ActiveProductDto
             {
                 Id = player.Character.Id
@@ -237,4 +243,27 @@ public class PlayerController : ControllerBase
         return Ok(response);
     }
 
+    [SwaggerOperation(
+        Summary = "Eliminar cuenta de jugador",
+        Description = "Realiza la baja lógica de la cuenta del jugador autenticado. El jugador será marcado como eliminado y no podrá acceder a su cuenta.",
+        OperationId = "DeletePlayer",
+        Tags = new[] { "Player - Gestión de jugadores" }
+    )]
+    [SwaggerResponse(200, "Cuenta eliminada exitosamente.")]
+    [SwaggerResponse(401, "No autorizado - Token inválido o faltante.")]
+    [SwaggerResponse(404, "Jugador no encontrado.")]
+    [SwaggerResponse(500, "Error interno del servidor.")]
+    [HttpDelete("delete")]
+    public async Task<ActionResult> DeletePlayer()
+    {
+        var uid = HttpContext.Items["FirebaseUid"] as string;
+        if (string.IsNullOrEmpty(uid))
+        {
+            return Unauthorized(new { message = "Token de autenticación requerido o inválido." });
+        }
+
+        await _deletePlayerUseCase.ExecuteAsync(uid);
+
+        return Ok(new { message = "Cuenta eliminada exitosamente." });
+    }
 }

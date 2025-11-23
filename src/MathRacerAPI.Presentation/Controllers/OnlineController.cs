@@ -14,13 +14,13 @@ namespace MathRacerAPI.Presentation.Controllers;
 public class OnlineController : ControllerBase
 {
     private readonly IGameRepository _gameRepository;
-    private readonly CreateCustomOnlineGameUseCase _createCustomGameUseCase;
+    private readonly ICreateCustomOnlineGameUseCase _createCustomGameUseCase;
     private readonly GetAvailableGamesUseCase _getAvailableGamesUseCase;
     private readonly JoinCreatedGameUseCase _joinCreatedGameUseCase;
 
     public OnlineController(
         IGameRepository gameRepository,
-        CreateCustomOnlineGameUseCase createCustomGameUseCase,
+        ICreateCustomOnlineGameUseCase createCustomGameUseCase,
         GetAvailableGamesUseCase getAvailableGamesUseCase,
         JoinCreatedGameUseCase joinCreatedGameUseCase)
     {
@@ -138,12 +138,9 @@ public class OnlineController : ControllerBase
             return BadRequest(new { error = "El nombre de la partida es requerido." });
         }
 
-        string connectionId = Guid.NewGuid().ToString();
-
         var game = await _createCustomGameUseCase.ExecuteAsync(
             firebaseUid,
             request.GameName,
-            connectionId,
             request.IsPrivate,
             request.Password,
             request.Difficulty,
@@ -180,7 +177,7 @@ public class OnlineController : ControllerBase
                 game.ExpectedResult,
                 game.PowerUpsEnabled,
                 game.CreatorPlayerId,
-                Message = "Partida creada exitosamente. Esperando jugadores..."
+                Message = "Partida creada exitosamente. Conéctate a SignalR y llama JoinGame para unirte."
             });
     }
 

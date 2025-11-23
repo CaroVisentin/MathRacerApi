@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36518.9 d17.14
+VisualStudioVersion = 17.14.36518.9
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{90D11B47-087D-4A3C-9B46-250DF4A6D4A8}"
 EndProject
@@ -15,13 +15,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E218341A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MathRacerAPI.Tests", "tests\MathRacerAPI.Tests\MathRacerAPI.Tests.csproj", "{301602AB-A1FA-477B-A313-D6F08540AA38}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Elementos de la solución", "Elementos de la solución", "{D107F4C8-89CC-BEA8-D3D7-CA6B7733353D}"
+	ProjectSection(SolutionItems) = preProject
+		firebase-credentials.json = firebase-credentials.json
+	EndProjectSection
+EndProject
 Global
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {EF14A81C-0E98-4A95-A0DD-CD33221967DD}
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
@@ -80,10 +79,16 @@ Global
 		{301602AB-A1FA-477B-A313-D6F08540AA38}.Release|x86.ActiveCfg = Release|Any CPU
 		{301602AB-A1FA-477B-A313-D6F08540AA38}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4303CC4B-9B44-447D-B745-C5B451D7E872} = {90D11B47-087D-4A3C-9B46-250DF4A6D4A8}
 		{48E27572-E15E-4349-9051-EE595A8C8AA4} = {90D11B47-087D-4A3C-9B46-250DF4A6D4A8}
 		{27E5A964-A793-4FA6-AABA-4DB540653096} = {90D11B47-087D-4A3C-9B46-250DF4A6D4A8}
 		{301602AB-A1FA-477B-A313-D6F08540AA38} = {E218341A-FB9C-4D49-B96C-890E1E4E5ACC}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EF14A81C-0E98-4A95-A0DD-CD33221967DD}
 	EndGlobalSection
 EndGlobal

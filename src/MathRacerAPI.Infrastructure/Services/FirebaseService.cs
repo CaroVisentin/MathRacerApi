@@ -15,28 +15,65 @@ namespace MathRacerAPI.Infrastructure.Services
         {
             if (!_initialized)
             {
-                var credPath = GetCredentialsPath();
-                
                 AppOptions options;
+                
+                // 1. Intentar desde variable de entorno JSON (para Render, Heroku, etc.)
+                var credJson = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIALS_JSON");
+                if (!string.IsNullOrWhiteSpace(credJson))
+                {
+                    Console.WriteLine("✅ Firebase credentials cargadas desde variable de entorno FIREBASE_CREDENTIALS_JSON");
+                    try
+                    {
+                        options = new AppOptions
+                        {
+                            Credential = GoogleCredential.FromJson(credJson)
+                        };
+                        FirebaseApp.Create(options);
+                        _initialized = true;
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"❌ Error al parsear FIREBASE_CREDENTIALS_JSON: {ex.Message}");
+                        throw new InvalidOperationException("La variable FIREBASE_CREDENTIALS_JSON contiene JSON inválido", ex);
+                    }
+                }
+                
+                // 2. Intentar desde archivo (desarrollo local)
+                var credPath = GetCredentialsPath();
                 if (!string.IsNullOrWhiteSpace(credPath) && System.IO.File.Exists(credPath))
                 {
-                    Console.WriteLine($"Firebase credentials encontradas en: {credPath}");
+                    Console.WriteLine($"✅ Firebase credentials encontradas en archivo: {credPath}");
                     options = new AppOptions
                     {
                         Credential = GoogleCredential.FromFile(credPath)
                     };
+                    FirebaseApp.Create(options);
+                    _initialized = true;
+                    return;
                 }
-                else
+                
+                // 3. Fallback a credenciales por defecto (Google Cloud)
+                Console.WriteLine("⚠️ No se encontró FIREBASE_CREDENTIALS_JSON ni archivo. Intentando credenciales por defecto...");
+                try
                 {
-                    Console.WriteLine("No se encontró firebase-credentials.json, usando credenciales por defecto");
                     options = new AppOptions
                     {
                         Credential = GoogleCredential.GetApplicationDefault()
                     };
+                    FirebaseApp.Create(options);
+                    _initialized = true;
+                    Console.WriteLine("✅ Firebase inicializado con credenciales por defecto");
                 }
-                
-                FirebaseApp.Create(options);
-                _initialized = true;
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error al inicializar Firebase: {ex.Message}");
+                    throw new InvalidOperationException(
+                        "No se pudo inicializar Firebase. Configura la variable de entorno FIREBASE_CREDENTIALS_JSON " +
+                        "con el contenido JSON de tus credenciales, o coloca el archivo firebase-credentials.json en la raíz del proyecto.",
+                        ex
+                    );
+                }
             }
         }
 

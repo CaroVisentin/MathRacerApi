@@ -18,6 +18,7 @@ public class GameHub : Hub
     private readonly ProcessOnlineAnswerUseCase _processAnswerUseCase;
     private readonly GetNextOnlineQuestionUseCase _getNextQuestionUseCase;
     private readonly IGameRepository _gameRepository;
+    private readonly IGameInvitationRepository _invitationRepository;
     private readonly IPowerUpService _powerUpService;
     private readonly ILogger<GameHub> _logger;
 
@@ -28,6 +29,7 @@ public class GameHub : Hub
         ProcessOnlineAnswerUseCase processAnswerUseCase,
         GetNextOnlineQuestionUseCase getNextQuestionUseCase,
         IGameRepository gameRepository,
+        IGameInvitationRepository invitationRepository,
         IPowerUpService powerUpService,
         ILogger<GameHub> logger)
     {
@@ -37,6 +39,7 @@ public class GameHub : Hub
         _processAnswerUseCase = processAnswerUseCase;
         _getNextQuestionUseCase = getNextQuestionUseCase;
         _gameRepository = gameRepository;
+        _invitationRepository = invitationRepository;
         _powerUpService = powerUpService;
         _logger = logger;
     }
@@ -95,10 +98,14 @@ public class GameHub : Hub
             var game = await _findMatchWithMatchmakingUseCase.ExecuteAsync(Context.ConnectionId, playerUid);
             
             _logger.LogInformation($"FindMatchWithMatchmakingUseCase completado. Partida {game.Id} con {game.Players.Count} jugadores");
-            
+            _logger.LogInformation($"🔍 Verificando ConnectionIds después del UseCase:");
+            foreach (var p in game.Players)
+            {
+                _logger.LogInformation($"   - {p.Name}: ConnectionId = {p.ConnectionId}, Context = {Context.ConnectionId}, Match = {p.ConnectionId == Context.ConnectionId}");
+            }
             // Encontrar el jugador recién creado
             var player = game.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
-            if (player == null)
+            if (player  == null)
             {
                 _logger.LogError($"No se pudo encontrar el jugador con UID {playerUid} en la partida {game.Id}");
                 await Clients.Caller.SendAsync("Error", "Error al crear jugador");
@@ -125,7 +132,8 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Une al jugador autenticado a una partida ya creada
+    /// Une al jugador autenticado a una partida ya creada.
+    /// Si la partida es por invitación y ambos jugadores están conectados, limpia la invitación.
     /// </summary>
     /// <param name="gameId">ID de la partida</param>
     /// <param name="password">Contraseña (opcional, solo para partidas privadas)</param>
@@ -133,8 +141,10 @@ public class GameHub : Hub
     {
         try
         {
-            // Obtener el UID de Firebase del contexto (inyectado por middleware)
-            var firebaseUid = Context.Items["FirebaseUid"] as string;
+             // Obtener el UID de Firebase del contexto (inyectado por middleware)
+            var http = Context.GetHttpContext();
+            var firebaseUid = http?.Items["FirebaseUid"] as string;
+
             if (string.IsNullOrEmpty(firebaseUid))
             {
                 await Clients.Caller.SendAsync("Error", "Autenticación requerida para unirse a la partida");
@@ -150,6 +160,12 @@ public class GameHub : Hub
 
             // Agregar al grupo de SignalR
             await Groups.AddToGroupAsync(Context.ConnectionId, $"Game_{game.Id}");
+
+            // LIMPIEZA DE INVITACIONES: Si la partida es por invitación y ya están ambos jugadores
+            if (game.IsFromInvitation && game.Players.Count == 2 && game.Status == GameStatus.InProgress)
+            {
+                await CleanupGameInvitation(gameId);
+            }
 
             // Notificar a todos los jugadores de la partida
             await NotifyAllPlayersInGame(game.Id);
@@ -170,6 +186,14 @@ public class GameHub : Hub
     {
         try
         {
+            // Actualizar ConnectionId del jugador actual antes de procesar respuesta
+            var gameBeforeAnswer = await _gameRepository.GetByIdAsync(gameId);
+            var playerInGame = gameBeforeAnswer.Players.FirstOrDefault(p => p.Id == playerId);
+            if (playerInGame != null && playerInGame.ConnectionId != Context.ConnectionId)
+            {
+                playerInGame.ConnectionId = Context.ConnectionId;
+                await _gameRepository.UpdateAsync(gameBeforeAnswer);
+            }
             var game = await _processAnswerUseCase.ExecuteAsync(gameId, playerId, answer);
             
             if (game == null)
@@ -266,7 +290,44 @@ public class GameHub : Hub
     public override async Task OnConnectedAsync()
     {
         _logger.LogInformation($"Jugador conectado: {Context.ConnectionId}");
+        var http = Context.GetHttpContext();
+        var uid = http?.Items["FirebaseUid"] as string;
         await base.OnConnectedAsync();
+    }
+
+    /// <summary>
+    /// Limpia la invitación de una partida eliminándola de la base de datos
+    /// </summary>
+    private async Task CleanupGameInvitation(int gameId)
+    {
+        try
+        {
+            _logger.LogInformation($"🧹 Iniciando limpieza de invitación para partida {gameId}");
+
+            var invitation = await _invitationRepository.GetByGameIdAsync(gameId);
+            
+            if (invitation == null)
+            {
+                _logger.LogWarning($"⚠️ No se encontró invitación para la partida {gameId}");
+                return;
+            }
+
+            // Solo eliminar si ambos jugadores están conectados (partida en progreso)
+            if (invitation.Status == InvitationStatus.Accepted || invitation.Status == InvitationStatus.Pending)
+            {
+                await _invitationRepository.DeleteAsync(invitation.Id);
+                _logger.LogInformation($"✅ Invitación {invitation.Id} eliminada exitosamente para partida {gameId}");
+            }
+            else
+            {
+                _logger.LogInformation($"ℹ️ Invitación {invitation.Id} con estado {invitation.Status}, no se eliminó");
+            }
+        }
+        catch (Exception ex)
+        {
+            // No lanzar excepción, solo registrar el error para no interrumpir el flujo del juego
+            _logger.LogError(ex, $"❌ Error al limpiar invitación de partida {gameId}. El juego continuará normalmente.");
+        }
     }
 
     private async Task NotifyAllPlayersInGame(int gameId)
@@ -274,6 +335,12 @@ public class GameHub : Hub
         try
         {
             var game = await _gameRepository.GetByIdAsync(gameId);
+            
+            _logger.LogInformation($"🔍 ConnectionIds al notificar:");
+            foreach (var p in game.Players)
+            {
+                _logger.LogInformation($"   - {p.Name}: ConnectionId = {p.ConnectionId}");
+            }
             if (game == null) 
             {
                 _logger.LogWarning($"Partida {gameId} no encontrada al notificar jugadores");
@@ -282,7 +349,30 @@ public class GameHub : Hub
 
             _logger.LogInformation($"Notificando a {game.Players.Count} jugadores de la partida {gameId}");
 
-            foreach (var player in game.Players.Where(p => !string.IsNullOrEmpty(p.ConnectionId)))
+            // FILTRAR jugadores con ConnectionId válido
+            var validPlayers = game.Players
+                .Where(p => !string.IsNullOrWhiteSpace(p.ConnectionId))
+                .ToList();
+
+            // LOG de jugadores sin conexión
+            var invalidPlayers = game.Players
+                .Where(p => string.IsNullOrWhiteSpace(p.ConnectionId))
+                .ToList();
+
+            foreach (var player in invalidPlayers)
+            {
+                _logger.LogWarning(
+                    $"⚠️ Jugador {player.Name} (ID: {player.Id}, Uid: {player.Uid}) " +
+                    $"sin ConnectionId válido en partida {gameId}");
+            }
+
+            if (validPlayers.Count == 0)
+            {
+                _logger.LogWarning($"⚠️ No hay jugadores con ConnectionId válido en partida {gameId}");
+                return;
+            }
+
+            foreach (var player in validPlayers)
             {
                 try
                 {
@@ -301,20 +391,25 @@ public class GameHub : Hub
                     var gameSession = GameSession.FromGame(game, currentQuestion);
                     var gameUpdateDto = GameUpdateDto.FromGameSession(gameSession);
 
-                    _logger.LogInformation($"Enviando GameUpdate a jugador {player.Name} ({player.ConnectionId}) - Status: {game.Status}");
+                    _logger.LogInformation(
+                        $"Enviando GameUpdate a jugador {player.Name} " +
+                        $"(ConnectionId: {player.ConnectionId}) - Status: {game.Status}");
+                    
                     await Clients.Client(player.ConnectionId).SendAsync("GameUpdate", gameUpdateDto);
                     
-                    _logger.LogInformation($"GameUpdate enviado exitosamente a {player.Name}");
+                    _logger.LogInformation($"✅ GameUpdate enviado exitosamente a {player.Name}");
                 }
                 catch (Exception playerEx)
                 {
-                    _logger.LogError(playerEx, $"Error al notificar al jugador {player.Name} ({player.ConnectionId})");
+                    _logger.LogError(playerEx, 
+                        $"❌ Error al notificar al jugador {player.Name} " +
+                        $"(ConnectionId: {player.ConnectionId})");
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error al notificar jugadores de la partida {gameId}");
+            _logger.LogError(ex, $"❌ Error general al notificar jugadores de la partida {gameId}");
         }
     }
 }

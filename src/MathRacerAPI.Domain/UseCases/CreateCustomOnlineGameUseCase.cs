@@ -1,14 +1,18 @@
+using MathRacerAPI.Domain.Exceptions;
 using MathRacerAPI.Domain.Models;
 using MathRacerAPI.Domain.Repositories;
 using MathRacerAPI.Domain.Services;
-using MathRacerAPI.Domain.Exceptions;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MathRacerAPI.Domain.UseCases;
 
 /// <summary>
 /// Caso de uso para crear una partida multijugador personalizada
 /// </summary>
-public class CreateCustomOnlineGameUseCase
+public class CreateCustomOnlineGameUseCase : ICreateCustomOnlineGameUseCase
 {
     private readonly IGameRepository _gameRepository;
     private readonly IWorldRepository _worldRepository;
@@ -34,155 +38,85 @@ public class CreateCustomOnlineGameUseCase
         _playerRepository = playerRepository;
     }
 
+    /// <summary>
+    /// Crea una partida personalizada SIN agregar jugadores aún.
+    /// El creador se unirá posteriormente mediante JoinCreatedGameUseCase con su ConnectionId real.
+    /// </summary>
     public async Task<Game> ExecuteAsync(
         string firebaseUid,
         string gameName,
-        string connectionId,
         bool isPrivate,
         string? password,
         string difficulty,
         string expectedResult)
     {
-        // Validar que si es privada tenga contraseña
-        if (isPrivate && string.IsNullOrWhiteSpace(password))
-        {
-            throw new BusinessException("Las partidas privadas requieren una contraseña.");
-        }
-
-        // Validar nombre de partida
+        // Validaciones
         if (string.IsNullOrWhiteSpace(gameName))
-        {
-            throw new BusinessException("El nombre de la partida es requerido.");
-        }
+            throw new ValidationException("El nombre de la partida es requerido");
 
-        // Obtener el perfil del jugador desde la base de datos usando el UID de Firebase
-        var playerProfile = await _playerRepository.GetByUidAsync(firebaseUid);
-        if (playerProfile == null)
-        {
-            throw new NotFoundException("Player", firebaseUid);
-        }
+        if (isPrivate && string.IsNullOrWhiteSpace(password))
+            throw new ValidationException("La contraseña es requerida para partidas privadas");
 
-        // Verificar que el jugador no tenga otra partida activa
-        var allGames = await _gameRepository.GetAllAsync();
-        var activeGame = allGames.FirstOrDefault(g =>
-            g.Players.Any(p => p.Id == playerProfile.Id) &&
-            (g.Status == GameStatus.WaitingForPlayers || g.Status == GameStatus.InProgress));
+        // Obtener perfil del creador
+        var creatorProfile = await _playerRepository.GetByUidAsync(firebaseUid);
+        if (creatorProfile == null)
+            throw new NotFoundException("Perfil de jugador no encontrado");
 
-        if (activeGame != null)
-        {
-            throw new BusinessException(
-                $"Ya tienes una partida activa (ID: {activeGame.Id}). " +
-                $"Debes finalizarla o abandonarla antes de crear una nueva."
-            );
-        }
+        // Determinar parámetros según dificultad
+        var (termCount, variableCount, operations, numMin, numMax, optMin, optMax, timePerEq, optCount) =
+            GetDifficultyParameters(difficulty);
 
-        // Normalizar dificultad y resultado esperado
-        difficulty = difficulty.ToUpperInvariant();
-        expectedResult = expectedResult.ToUpperInvariant();
-
-        // Validar dificultad
-        if (difficulty != "FACIL" && difficulty != "MEDIO" && difficulty != "DIFICIL")
-        {
-            throw new BusinessException("La dificultad debe ser FACIL, MEDIO o DIFICIL.");
-        }
-
-        // Validar resultado esperado
-        if (expectedResult != "MAYOR" && expectedResult != "MENOR")
-        {
-            throw new BusinessException("El resultado esperado debe ser MAYOR o MENOR.");
-        }
-
-        // Obtener todos los mundos
-        var allWorlds = await _worldRepository.GetAllWorldsAsync();
-
-        // Filtrar mundos por dificultad (comparación case-insensitive)
-        var worldsWithDifficulty = allWorlds
-            .Where(w => w.Difficulty.Equals(difficulty, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        if (!worldsWithDifficulty.Any())
-        {
-            throw new BusinessException($"No se encontraron mundos con dificultad {difficulty}.");
-        }
-
-        // Seleccionar un mundo aleatorio de los que coinciden con la dificultad
-        var random = new Random();
-        var selectedWorld = worldsWithDifficulty[random.Next(worldsWithDifficulty.Count)];
-
-        // Obtener todos los niveles del mundo seleccionado
-        var levelsInWorld = await _levelRepository.GetAllByWorldIdAsync(selectedWorld.Id);
-
-        if (!levelsInWorld.Any())
-        {
-            throw new BusinessException($"El mundo {selectedWorld.Name} no tiene niveles configurados.");
-        }
-
-        // Seleccionar nivel según dificultad
-        // FACIL = nivel 1, MEDIO = nivel 6, DIFICIL = nivel 11
-        int levelNumber = difficulty switch
-        {
-            "FACIL" => 1,
-            "MEDIO" => 6,
-            "DIFICIL" => 11,
-            _ => 1
-        };
-
-        var selectedLevel = levelsInWorld.FirstOrDefault(l => l.Number == levelNumber);
-
-        if (selectedLevel == null)
-        {
-            throw new BusinessException($"No se encontró el nivel {levelNumber} en el mundo {selectedWorld.Name}.");
-        }
-
-        // Crear jugador para la partida usando el perfil existente
-        var player = new Player
-        {
-            Id = playerProfile.Id,
-            Name = playerProfile.Name,
-            ConnectionId = connectionId,
-            LastLevelId = playerProfile.LastLevelId ?? 0
-        };
-
-        // Otorgar power-ups iniciales
-        player.AvailablePowerUps = _powerUpService.GrantInitialPowerUps(player.Id);
-
-        // Crear nueva partida
+        // Crear partida SIN jugadores
         var game = new Game
         {
             Id = Interlocked.Increment(ref _nextGameId),
             Name = gameName,
             IsPrivate = isPrivate,
-            Password = password,
+            Password = isPrivate ? password : null,
+            Difficulty = difficulty, 
             Status = GameStatus.WaitingForPlayers,
             CreatedAt = DateTime.UtcNow,
             PowerUpsEnabled = true,
             MaxPowerUpsPerPlayer = 3,
+            MaxQuestions = 15,
+            ConditionToWin = 10,
             ExpectedResult = expectedResult,
-            CreatorPlayerId = playerProfile.Id
-        };
-
-        game.Players.Add(player);
-
-        // Construir EquationParams usando datos del mundo y nivel seleccionados
-        var equationParams = new EquationParams
-        {
-            TermCount = selectedLevel.TermsCount,
-            VariableCount = selectedLevel.VariablesCount,
-            Operations = selectedWorld.Operations,
-            ExpectedResult = expectedResult,
-            OptionsCount = selectedWorld.OptionsCount,
-            OptionRangeMin = selectedWorld.OptionRangeMin,
-            OptionRangeMax = selectedWorld.OptionRangeMax,
-            NumberRangeMin = selectedWorld.NumberRangeMin,
-            NumberRangeMax = selectedWorld.NumberRangeMax,
-            TimePerEquation = selectedWorld.TimePerEquation
+            CreatorPlayerId = null,
+            Players = new List<Player>()
         };
 
         // Generar preguntas
-        var allQuestions = await _getQuestionsUseCase.GetQuestions(equationParams, game.MaxQuestions);
-        game.Questions = allQuestions;
+        var equationParams = new EquationParams
+        {
+            TermCount = termCount,
+            VariableCount = variableCount,
+            Operations = operations,
+            ExpectedResult = expectedResult,
+            OptionsCount = optCount,
+            OptionRangeMin = optMin,
+            OptionRangeMax = optMax,
+            NumberRangeMin = numMin,
+            NumberRangeMax = numMax,
+            TimePerEquation = timePerEq
+        };
+
+        var questions = await _getQuestionsUseCase.GetQuestions(equationParams, game.MaxQuestions);
+        game.Questions = questions;
 
         await _gameRepository.AddAsync(game);
         return game;
+    }
+
+    private static (int termCount, int variableCount, List<string> operations,
+                    int numMin, int numMax, int optMin, int optMax, int timePerEq, int optCount)
+        GetDifficultyParameters(string difficulty)
+    {
+        return difficulty.ToLower() switch
+        {
+            "facil" => (2, 1, new List<string> { "+", "-" }, -10, 10, -10, 10, 10, 2),
+            "medio" => (2, 1, new List<string> { "+", "-", "*" }, -20, 20, -20, 20, 12, 3),
+            "dificil" => (3, 2, new List<string> { "+", "-", "*", "/" }, -50, 50, -50, 50, 15, 4),
+            _ => (2, 1, new List<string> { "+", "-" }, -10, 10, -10, 10, 15, 2)
+        };
     }
 }
