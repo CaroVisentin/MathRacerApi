@@ -31,6 +31,7 @@ namespace MathRacerAPI.Presentation.Controllers
             Description = "Crea una preferencia de pago en MercadoPago para un paquete de monedas específico."
         )]
         [SwaggerResponse(200, "Preferencia de pago creada exitosamente")]
+        [SwaggerResponse(400, "Payload inválido o datos incompletos")]
         [SwaggerResponse(404, "No se encontró el paquete de monedas")]
         [SwaggerResponse(500, "Error interno del servidor")]
     

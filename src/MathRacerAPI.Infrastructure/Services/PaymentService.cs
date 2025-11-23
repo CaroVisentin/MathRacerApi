@@ -26,8 +26,11 @@ namespace MathRacerAPI.Infrastructure.Services
         {
 
             var backendUrl = _configuration.GetValue<string>("Payment:BackUrl");
-                
-            //todo: manejar null 
+
+            if (string.IsNullOrWhiteSpace(backendUrl))
+            {
+                throw new InvalidOperationException("Payment:BackUrl no está configurado.");
+            }
 
             var preferenceRequest = new PreferenceRequest
             {
@@ -60,7 +63,7 @@ namespace MathRacerAPI.Infrastructure.Services
             }
             catch
             {
-                _logger.LogError("[PAYMENTS] Error creating preference");
+                _logger.LogError("[PAYMENT] Error creating preference");
                 return null;
             }
         }

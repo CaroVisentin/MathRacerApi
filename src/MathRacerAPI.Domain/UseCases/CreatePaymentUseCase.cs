@@ -22,12 +22,12 @@ namespace MathRacerAPI.Domain.UseCases
         public async Task<string> ExecuteAsync(CoinPackage coinPackage, int playerId, string successUrl, string pendingUrl, string failureUrl)
         {
 
-            var preferenceId = _paymentService.CreatePreferenceAsync(
+            var preferenceId = await _paymentService.CreatePreferenceAsync(
                 successUrl,
                 pendingUrl,
                 failureUrl,
                 coinPackage,
-                playerId).Result;
+                playerId);
 
             if (preferenceId == null)
             {
