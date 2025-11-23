@@ -159,10 +159,11 @@ public static class ServiceExtensions
         services.AddScoped<IGameLogicService, GameLogicService>();
         services.AddScoped<IPowerUpService, PowerUpService>();
 
-  
-
         // Configurar SignalR
         services.AddSignalR();
+
+        // Registrar servicio de limpieza de juegos en segundo plano
+        services.AddHostedService<GameCleanupService>();
 
         return services;
     }

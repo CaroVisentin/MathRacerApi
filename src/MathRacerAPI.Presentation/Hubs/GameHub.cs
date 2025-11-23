@@ -283,7 +283,88 @@ public class GameHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        _logger.LogInformation($"Jugador desconectado: {Context.ConnectionId}");
+        try
+        {
+            _logger.LogInformation($"Jugador desconectado: {Context.ConnectionId}");
+
+            // Buscar TODAS las partidas del jugador desconectado
+            var games = await _gameRepository.GetAllAsync();
+            var playerGames = games.Where(g => 
+                g.Players.Any(p => p.ConnectionId == Context.ConnectionId))
+                .ToList();
+
+            foreach (var game in playerGames)
+            {
+                var disconnectedPlayer = game.Players.First(p => p.ConnectionId == Context.ConnectionId);
+
+                // CASO 1: Partida en progreso - Marcar rival como ganador
+                if (game.Status == GameStatus.InProgress)
+                {
+                    var rivalPlayer = game.Players.FirstOrDefault(p => p.Id != disconnectedPlayer.Id);
+
+                    if (rivalPlayer != null)
+                    {
+                        _logger.LogInformation(
+                            $"Jugador {disconnectedPlayer.Name} se desconectó. " +
+                            $"Marcando a {rivalPlayer.Name} como ganador en partida {game.Id}");
+
+                        game.Status = GameStatus.Finished;
+                        game.WinnerId = rivalPlayer.Id;
+                        
+                        if (rivalPlayer.FinishedAt == null)
+                        {
+                            rivalPlayer.FinishedAt = DateTime.UtcNow;
+                        }
+
+                        rivalPlayer.Position = 1;
+                        disconnectedPlayer.Position = 2;
+
+                        await _gameRepository.UpdateAsync(game);
+                        await NotifyAllPlayersInGame(game.Id);
+
+                        _logger.LogInformation(
+                            $"✅ Partida {game.Id} finalizada. Ganador: {rivalPlayer.Name} (por desconexión)");
+                    }
+                }
+                // CASO 2: Partida esperando jugadores - Eliminar o limpiar
+                else if (game.Status == GameStatus.WaitingForPlayers)
+                {
+                    // Si es el único jugador (creador), ELIMINAR la partida
+                    if (game.Players.Count == 1)
+                    {
+                        _logger.LogInformation(
+                            $"🗑️ Eliminando partida {game.Id} ('{game.Name}') - " +
+                            $"Creador {disconnectedPlayer.Name} se desconectó sin rival");
+
+                        // Limpiar invitación si existe
+                        if (game.IsFromInvitation)
+                        {
+                            await CleanupGameInvitation(game.Id);
+                        }
+
+                        await _gameRepository.DeleteAsync(game.Id);
+                    }
+                    // Si hay otro jugador esperando, remover solo al desconectado
+                    else
+                    {
+                        _logger.LogInformation(
+                            $"Removiendo jugador {disconnectedPlayer.Name} de partida {game.Id} " +
+                            $"(quedan {game.Players.Count - 1} jugadores)");
+
+                        game.Players.Remove(disconnectedPlayer);
+                        await _gameRepository.UpdateAsync(game);
+
+                        // Notificar al jugador restante
+                        await NotifyAllPlayersInGame(game.Id);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error al manejar desconexión del jugador {Context.ConnectionId}");
+        }
+
         await base.OnDisconnectedAsync(exception);
     }
 
@@ -312,21 +393,16 @@ public class GameHub : Hub
                 return;
             }
 
-            // Solo eliminar si ambos jugadores están conectados (partida en progreso)
-            if (invitation.Status == InvitationStatus.Accepted || invitation.Status == InvitationStatus.Pending)
-            {
-                await _invitationRepository.DeleteAsync(invitation.Id);
-                _logger.LogInformation($"✅ Invitación {invitation.Id} eliminada exitosamente para partida {gameId}");
-            }
-            else
-            {
-                _logger.LogInformation($"ℹ️ Invitación {invitation.Id} con estado {invitation.Status}, no se eliminó");
-            }
+            // ELIMINAR en cualquiera de estos casos:
+            // 1. Ambos jugadores conectados (partida en progreso)
+            // 2. El creador abandonó (partida eliminada)
+            // 3. Invitación pendiente o aceptada (limpieza por desconexión)
+            await _invitationRepository.DeleteAsync(invitation.Id);
+            _logger.LogInformation($"✅ Invitación {invitation.Id} eliminada para partida {gameId}");
         }
         catch (Exception ex)
         {
-            // No lanzar excepción, solo registrar el error para no interrumpir el flujo del juego
-            _logger.LogError(ex, $"❌ Error al limpiar invitación de partida {gameId}. El juego continuará normalmente.");
+            _logger.LogError(ex, $"❌ Error al limpiar invitación de partida {gameId}");
         }
     }
 
