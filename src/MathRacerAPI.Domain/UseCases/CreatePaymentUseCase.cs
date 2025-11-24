@@ -19,22 +19,22 @@ namespace MathRacerAPI.Domain.UseCases
         }
 
 
-        public async Task<string> ExecuteAsync(CoinPackage coinPackage, int playerId, string successUrl, string pendingUrl, string failureUrl)
+        public async Task<PaymentResponse> ExecuteAsync(CoinPackage coinPackage, int playerId, string successUrl, string pendingUrl, string failureUrl)
         {
 
-            var preferenceId = await _paymentService.CreatePreferenceAsync(
+            var preferenceResponse = await _paymentService.CreatePreferenceAsync(
                 successUrl,
                 pendingUrl,
                 failureUrl,
                 coinPackage,
                 playerId);
 
-            if (preferenceId == null)
+            if (preferenceResponse == null)
             {
                 throw new Exception("Failed to create payment preference.");
             }
 
-            return preferenceId;
+            return preferenceResponse;
         }
     }
     }

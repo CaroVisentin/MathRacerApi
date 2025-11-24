@@ -22,7 +22,7 @@ namespace MathRacerAPI.Infrastructure.Services
             _configuration = configuration;
         }
 
-        async Task<string?> IPaymentService.CreatePreferenceAsync(string successUrl, string pendingUrl, string failureUrl, CoinPackage coinPackage, int playerId)
+        async Task<PaymentResponse> IPaymentService.CreatePreferenceAsync(string successUrl, string pendingUrl, string failureUrl, CoinPackage coinPackage, int playerId)
         {
 
             var backendUrl = _configuration.GetValue<string>("Payment:BackUrl");
@@ -58,7 +58,8 @@ namespace MathRacerAPI.Infrastructure.Services
             try
             {
                 var preference = await client.CreateAsync(preferenceRequest);
-                return preference.Id;
+                var response = new PaymentResponse {PreferenceId = preference.Id, InitPoint = preference.InitPoint };
+                return response;
 
             }
             catch

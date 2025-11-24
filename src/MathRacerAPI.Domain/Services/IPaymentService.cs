@@ -10,6 +10,6 @@ namespace MathRacerAPI.Domain.Services
     public interface IPaymentService
     {
 
-        Task<string?> CreatePreferenceAsync(string successUrl, string pendingUrl, string failureUrl, CoinPackage coinPackage, int playerId);
+        Task<PaymentResponse> CreatePreferenceAsync(string successUrl, string pendingUrl, string failureUrl, CoinPackage coinPackage, int playerId);
     }
 }

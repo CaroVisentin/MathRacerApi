@@ -65,15 +65,21 @@ namespace MathRacerAPI.Presentation.Controllers
                     return NotFound(new { message = "Coin package not found." });
                 }
 
-                var preferenceId = await _createPaymentUseCase.ExecuteAsync(
-                    coinPackage,
-                     req.PlayerId,
-                    req.SuccessUrl,
-                    req.PendingUrl,
-                    req.FailureUrl
-                   
-                  );
-                return Ok(new { PreferenceId = preferenceId });
+                var paymentResponse = await _createPaymentUseCase.ExecuteAsync(
+                       coinPackage,
+                       req.PlayerId,
+                       req.SuccessUrl,
+                       req.PendingUrl,
+                       req.FailureUrl
+                   );
+
+                var dto = new PaymentResponseDto
+                {
+                    PreferenceId = paymentResponse.PreferenceId,
+                    InitPoint = paymentResponse.InitPoint
+                };
+
+                return Ok(dto);
 
             }
             catch (Exception ex)
