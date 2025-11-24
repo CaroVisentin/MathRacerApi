@@ -63,6 +63,7 @@ public static class ServiceExtensions
         services.AddScoped<StartSoloGameUseCase>();
         services.AddScoped<GetSoloGameStatusUseCase>();
         services.AddScoped<SubmitSoloAnswerUseCase>();
+        services.AddScoped<AbandonSoloGameUseCase>();
 
         // Registrar casos de uso de modo online 
         services.AddScoped<FindMatchUseCase>();

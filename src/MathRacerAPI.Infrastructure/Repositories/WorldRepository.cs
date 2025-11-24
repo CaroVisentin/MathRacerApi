@@ -51,11 +51,32 @@ namespace MathRacerAPI.Infrastructure.Repositories
             // Buscar el nivel y obtener su WorldId
             var level = await _context.Levels
                 .Where(l => l.Id == levelId)
-                .Select(l => l.WorldId)
+                .Select(l => new { l.WorldId, l.Number })
                 .FirstOrDefaultAsync();
 
             // Si no existe el nivel, retornar mundo 1 por defecto
-            return level > 0 ? level : 1;
+            if (level == null)
+            {
+                return 1;
+            }
+
+            // Verificar si este nivel es el último del mundo
+            var maxLevelNumberInWorld = await _context.Levels
+                .Where(l => l.WorldId == level.WorldId)
+                .MaxAsync(l => l.Number);
+
+            // Si completó el último nivel del mundo, dar acceso al siguiente mundo
+            if (level.Number == maxLevelNumberInWorld)
+            {
+                // Verificar si existe un mundo siguiente
+                var nextWorldExists = await _context.Worlds
+                    .AnyAsync(w => w.Id == level.WorldId + 1);
+
+                return nextWorldExists ? level.WorldId + 1 : level.WorldId;
+            }
+
+            // Si no es el último nivel, permanece en el mismo mundo
+            return level.WorldId;
         }
 
         /// <summary>
