@@ -17,4 +17,9 @@ public class Player
     public DateTime? FinishedAt { get; set; }
     public List<PowerUp> AvailablePowerUps { get; set; } = new();
     public bool HasDoublePointsActive { get; set; } = false;
+    
+    // Productos equipados del jugador
+    public Product? EquippedCar { get; set; }
+    public Product? EquippedCharacter { get; set; }
+    public Product? EquippedBackground { get; set; }
 }

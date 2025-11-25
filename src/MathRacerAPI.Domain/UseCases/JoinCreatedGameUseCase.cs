@@ -47,6 +47,31 @@ public class JoinCreatedGameUseCase
         if (game == null)
             throw new NotFoundException("Game", gameId);
 
+        // Prevenir auto-unión
+        if (game.Players.Any(p => p.Uid == firebaseUid))
+        {
+            // Si el jugador ya está en la partida, solo actualizar ConnectionId
+            var existingPlayer = game.Players.First(p => p.Uid == firebaseUid);
+            
+            _logger.LogInformation(
+                $"Jugador {existingPlayer.Name} (Uid: {firebaseUid}) ya existe en partida {gameId}. " +
+                $"Actualizando ConnectionId: {existingPlayer.ConnectionId} -> {connectionId}");
+
+            existingPlayer.ConnectionId = connectionId;
+            await _gameRepository.UpdateAsync(game);
+            return game;
+        }
+
+        // Evitar que un jugador se una a su propia partida vacía
+        if (game.CreatorPlayerId != null && game.Players.Count == 1)
+        {
+            var creator = game.Players.First();
+            if (creator.Uid == firebaseUid)
+            {
+                throw new ValidationException("No puedes unirte a tu propia partida");
+            }
+        }
+
         // Validar estado de la partida
         if (game.Status != GameStatus.WaitingForPlayers)
             throw new ValidationException($"La partida no está disponible (estado: {game.Status})");
@@ -64,38 +89,41 @@ public class JoinCreatedGameUseCase
         if (playerProfile == null)
             throw new NotFoundException("Perfil de jugador no encontrado");
 
-        // 🔍 BUSCAR SI EL JUGADOR YA EXISTE EN LA PARTIDA (mismo FirebaseUid)
-        var existingPlayer = game.Players.FirstOrDefault(p => p.Uid == firebaseUid);
+        // BUSCAR SI EL JUGADOR YA EXISTE EN LA PARTIDA (mismo FirebaseUid)
+        var existingPlayerInGame = game.Players.FirstOrDefault(p => p.Uid == firebaseUid);
 
-        if (existingPlayer != null)
+        if (existingPlayerInGame != null)
         {
-            // ✅ ACTUALIZAR ConnectionId del jugador existente
+            // ACTUALIZAR ConnectionId del jugador existente
             _logger.LogInformation(
-                $"Jugador {existingPlayer.Name} (Uid: {firebaseUid}) ya existe en partida {gameId}. " +
-                $"Actualizando ConnectionId: {existingPlayer.ConnectionId} -> {connectionId}");
+                $"Jugador {existingPlayerInGame.Name} (Uid: {firebaseUid}) ya existe en partida {gameId}. " +
+                $"Actualizando ConnectionId: {existingPlayerInGame.ConnectionId} -> {connectionId}");
 
-            existingPlayer.ConnectionId = connectionId;
+            existingPlayerInGame.ConnectionId = connectionId;
 
             // Si es el creador y no se había asignado, asignarlo ahora
             if (game.CreatorPlayerId == null)
             {
-                game.CreatorPlayerId = existingPlayer.Id;
-                _logger.LogInformation($"Asignado creador de partida {gameId}: PlayerId {existingPlayer.Id}");
+                game.CreatorPlayerId = existingPlayerInGame.Id;
+                _logger.LogInformation($"Asignado creador de partida {gameId}: PlayerId {existingPlayerInGame.Id}");
             }
         }
         else
         {
-            // ✅ CREAR NUEVO JUGADOR usando el ID del PlayerProfile de BD
+            // CREAR NUEVO JUGADOR usando el ID del PlayerProfile de BD
             var newPlayer = new Player
             {
-                Id = playerProfile.Id, // ✅ Usar ID de la base de datos
+                Id = playerProfile.Id, 
                 Name = playerProfile.Name,
                 Uid = firebaseUid,
                 ConnectionId = connectionId,
                 CorrectAnswers = 0,
                 IndexAnswered = 0,
                 Position = 0,
-                IsReady = false
+                IsReady = false,
+                EquippedCar = playerProfile.Car,
+                EquippedCharacter = playerProfile.Character,
+                EquippedBackground = playerProfile.Background
             };
 
             // Otorgar power-ups iniciales
@@ -115,14 +143,14 @@ public class JoinCreatedGameUseCase
                 $"agregado a partida {gameId}");
         }
 
-        // 🎮 INICIAR JUEGO si hay 2 jugadores
+        // INICIAR JUEGO si hay 2 jugadores
         if (game.Players.Count == 2 && game.Status == GameStatus.WaitingForPlayers)
         {
             game.Status = GameStatus.InProgress;
             _logger.LogInformation($"Partida {gameId} iniciada con 2 jugadores: {string.Join(", ", game.Players.Select(p => p.Name))}");
         }
 
-        // ⚠️ VERIFICAR DUPLICADOS (logging preventivo)
+        // VERIFICAR DUPLICADOS (logging preventivo)
         var duplicateUids = game.Players
             .GroupBy(p => p.Uid)
             .Where(g => g.Count() > 1)

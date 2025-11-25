@@ -127,12 +127,22 @@ namespace MathRacerAPI.Infrastructure.Repositories
                     .SetProperty(p => p.Coins, p => p.Coins + coins));
         }
 
+    
+
         public async Task UpdateLastLevelAsync(int playerId, int levelId)
         {
             await _context.Players
                 .Where(p => p.Id == playerId && p.LastLevelId < levelId)
                 .ExecuteUpdateAsync(setters => setters
                     .SetProperty(p => p.LastLevelId, levelId));
+        }
+
+        public async Task DeleteAsync(string uid)
+        {
+            await _context.Players
+                .Where(p => p.Uid == uid && !p.Deleted)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(p => p.Deleted, true));
         }
 
         private PlayerProfile MapToPlayerProfile(PlayerEntity entity)
@@ -229,5 +239,7 @@ namespace MathRacerAPI.Infrastructure.Repositories
                 LastCalculatedRecharge = now
             };
         }
+
+      
     }
 }

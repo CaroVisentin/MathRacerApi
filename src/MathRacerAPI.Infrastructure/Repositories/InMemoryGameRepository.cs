@@ -50,5 +50,10 @@ public class InMemoryGameRepository : IGameRepository
         _games.TryGetValue(gameId, out var game);
         return Task.FromResult(game);
     }
+    public Task DeleteAsync(int gameId)
+    {
+        _games.Remove(gameId, out _);
+        return Task.CompletedTask;
+    }
 
 }

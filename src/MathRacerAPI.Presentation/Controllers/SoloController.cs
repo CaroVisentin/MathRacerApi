@@ -14,17 +14,20 @@ public class SoloController : ControllerBase
     private readonly GetSoloGameStatusUseCase _getSoloGameStatusUseCase;
     private readonly SubmitSoloAnswerUseCase _submitSoloAnswerUseCase;
     private readonly UseWildcardUseCase _useWildcardUseCase;
+    private readonly AbandonSoloGameUseCase _abandonSoloGameUseCase;
 
     public SoloController(
         StartSoloGameUseCase startSoloGameUseCase,
         GetSoloGameStatusUseCase getSoloGameStatusUseCase,
         SubmitSoloAnswerUseCase submitSoloAnswerUseCase,
-        UseWildcardUseCase useWildcardUseCase)
+        UseWildcardUseCase useWildcardUseCase,
+        AbandonSoloGameUseCase abandonSoloGameUseCase)
     {
         _startSoloGameUseCase = startSoloGameUseCase;
         _getSoloGameStatusUseCase = getSoloGameStatusUseCase;
         _submitSoloAnswerUseCase = submitSoloAnswerUseCase;
         _useWildcardUseCase = useWildcardUseCase;
+        _abandonSoloGameUseCase = abandonSoloGameUseCase;
     }
 
     [SwaggerOperation(
@@ -126,5 +129,30 @@ public class SoloController : ControllerBase
         var result = await _useWildcardUseCase.ExecuteAsync(gameId, wildcardId, uid);
 
         return Ok(result.ToWildcardResponseDto());
+    }
+
+    [SwaggerOperation(
+        Summary = "Abandona una partida individual",
+        Description = "Permite al jugador abandonar una partida en progreso. La partida se marca como perdida, se consumen todas las vidas y se deduce 1 punto de energía del jugador. No se puede abandonar una partida que ya finalizó.",
+        OperationId = "AbandonSoloGame",
+        Tags = new[] { "Solo - Modo individual" })]
+    [SwaggerResponse(200, "Partida abandonada exitosamente")]
+    [SwaggerResponse(400, "Partida ya finalizada o estado inválido")]
+    [SwaggerResponse(401, "No autorizado - Token inválido o faltante")]
+    [SwaggerResponse(403, "El jugador no tiene permiso para abandonar esta partida")]
+    [SwaggerResponse(404, "Partida no encontrada")]
+    [SwaggerResponse(500, "Error interno del servidor")]
+    [HttpPost("{gameId}/abandon")]
+    public async Task<ActionResult> AbandonGame(int gameId)
+    {
+        var uid = HttpContext.Items["FirebaseUid"] as string;
+        if (string.IsNullOrEmpty(uid))
+        {
+            return Unauthorized(new { message = "Token de autenticación requerido o inválido." });
+        }
+
+        await _abandonSoloGameUseCase.ExecuteAsync(gameId, uid);
+
+        return Ok(new { message = "Partida abandonada exitosamente. Energía reducida." });
     }
 }

@@ -39,7 +39,10 @@ public class GameUpdateDto
                 PenaltyUntil = p.PenaltyUntil,
                 FinishedAt = p.FinishedAt,
                 AvailablePowerUps = p.AvailablePowerUps.Select(PowerUpDto.FromPowerUp).ToList(),
-                HasDoublePointsActive = p.HasDoublePointsActive
+                HasDoublePointsActive = p.HasDoublePointsActive,
+                EquippedCar = EquippedProductDto.FromProduct(p.EquippedCar),
+                EquippedCharacter = EquippedProductDto.FromProduct(p.EquippedCharacter),
+                EquippedBackground = EquippedProductDto.FromProduct(p.EquippedBackground)
             }).ToList(),
             Status = gameSession.Status.ToString(),
             CurrentQuestion = gameSession.CurrentQuestion != null ? QuestionDto.FromQuestion(gameSession.CurrentQuestion) : null,

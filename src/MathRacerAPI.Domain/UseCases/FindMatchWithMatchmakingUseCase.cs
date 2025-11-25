@@ -100,7 +100,10 @@ public class FindMatchWithMatchmakingUseCase
             Id = Interlocked.Increment(ref _nextPlayerId),
             Name = playerProfile.Name,
             Uid = playerUid,
-            ConnectionId = connectionId
+            ConnectionId = connectionId,
+            EquippedCar = playerProfile.Car,
+            EquippedCharacter = playerProfile.Character,
+            EquippedBackground = playerProfile.Background
         };
 
         player.AvailablePowerUps = _powerUpService.GrantInitialPowerUps(player.Id);
