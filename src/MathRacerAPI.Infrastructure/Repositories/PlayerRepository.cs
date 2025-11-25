@@ -127,6 +127,8 @@ namespace MathRacerAPI.Infrastructure.Repositories
                     .SetProperty(p => p.Coins, p => p.Coins + coins));
         }
 
+    
+
         public async Task UpdateLastLevelAsync(int playerId, int levelId)
         {
             await _context.Players
@@ -237,5 +239,7 @@ namespace MathRacerAPI.Infrastructure.Repositories
                 LastCalculatedRecharge = now
             };
         }
+
+      
     }
 }

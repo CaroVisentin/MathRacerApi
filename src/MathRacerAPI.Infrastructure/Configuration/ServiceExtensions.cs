@@ -63,6 +63,7 @@ public static class ServiceExtensions
         services.AddScoped<StartSoloGameUseCase>();
         services.AddScoped<GetSoloGameStatusUseCase>();
         services.AddScoped<SubmitSoloAnswerUseCase>();
+        services.AddScoped<AbandonSoloGameUseCase>();
 
         // Registrar casos de uso de modo online 
         services.AddScoped<FindMatchUseCase>();
@@ -106,12 +107,21 @@ public static class ServiceExtensions
         services.AddScoped<PurchaseEnergyUseCase>();
         services.AddScoped<GetEnergyStoreInfoUseCase>();
 
+        // Registrar casos de uso de pagos/paquetes de monedas
+        services.AddScoped<GetCoinPackageUseCase>();
+        services.AddScoped<GetAllCoinPackagesUseCase>();
+        services.AddScoped<PurchaseExistsByPaymentIdUseCase>();
+        services.AddScoped<PersistPurchaseUseCase>();
+        services.AddScoped<AddCoinsToPlayerUseCase>();
+
         // Registrar casos de uso de modo infinito
         services.AddScoped<StartInfiniteGameUseCase>();
         services.AddScoped<SubmitInfiniteAnswerUseCase>();
         services.AddScoped<LoadNextBatchUseCase>();
         services.AddScoped<GetInfiniteGameStatusUseCase>();
         services.AddScoped<AbandonInfiniteGameUseCase>();
+
+        services.AddScoped<CreatePaymentUseCase>();
 
         // Registrar casos de uso de invitaciones de juego
         services.AddScoped<SendGameInvitationUseCase>();
@@ -127,6 +137,7 @@ public static class ServiceExtensions
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IEnergyRepository, EnergyRepository>();
         services.AddScoped<IStoreRepository, StoreRepository>();
+        services.AddScoped<ICoinPackageRepository, CoinPackageRepository>();
         services.AddScoped<IGameRepository, InMemoryGameRepository>();
         services.AddSingleton<ISoloGameRepository, InMemorySoloGameRepository>();
         services.AddSingleton<IInfiniteGameRepository, InMemoryInfiniteGameRepository>();
@@ -142,9 +153,12 @@ public static class ServiceExtensions
         services.AddScoped<IFriendshipRepository, FriendshipRepository>();
         services.AddScoped<IChestRepository, ChestRepository>();
         services.AddScoped<IWildcardRepository, WildcardRepository>();
+       services.AddScoped<IPurchaseRepository, PurchaseRepository>();
+
 
         // Registrar servicio de Firebase
-        services.AddScoped<IFirebaseService, FirebaseService>();
+        services.AddSingleton<IFirebaseService, FirebaseService>();
+        services.AddSingleton<IPaymentService, PaymentService> ();
 
     // Cargar el archivo .env fijo para todos los entornos
     DotNetEnv.Env.Load($".env.{environment.EnvironmentName.ToLower()}");
@@ -159,10 +173,11 @@ public static class ServiceExtensions
         services.AddScoped<IGameLogicService, GameLogicService>();
         services.AddScoped<IPowerUpService, PowerUpService>();
 
-  
-
         // Configurar SignalR
         services.AddSignalR();
+
+        // Registrar servicio de limpieza de juegos en segundo plano
+        services.AddHostedService<GameCleanupService>();
 
         return services;
     }

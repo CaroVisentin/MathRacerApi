@@ -11,5 +11,6 @@
         public int TermsCount { get; set; }
         public int VariablesCount { get; set; }
         public string ResultType { get; set; } = string.Empty;
+        public bool IsCompleted { get; set; }
     }
 }

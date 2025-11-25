@@ -40,6 +40,9 @@ public class SoloControllerTests
 
         // Crear Use Cases reales con repositorios mockeados
         var getQuestionsUseCase = new GetQuestionsUseCase();
+        var abandonSoloGameUseCase = new AbandonSoloGameUseCase(
+            _soloGameRepositoryMock.Object,
+            _energyRepositoryMock.Object);
         var getPlayerByIdUseCase = new GetPlayerByIdUseCase(_playerRepositoryMock.Object);
         var useWildcardUseCase = new UseWildcardUseCase(
             _soloGameRepositoryMock.Object,
@@ -75,7 +78,8 @@ public class SoloControllerTests
             startSoloGameUseCase,
             getSoloGameStatusUseCase,
             submitSoloAnswerUseCase, 
-            useWildcardUseCase);
+            useWildcardUseCase,
+            abandonSoloGameUseCase);
 
         // Configurar HttpContext con FirebaseUid
         _controller.ControllerContext = new ControllerContext

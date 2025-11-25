@@ -60,7 +60,8 @@ namespace MathRacerAPI.Presentation.Controllers
                     Number = l.Number,
                     TermsCount = l.TermsCount,
                     VariablesCount = l.VariablesCount,
-                    ResultType = l.ResultType
+                    ResultType = l.ResultType,
+                    IsCompleted = l.Id <= playerWorldLevels.LastCompletedLevelId
                 }).ToList(),
                 LastCompletedLevelId = playerWorldLevels.LastCompletedLevelId,
             };
