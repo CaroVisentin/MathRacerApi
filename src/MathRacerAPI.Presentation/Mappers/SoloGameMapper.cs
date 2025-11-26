@@ -102,7 +102,8 @@ public static class SoloGameMapper
             CurrentQuestionIndex = result.Game.CurrentQuestionIndex,
             ShouldOpenWorldCompletionChest = result.ShouldOpenWorldCompletionChest,
             ProgressIncrement = result.ProgressIncrement,
-            CoinsEarned = result.CoinsEarned
+            CoinsEarned = result.CoinsEarned,
+            RemainingCoins = result.RemainingCoins
         };
     }
 

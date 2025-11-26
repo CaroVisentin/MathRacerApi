@@ -23,13 +23,13 @@ public class PurchaseWildcardUseCase
     /// <param name="playerId">ID del jugador que compra</param>
     /// <param name="wildcardId">ID del wildcard a comprar</param>
     /// <param name="quantity">Cantidad de wildcards a comprar (por defecto 1)</param>
-    /// <returns>Resultado de la compra con información de éxito, mensaje y nueva cantidad</returns>
+    /// <returns>Resultado de la compra con información de éxito, mensaje, nueva cantidad y monedas restantes</returns>
     /// <exception cref="NotFoundException">Se lanza cuando el jugador o wildcard no existe</exception>
     /// <exception cref="ValidationException">Se lanza cuando la cantidad es inválida</exception>
     /// <exception cref="ConflictException">Se lanza cuando excede el límite máximo</exception>
     /// <exception cref="InsufficientFundsException">Se lanza cuando no tiene suficientes monedas</exception>
     /// <exception cref="BusinessException">Se lanza cuando hay un error de lógica de negocio</exception>
-    public async Task<(bool success, string message, int newQuantity)> ExecuteAsync(int playerId, int wildcardId, int quantity = 1)
+    public async Task<(bool success, string message, int newQuantity, int remainingCoins)> ExecuteAsync(int playerId, int wildcardId, int quantity = 1)
     {
         // Verificar que el jugador existe
         var player = await _playerRepository.GetByIdAsync(playerId);
@@ -88,10 +88,11 @@ public class PurchaseWildcardUseCase
 
         // Devolver el resultado de la compra
         var newQuantity = currentQuantity + quantity;
+        var remainingCoins = player.Coins - totalPrice;
         var message = quantity == 1 
             ? $"¡Compra exitosa! Ahora tienes {newQuantity} unidades de {wildcard.Name}"
             : $"¡Compra exitosa! Compraste {quantity} unidades. Ahora tienes {newQuantity} unidades de {wildcard.Name}";
 
-        return (true, message, newQuantity);
+        return (true, message, newQuantity, remainingCoins);
     }
 }

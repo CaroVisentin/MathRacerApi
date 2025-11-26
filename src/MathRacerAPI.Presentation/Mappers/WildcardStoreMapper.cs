@@ -34,13 +34,14 @@ public static class WildcardStoreMapper
     /// <summary>
     /// Convierte un resultado de compra a PurchaseResultDto
     /// </summary>
-    public static PurchaseResultDto ToPurchaseResultDto(this (bool success, string message, int newQuantity) result)
+    public static PurchaseResultDto ToPurchaseResultDto(this (bool success, string message, int newQuantity, int remainingCoins) result)
     {
         return new PurchaseResultDto
         {
             Success = result.success,
             Message = result.message,
-            NewQuantity = result.newQuantity
+            NewQuantity = result.newQuantity,
+            RemainingCoins = result.remainingCoins
         };
     }
 }
