@@ -198,6 +198,7 @@ public class PurchaseWildcardUseCaseComprehensiveTests
         result.success.Should().BeTrue();
         result.message.Should().Be("¡Compra exitosa! Compraste 3 unidades. Ahora tienes 8 unidades de Double Points");
         result.newQuantity.Should().Be(8);
+        result.remainingCoins.Should().Be(955); // 1000 - 45
 
         _wildcardRepositoryMock.Verify(x => x.PurchaseWildcardAsync(playerId, wildcardId, quantity, 45), Times.Once);
     }
@@ -225,6 +226,7 @@ public class PurchaseWildcardUseCaseComprehensiveTests
         result.success.Should().BeTrue();
         result.message.Should().Be("¡Compra exitosa! Ahora tienes 3 unidades de Skip Question");
         result.newQuantity.Should().Be(3);
+        result.remainingCoins.Should().Be(980); // 1000 - 20
 
         _wildcardRepositoryMock.Verify(x => x.PurchaseWildcardAsync(playerId, wildcardId, 1, 20), Times.Once);
     }
@@ -249,6 +251,7 @@ public class PurchaseWildcardUseCaseComprehensiveTests
         result.success.Should().BeTrue();
         result.message.Should().Be("¡Compra exitosa! Compraste 2 unidades. Ahora tienes 2 unidades de New Wildcard");
         result.newQuantity.Should().Be(2);
+        result.remainingCoins.Should().Be(950); // 1000 - 50
 
         _wildcardRepositoryMock.Verify(x => x.PurchaseWildcardAsync(playerId, wildcardId, 2, 50), Times.Once);
     }
@@ -276,6 +279,7 @@ public class PurchaseWildcardUseCaseComprehensiveTests
         // Assert
         result.success.Should().BeTrue();
         result.newQuantity.Should().Be(quantity);
+        result.remainingCoins.Should().Be(2000 - expectedTotalPrice);
 
         _wildcardRepositoryMock.Verify(x => x.PurchaseWildcardAsync(playerId, wildcardId, quantity, expectedTotalPrice), Times.Once);
     }
@@ -300,6 +304,7 @@ public class PurchaseWildcardUseCaseComprehensiveTests
         result.success.Should().BeTrue();
         result.newQuantity.Should().Be(99);
         result.message.Should().Be("¡Compra exitosa! Compraste 99 unidades. Ahora tienes 99 unidades de Max Wildcard");
+        result.remainingCoins.Should().Be(9010); // 10000 - 990
 
         _wildcardRepositoryMock.Verify(x => x.PurchaseWildcardAsync(playerId, wildcardId, 99, 990), Times.Once);
     }

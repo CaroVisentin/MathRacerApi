@@ -151,6 +151,10 @@ public class SubmitSoloAnswerUseCase
 
         await _soloGameRepository.UpdateAsync(game);
 
+        // Obtener el saldo actualizado de monedas del jugador
+        var updatedPlayer = await _playerRepository.GetByIdAsync(game.PlayerId);
+        var remainingCoins = updatedPlayer?.Coins ?? 0;
+
         return new SoloAnswerResult
         {
             Game = game,
@@ -159,7 +163,8 @@ public class SubmitSoloAnswerUseCase
             PlayerAnswer = answer,
             ShouldOpenWorldCompletionChest = shouldOpenChest,
             ProgressIncrement = progressIncrement,
-            CoinsEarned = coinsEarned
+            CoinsEarned = coinsEarned,
+            RemainingCoins = remainingCoins
         };
     }
 

@@ -36,4 +36,9 @@ public class SubmitSoloAnswerResponseDto
     /// Cantidad de monedas obtenidas al completar el nivel (0 si no completó)
     /// </summary>
     public int CoinsEarned { get; set; }
+    
+    /// <summary>
+    /// Saldo total de monedas del jugador después de la recompensa
+    /// </summary>
+    public int RemainingCoins { get; set; }
 }

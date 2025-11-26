@@ -66,4 +66,9 @@ public class PurchaseResultDto
     /// Nueva cantidad total del wildcard que tiene el jugador
     /// </summary>
     public int NewQuantity { get; set; }
+    
+    /// <summary>
+    /// Saldo de monedas restante del jugador después de la compra
+    /// </summary>
+    public int RemainingCoins { get; set; }
 }

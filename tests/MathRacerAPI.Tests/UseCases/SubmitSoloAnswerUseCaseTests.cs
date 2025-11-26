@@ -235,8 +235,9 @@ public class SubmitSoloAnswerUseCaseTests
         result.Game.Status.Should().Be(SoloGameStatus.PlayerWon);
         result.Game.PlayerPosition.Should().Be(game.TotalQuestions);
         result.Game.GameFinishedAt.Should().NotBeNull();
+        result.RemainingCoins.Should().BeGreaterOrEqualTo(0);
         
-        _playerRepositoryMock.Verify(x => x.GetByIdAsync(game.PlayerId), Times.Exactly(2)); 
+        _playerRepositoryMock.Verify(x => x.GetByIdAsync(game.PlayerId), Times.Exactly(3)); // Ahora llama 3 veces: inicial + verificar nuevo nivel + obtener saldo actualizado
         _playerRepositoryMock.Verify(x => x.AddCoinsAsync(game.PlayerId, It.IsAny<int>()), Times.Once);
     }
 
