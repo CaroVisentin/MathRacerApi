@@ -366,7 +366,16 @@ namespace MathRacerAPI.Infrastructure.Configuration
                 entity.Property(e => e.TotalAmount)
                     .IsRequired()
                     .HasColumnType("decimal(18,2)");
+
+                entity.Property(e => e.PaymentId)
+                      .IsRequired()
+                      .HasMaxLength(50);
+
+                entity.HasIndex(e => e.PaymentId)
+                      .IsUnique();
+
             });
+
 
             // --- RARITY ---
             modelBuilder.Entity<RarityEntity>(entity =>
