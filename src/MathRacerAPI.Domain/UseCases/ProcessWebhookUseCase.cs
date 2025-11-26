@@ -72,7 +72,6 @@ namespace MathRacerAPI.Domain.UseCases
          
             try
             {
-                // A. Validar que el paquete existe
                 var pack = await _coinPackageRepository.GetByIdAsync(packageId);
                 if (pack == null)
                 {
@@ -80,7 +79,6 @@ namespace MathRacerAPI.Domain.UseCases
                     return;
                 }
 
-                // B. Crear entidad de compra
                 var purchase = new Purchase
                 {
                     PlayerId = playerId,

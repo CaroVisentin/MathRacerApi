@@ -76,10 +76,8 @@ namespace MathRacerAPI.Infrastructure.Services
         {
             try
             {
-                // 1. Extraer Topic (replicando tu lógica antigua)
                 string topic = GetString(json, "topic") ?? GetString(json, "type");
 
-                // 2. Extraer ID (Buscamos en data.id, id, o resource)
                 string idStr = null;
 
                 if (json.TryGetProperty("data", out JsonElement dataElem))
@@ -90,7 +88,6 @@ namespace MathRacerAPI.Infrastructure.Services
                 if (string.IsNullOrEmpty(idStr)) idStr = GetString(json, "id");
                 if (string.IsNullOrEmpty(idStr)) idStr = GetString(json, "resource");
 
-                // Limpieza de URL si vino en resource
                 if (!string.IsNullOrEmpty(idStr) && !long.TryParse(idStr, out _))
                 {
                     idStr = idStr.Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
@@ -98,7 +95,6 @@ namespace MathRacerAPI.Infrastructure.Services
 
                 if (string.IsNullOrEmpty(topic) || string.IsNullOrEmpty(idStr)) return null;
 
-                // 3. Llamar a la API según el topic
                 if (topic == "payment")
                 {
                     return await GetFromPaymentId(idStr);
@@ -127,7 +123,6 @@ namespace MathRacerAPI.Infrastructure.Services
 
             if (payment == null) return null;
 
-            // Mapeo directo aquí, sin métodos extra
             return new PaymentInfo
             {
                 PaymentId = payment.Id.ToString(),
@@ -143,7 +138,6 @@ namespace MathRacerAPI.Infrastructure.Services
             var client = new MerchantOrderClient();
             var order = await client.GetAsync(orderId);
 
-            // Buscamos pago aprobado
             var approvedPayment = order.Payments?.FirstOrDefault(p => p.Status == "approved");
 
             if (approvedPayment == null) return null;
