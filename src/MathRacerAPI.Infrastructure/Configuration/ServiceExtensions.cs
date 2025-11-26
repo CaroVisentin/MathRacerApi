@@ -122,6 +122,7 @@ public static class ServiceExtensions
         services.AddScoped<AbandonInfiniteGameUseCase>();
 
         services.AddScoped<CreatePaymentUseCase>();
+        services.AddScoped<ProcessWebhookUseCase>();
 
         // Registrar casos de uso de invitaciones de juego
         services.AddScoped<SendGameInvitationUseCase>();
