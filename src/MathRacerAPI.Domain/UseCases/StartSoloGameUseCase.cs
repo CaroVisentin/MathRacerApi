@@ -112,7 +112,7 @@ public class StartSoloGameUseCase
             WorldId = level.WorldId,
             ResultType = level.ResultType,
             Questions = questions,
-            TotalQuestions = 10,
+            TotalQuestions = 5,
             TimePerEquation = world.TimePerEquation,
             GameStartedAt = DateTime.UtcNow,
             Status = SoloGameStatus.InProgress,

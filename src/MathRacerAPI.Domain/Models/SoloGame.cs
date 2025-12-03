@@ -27,7 +27,7 @@ public class SoloGame
 
     // Configuración del nivel
     public List<Question> Questions { get; set; } = new();
-    public int TotalQuestions { get; set; } = 10;
+    public int TotalQuestions { get; set; } = 5;
     public int TimePerEquation { get; set; }
 
     // Control de tiempo
